@@ -1,0 +1,61 @@
+# SPDX-License-Identifier: Apache-2.0
+# Multi-stage build for both runtime images:
+#   docker build -f docker/Dockerfile --target app .
+#   docker build -f docker/Dockerfile --target converter .
+
+ARG NODE_IMAGE=node:24-trixie-slim
+
+FROM ${NODE_IMAGE} AS build
+ENV PNPM_HOME=/pnpm PATH=/pnpm:$PATH CI=true
+WORKDIR /src
+COPY package.json ./
+RUN npm install -g "$(node -p "require('./package.json').packageManager")"
+COPY pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+COPY apps/server/package.json apps/server/
+COPY apps/converter/package.json apps/converter/
+COPY apps/web/package.json apps/web/
+COPY packages/shared/package.json packages/shared/
+COPY packages/course-model/package.json packages/course-model/
+COPY packages/player/package.json packages/player/
+COPY packages/eslint-config/package.json packages/eslint-config/
+RUN pnpm install --frozen-lockfile
+COPY . .
+RUN pnpm --filter @lernwerk/server --filter @lernwerk/converter --filter @lernwerk/web run build \
+ && pnpm --filter @lernwerk/server deploy --prod /out/app \
+ && pnpm --filter @lernwerk/converter deploy --prod /out/converter \
+ && mkdir -p /out/app/public && cp -r apps/web/dist/. /out/app/public/
+
+# --- app: API, web UI, content host -------------------------------------------
+FROM ${NODE_IMAGE} AS app
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends postgresql-client-17 \
+ && rm -rf /var/lib/apt/lists/* \
+ && groupadd --gid 10000 lernwerk-work \
+ && useradd --uid 10001 --gid 10000 --no-create-home --shell /usr/sbin/nologin lernwerk \
+ && mkdir -p /data /work /run/lernwerk \
+ && chown 10001:10000 /data && chown 10001:10000 /work && chmod 2770 /work
+COPY --from=build /out/app /app
+COPY docker/lernwerk.sh /usr/local/bin/lernwerk
+ENV NODE_ENV=production LERNWERK_DATA_DIR=/data LERNWERK_WEB_DIR=/app/public
+USER 10001:10000
+WORKDIR /app
+EXPOSE 3000
+HEALTHCHECK --interval=15s --timeout=5s --start-period=20s --retries=3 CMD ["node", "/app/dist/healthcheck.js"]
+CMD ["node", "/app/dist/main.js"]
+
+# --- converter: untrusted documents and media --------------------------------
+FROM ${NODE_IMAGE} AS converter
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      libreoffice-impress-nogui ffmpeg \
+      fonts-crosextra-carlito fonts-crosextra-caladea fonts-liberation fonts-dejavu-core \
+ && rm -rf /var/lib/apt/lists/* \
+ && groupadd --gid 10000 lernwerk-work \
+ && useradd --uid 10002 --gid 10000 --no-create-home --shell /usr/sbin/nologin converter \
+ && mkdir -p /work && chown 10002:10000 /work && chmod 2770 /work
+COPY --from=build /out/converter /converter
+ENV NODE_ENV=production LERNWERK_WORK_DIR=/work HOME=/tmp
+USER 10002:10000
+WORKDIR /converter
+HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=3 CMD ["node", "/converter/dist/healthcheck.js"]
+CMD ["node", "/converter/dist/main.js"]

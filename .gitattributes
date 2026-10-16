@@ -1,0 +1,24 @@
+# Normalize text files to LF in the repository and working tree.
+* text=auto eol=lf
+
+# Binary assets: no line-ending conversion, no textual diff.
+*.woff2 binary
+*.woff binary
+*.ttf binary
+*.otf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.pptx binary
+*.mp4 binary
+*.webm binary
+*.mp3 binary
+
+# Generated files: collapse in diffs.
+pnpm-lock.yaml linguist-generated=true -diff
+packages/course-model/schema/*.json linguist-generated=true

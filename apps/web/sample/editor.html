@@ -1,0 +1,465 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Static design sample: course editor. Not shipped; see docs/design.md. -->
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lernwerk – Musterseite Editor</title>
+    <link rel="stylesheet" href="../src/styles/tokens.css" />
+    <link rel="stylesheet" href="../src/styles/base.css" />
+    <link rel="stylesheet" href="./icons.css" />
+    <link rel="stylesheet" href="./sample.css" />
+    <script type="module" src="./sample.js"></script>
+  </head>
+  <body>
+    <div class="app">
+      <!-- Menu bar -->
+      <nav class="menubar" aria-label="Hauptmenü">
+        <span class="menubar__brand">Lernwerk</span>
+        <button class="menubar__item">Datei</button>
+        <span class="menubar__item--anchor">
+          <button class="menubar__item" aria-expanded="false">Bearbeiten</button>
+        </span>
+        <button class="menubar__item">Ansicht</button>
+        <button class="menubar__item">Einfügen</button>
+        <button class="menubar__item">Folie</button>
+        <button class="menubar__item">Quiz</button>
+        <button class="menubar__item">Veröffentlichen</button>
+        <button class="menubar__item">Hilfe</button>
+        <span class="menubar__spacer"></span>
+        <span class="menubar__doc">
+          <span class="icon i-lock" aria-hidden="true"></span>
+          Arbeitssicherheit Grundlagen · Entwurf
+        </span>
+        <button class="menubar__item" id="theme-toggle" title="Hell/Dunkel umschalten">Hell/Dunkel</button>
+      </nav>
+
+      <!-- Ribbon -->
+      <div class="ribbon">
+        <div class="tabstrip" role="tablist" aria-label="Werkzeuge">
+          <button class="tabstrip__tab" role="tab" aria-selected="true">Start</button>
+          <button class="tabstrip__tab" role="tab" aria-selected="false">Einfügen</button>
+          <button class="tabstrip__tab" role="tab" aria-selected="false">Animation</button>
+          <button class="tabstrip__tab" role="tab" aria-selected="false">Vertonung</button>
+          <button class="tabstrip__tab" role="tab" aria-selected="false">Quiz</button>
+          <button class="tabstrip__tab" role="tab" aria-selected="false">Ansicht</button>
+        </div>
+        <div class="ribbon__body" role="toolbar" aria-label="Start">
+          <div class="ribbon-group">
+            <div class="ribbon-group__items">
+              <button class="tool tool--large">
+                <span class="icon icon-lg i-clipboard-paste"></span>Einfügen
+              </button>
+              <div class="ribbon-group__stack">
+                <button class="tool"><span class="icon i-scissors"></span>Ausschneiden</button>
+                <button class="tool"><span class="icon i-copy"></span>Kopieren</button>
+              </div>
+            </div>
+            <span class="ribbon-group__label">Zwischenablage</span>
+          </div>
+          <div class="ribbon-group">
+            <div class="ribbon-group__items">
+              <button class="tool tool--large">
+                <span class="icon icon-lg i-file-plus"></span>Neue Folie
+              </button>
+              <div class="ribbon-group__stack">
+                <button class="tool"><span class="icon i-copy"></span>Duplizieren</button>
+                <button class="tool"><span class="icon i-trash-2"></span>Löschen</button>
+              </div>
+            </div>
+            <span class="ribbon-group__label">Folien</span>
+          </div>
+          <div class="ribbon-group">
+            <div class="ribbon-group__items">
+              <div class="ribbon-group__stack">
+                <button class="tool"><span class="icon i-type"></span>Text</button>
+                <button class="tool"><span class="icon i-image"></span>Bild</button>
+              </div>
+              <div class="ribbon-group__stack">
+                <button class="tool"><span class="icon i-square"></span>Form</button>
+                <button class="tool"><span class="icon i-video"></span>Video</button>
+              </div>
+              <div class="ribbon-group__stack">
+                <button class="tool"><span class="icon i-music"></span>Audio</button>
+                <button class="tool"><span class="icon i-mouse-pointer-click"></span>Hotspot</button>
+              </div>
+            </div>
+            <span class="ribbon-group__label">Einfügen</span>
+          </div>
+          <div class="ribbon-group">
+            <div class="ribbon-group__items">
+              <div class="ribbon-group__stack">
+                <button class="tool"><span class="icon i-bring-to-front"></span>Nach vorn</button>
+                <button class="tool"><span class="icon i-send-to-back"></span>Nach hinten</button>
+              </div>
+              <div class="ribbon-group__stack">
+                <button class="tool"><span class="icon i-group"></span>Gruppieren</button>
+                <button class="tool" disabled><span class="icon i-ungroup"></span>Aufheben</button>
+              </div>
+            </div>
+            <span class="ribbon-group__label">Anordnen</span>
+          </div>
+          <div class="ribbon-group">
+            <div class="ribbon-group__grid">
+              <button class="tool tool--icon" title="Links ausrichten" aria-label="Links ausrichten">
+                <span class="icon i-align-start-vertical"></span>
+              </button>
+              <button
+                class="tool tool--icon"
+                title="Horizontal zentrieren"
+                aria-label="Horizontal zentrieren"
+              >
+                <span class="icon i-align-center-vertical"></span>
+              </button>
+              <button class="tool tool--icon" title="Rechts ausrichten" aria-label="Rechts ausrichten">
+                <span class="icon i-align-end-vertical"></span>
+              </button>
+              <button class="tool tool--icon" title="Oben ausrichten" aria-label="Oben ausrichten">
+                <span class="icon i-align-start-horizontal"></span>
+              </button>
+              <button class="tool tool--icon" title="Vertikal zentrieren" aria-label="Vertikal zentrieren">
+                <span class="icon i-align-center-horizontal"></span>
+              </button>
+              <button class="tool tool--icon" title="Unten ausrichten" aria-label="Unten ausrichten">
+                <span class="icon i-align-end-horizontal"></span>
+              </button>
+            </div>
+            <span class="ribbon-group__label">Ausrichten</span>
+          </div>
+          <div class="ribbon-group">
+            <div class="ribbon-group__items">
+              <div class="ribbon-group__stack">
+                <button class="tool" aria-pressed="true"><span class="icon i-grid-3x3"></span>Raster</button>
+                <button class="tool" aria-pressed="true"><span class="icon i-layers"></span>Ebenen</button>
+              </div>
+              <button class="tool tool--large"><span class="icon icon-lg i-play"></span>Vorschau</button>
+            </div>
+            <span class="ribbon-group__label">Ansicht</span>
+          </div>
+          <div class="ribbon-group">
+            <div class="ribbon-group__items">
+              <button class="tool tool--large">
+                <span class="icon icon-lg i-upload"></span>Veröffentlichen
+              </button>
+            </div>
+            <span class="ribbon-group__label">Ausgabe</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Workbench -->
+      <div class="workbench">
+        <!-- Slide list -->
+        <section class="panel" aria-label="Folien">
+          <header class="panel__header">
+            <span class="panel__title">Folien</span>
+            <button class="tool tool--icon" aria-label="Folie hinzufügen">
+              <span class="icon i-plus"></span>
+            </button>
+          </header>
+          <div class="panel__body">
+            <div class="chapter"><span class="icon i-chevron-down"></span>1 Einführung</div>
+            <ol class="slide-list" role="listbox" aria-label="Folien in Einführung">
+              <li class="slide-thumb" role="option" aria-selected="false">
+                <span class="slide-thumb__index">1</span>
+                <span class="slide-thumb__frame"
+                  ><span class="thumb-line thumb-line--title"></span
+                  ><span class="thumb-line thumb-line--a"></span><span class="thumb-line thumb-line--b"></span
+                ></span>
+                <span class="slide-thumb__caption">Titel</span>
+              </li>
+              <li class="slide-thumb" role="option" aria-selected="false">
+                <span class="slide-thumb__index">2</span>
+                <span class="slide-thumb__frame"
+                  ><span class="thumb-line thumb-line--title"></span
+                  ><span class="thumb-line thumb-line--a"></span><span class="thumb-line thumb-line--b"></span
+                  ><span class="thumb-line thumb-line--c"></span
+                ></span>
+                <span class="slide-thumb__caption">Ziele des Kurses</span>
+              </li>
+              <li class="slide-thumb" role="option" aria-selected="true">
+                <span class="slide-thumb__index">3</span>
+                <span class="slide-thumb__frame"
+                  ><span class="thumb-line thumb-line--title"></span
+                  ><span class="thumb-line thumb-line--a"></span><span class="thumb-line thumb-line--b"></span
+                  ><span class="thumb-box"></span><span class="thumb-badge">0:42</span></span
+                >
+                <span class="slide-thumb__caption">Fluchtwege im Lager</span>
+              </li>
+            </ol>
+            <div class="chapter"><span class="icon i-chevron-down"></span>2 Prüfung</div>
+            <ol class="slide-list" role="listbox" aria-label="Folien in Prüfung">
+              <li class="slide-thumb" role="option" aria-selected="false">
+                <span class="slide-thumb__index">4</span>
+                <span class="slide-thumb__frame"
+                  ><span class="thumb-line thumb-line--title"></span
+                  ><span class="thumb-line thumb-line--a"></span><span class="thumb-line thumb-line--b"></span
+                  ><span class="thumb-line thumb-line--c"></span
+                  ><span class="thumb-badge">Quiz · 8</span></span
+                >
+                <span class="slide-thumb__caption">Abschlusstest</span>
+              </li>
+            </ol>
+          </div>
+        </section>
+
+        <div
+          class="splitter"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Folienliste skalieren"
+          tabindex="0"
+        ></div>
+
+        <!-- Canvas + timeline -->
+        <div class="center">
+          <div class="canvas-area">
+            <div class="slide" aria-label="Folie 3">
+              <div class="grid-overlay"></div>
+              <div class="slide__title">Fluchtwege im Lager</div>
+              <ul class="slide__text">
+                <li>Fluchtwege sind grün gekennzeichnet.</li>
+                <li>Gänge immer mindestens 1,20 m frei halten.</li>
+                <li>Sammelplatz: Parkplatz Nord.</li>
+              </ul>
+              <div class="slide__image">
+                <span class="icon icon-lg i-image" aria-hidden="true"></span>
+                <div class="selection">
+                  <span class="handle handle--nw"></span><span class="handle handle--n"></span
+                  ><span class="handle handle--ne"></span><span class="handle handle--e"></span>
+                  <span class="handle handle--se"></span><span class="handle handle--s"></span
+                  ><span class="handle handle--sw"></span><span class="handle handle--w"></span>
+                  <span class="size-tag">480 × 320</span>
+                </div>
+              </div>
+              <div class="slide__hotspot" aria-hidden="true"></div>
+              <span class="guide guide--v"></span>
+              <div class="slide__footer">Arbeitssicherheit Grundlagen · Kapitel 1</div>
+            </div>
+
+            <!-- Context menu example (right click on the image) -->
+            <div class="menu pos-context-menu" role="menu" aria-label="Kontextmenü Bild">
+              <div class="menu__item" role="menuitem">
+                <span class="icon i-scissors"></span>Ausschneiden<span class="menu__shortcut">Strg+X</span>
+              </div>
+              <div class="menu__item" role="menuitem" data-focused>
+                <span class="icon i-copy"></span>Kopieren<span class="menu__shortcut">Strg+C</span>
+              </div>
+              <div class="menu__item" role="menuitem" aria-disabled="true">
+                <span class="icon i-clipboard-paste"></span>Einfügen<span class="menu__shortcut">Strg+V</span>
+              </div>
+              <div class="menu__separator" role="separator"></div>
+              <div class="menu__item" role="menuitem">
+                <span class="icon i-bring-to-front"></span>In den Vordergrund<span class="menu__shortcut"
+                  >Strg+Umschalt+]</span
+                >
+              </div>
+              <div class="menu__item" role="menuitem">
+                <span class="icon i-send-to-back"></span>In den Hintergrund<span class="menu__shortcut"
+                  >Strg+Umschalt+[</span
+                >
+              </div>
+              <div class="menu__separator" role="separator"></div>
+              <div class="menu__item" role="menuitem">
+                <span class="icon i-image"></span>Bild ersetzen …<span class="menu__shortcut"></span>
+              </div>
+              <div class="menu__item" role="menuitem">
+                <span class="icon i-message-square"></span>Kommentar hinzufügen<span class="menu__shortcut"
+                  >Strg+Alt+M</span
+                >
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="splitter splitter--h"
+            role="separator"
+            aria-orientation="horizontal"
+            aria-label="Zeitachse skalieren"
+            tabindex="0"
+          ></div>
+
+          <section class="timeline" aria-label="Zeitachse">
+            <header class="panel__header">
+              <span class="icon i-timer" aria-hidden="true"></span>
+              <span class="panel__title">Zeitachse</span>
+              <button class="tool tool--icon" aria-label="Abspielen">
+                <span class="icon i-play"></span>
+              </button>
+              <button class="tool"><span class="icon i-mic"></span>Aufnehmen</button>
+              <span class="num muted">00:16,0 / 00:42,0</span>
+            </header>
+            <div class="timeline__ruler" aria-hidden="true">
+              <span></span>
+              <div class="timeline__scale">
+                <span>0 s</span><span>4</span><span>8</span><span>12</span><span>16</span><span>20</span
+                ><span>24</span><span>28</span><span>32</span><span>36</span>
+              </div>
+            </div>
+            <div class="timeline__tracks">
+              <div class="track">
+                <span class="track__name"><span class="icon i-music"></span>Sprechertext.mp3</span
+                ><span class="track__lane"><span class="bar bar--audio bar--b5"></span></span>
+              </div>
+              <div class="track">
+                <span class="track__name"><span class="icon i-type"></span>Titel</span
+                ><span class="track__lane"
+                  ><span class="bar bar--b1"><span class="bar__in"></span></span
+                ></span>
+              </div>
+              <div class="track">
+                <span class="track__name"><span class="icon i-type"></span>Aufzählung</span
+                ><span class="track__lane"
+                  ><span class="bar bar--b3"><span class="bar__in"></span></span
+                ></span>
+              </div>
+              <div class="track" aria-selected="true">
+                <span class="track__name"><span class="icon i-image"></span>Lagerhalle</span
+                ><span class="track__lane"
+                  ><span class="bar bar--selected bar--b4"><span class="bar__in"></span></span
+                ></span>
+              </div>
+              <div class="track">
+                <span class="track__name"
+                  ><span class="icon i-mouse-pointer-click"></span>Hotspot Notausgang</span
+                ><span class="track__lane"><span class="bar bar--b2"></span></span>
+              </div>
+              <span class="playhead" aria-hidden="true"></span>
+            </div>
+          </section>
+        </div>
+
+        <div
+          class="splitter"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Eigenschaften skalieren"
+          tabindex="0"
+        ></div>
+
+        <!-- Properties -->
+        <section class="panel" aria-label="Eigenschaften">
+          <header class="panel__header">
+            <span class="panel__title">Eigenschaften · Bild</span>
+            <button class="tool tool--icon" aria-label="Panel schließen">
+              <span class="icon i-x"></span>
+            </button>
+          </header>
+          <div class="panel__body">
+            <div class="section">
+              <button class="section__header" aria-expanded="true">
+                <span class="icon i-chevron-down"></span>Position und Größe
+              </button>
+              <div class="form">
+                <label class="form__label" for="p-x">Position</label>
+                <div class="form__pair">
+                  <span class="field"
+                    ><span class="field__prefix">X</span><input id="p-x" class="num" value="720"
+                  /></span>
+                  <span class="field"
+                    ><span class="field__prefix">Y</span><input class="num" value="187" aria-label="Y"
+                  /></span>
+                </div>
+                <label class="form__label" for="p-w">Größe</label>
+                <div class="form__pair">
+                  <span class="field"
+                    ><span class="field__prefix">B</span><input id="p-w" class="num" value="480"
+                  /></span>
+                  <span class="field"
+                    ><span class="field__prefix">H</span><input class="num" value="320" aria-label="Höhe"
+                  /></span>
+                </div>
+                <label class="form__label" for="p-r">Drehung</label>
+                <span class="field"
+                  ><input id="p-r" class="num" value="0" /><span class="field__unit">°</span></span
+                >
+                <span class="form__label">Anpassen</span>
+                <span class="segmented" role="group" aria-label="Bild anpassen">
+                  <button aria-pressed="true" title="Einpassen" aria-label="Einpassen">
+                    <span class="icon i-zoom-out"></span>
+                  </button>
+                  <button aria-pressed="false" title="Ausfüllen" aria-label="Ausfüllen">
+                    <span class="icon i-zoom-in"></span>
+                  </button>
+                  <button aria-pressed="false" title="Strecken" aria-label="Strecken">
+                    <span class="icon i-square"></span>
+                  </button>
+                </span>
+              </div>
+            </div>
+            <div class="section">
+              <button class="section__header" aria-expanded="true">
+                <span class="icon i-chevron-down"></span>Darstellung
+              </button>
+              <div class="form">
+                <label class="form__label" for="p-border">Rahmen</label>
+                <span class="field"
+                  ><span class="swatch swatch--accent"></span><input id="p-border" value="#1F5FA6"
+                /></span>
+                <label class="form__label" for="p-bw">Rahmenstärke</label>
+                <span class="field field--invalid"
+                  ><input
+                    id="p-bw"
+                    class="num"
+                    value="120"
+                    aria-invalid="true"
+                    aria-describedby="p-bw-err"
+                  /><span class="field__unit">px</span></span
+                >
+                <span class="field-error" id="p-bw-err">Höchstens 100 px.</span>
+                <label class="form__label" for="p-fill">Füllung</label>
+                <span class="field"
+                  ><span class="swatch swatch--none"></span><input id="p-fill" value="Keine"
+                /></span>
+              </div>
+            </div>
+            <div class="section">
+              <button class="section__header" aria-expanded="true">
+                <span class="icon i-chevron-down"></span>Barrierefreiheit
+              </button>
+              <div class="form">
+                <label class="form__label" for="p-alt">Alt-Text</label>
+                <span class="form__label"><span class="badge badge--neutral">DE</span></span>
+                <textarea id="p-alt" class="textarea form__full">
+Lagerhalle mit Hochregalen; links der grün markierte Notausgang.</textarea>
+                <label class="check form__full"
+                  ><input type="checkbox" /> Dekorativ (kein Alt-Text nötig)</label
+                >
+              </div>
+              <p class="hint">
+                <span class="icon i-languages" aria-hidden="true"></span>Alt-Text für Englisch fehlt.
+              </p>
+            </div>
+            <div class="section">
+              <button class="section__header" aria-expanded="false">
+                <span class="icon i-chevron-right"></span>Auslöser (1)
+              </button>
+            </div>
+            <div class="section">
+              <button class="section__header" aria-expanded="false">
+                <span class="icon i-chevron-right"></span>Animation
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Status bar -->
+      <footer class="statusbar">
+        <span class="statusbar__item">Folie 3 von 4</span>
+        <span class="statusbar__item"
+          ><span class="status-dot" aria-hidden="true"></span>Gespeichert 21:58</span
+        >
+        <span class="statusbar__item"
+          ><span class="icon i-users" aria-hidden="true"></span>Nur Sie bearbeiten</span
+        >
+        <span class="statusbar__item statusbar__item--end">X 720 · Y 187</span>
+        <span class="statusbar__item"><span class="icon i-monitor" aria-hidden="true"></span>1280 × 720</span>
+        <span class="statusbar__item">Zoom 60 %</span>
+        <span class="statusbar__item">DE</span>
+        <span class="statusbar__item"><kbd>?</kbd> Tastenkürzel</span>
+      </footer>
+    </div>
+  </body>
+</html>

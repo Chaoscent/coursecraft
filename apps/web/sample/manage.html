@@ -1,0 +1,280 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Static design sample: LMS management (tables, navigation, dialog). Not shipped. -->
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lernwerk – Musterseite Verwaltung</title>
+    <link rel="stylesheet" href="../src/styles/tokens.css" />
+    <link rel="stylesheet" href="../src/styles/base.css" />
+    <link rel="stylesheet" href="./icons.css" />
+    <link rel="stylesheet" href="./sample.css" />
+    <script type="module" src="./sample.js"></script>
+  </head>
+  <body>
+    <div class="app app--manage">
+      <nav class="menubar" aria-label="Hauptmenü">
+        <span class="menubar__brand">Lernwerk</span>
+        <button class="menubar__item">Datei</button>
+        <button class="menubar__item">Bearbeiten</button>
+        <button class="menubar__item">Ansicht</button>
+        <button class="menubar__item">Extras</button>
+        <button class="menubar__item">Hilfe</button>
+        <span class="menubar__spacer"></span>
+        <span class="menubar__doc"
+          ><span class="icon i-users" aria-hidden="true"></span>A. Berger · Administration</span
+        >
+        <button class="menubar__item" id="theme-toggle">Hell/Dunkel</button>
+      </nav>
+
+      <div class="toolbar" role="toolbar" aria-label="Kursbibliothek">
+        <button class="tool"><span class="icon i-plus"></span>Neuer Kurs</button>
+        <button class="tool"><span class="icon i-download"></span>Paket importieren</button>
+        <span class="toolbar__separator"></span>
+        <button class="tool"><span class="icon i-users"></span>Zuweisen …</button>
+        <button class="tool"><span class="icon i-eye"></span>Vorschau</button>
+        <button class="tool" disabled><span class="icon i-trash-2"></span>Archivieren</button>
+        <span class="toolbar__spacer"></span>
+        <span class="field search"
+          ><span class="field__prefix"><span class="icon i-search"></span></span
+          ><input placeholder="Titel, Autor, Schlagwort" aria-label="Kurse durchsuchen"
+        /></span>
+        <span class="field"
+          ><select aria-label="Status filtern">
+            <option>Alle Status</option>
+            <option>Veröffentlicht</option>
+            <option>Entwurf</option>
+          </select></span
+        >
+      </div>
+
+      <div class="manage">
+        <section class="panel" aria-label="Navigation">
+          <div class="panel__body nav">
+            <div class="nav__group">Lernen</div>
+            <a class="nav__item" href="#"
+              ><span class="icon i-book-open"></span>Meine Kurse<span class="nav__count">4</span></a
+            >
+            <div class="nav__group">Autorenwerkzeug</div>
+            <a class="nav__item" href="#"
+              ><span class="icon i-folder-open"></span>Kursentwürfe<span class="nav__count">12</span></a
+            >
+            <div class="nav__group">Verwaltung</div>
+            <a class="nav__item" href="#" aria-current="page"
+              ><span class="icon i-book-open"></span>Kursbibliothek<span class="nav__count">38</span></a
+            >
+            <a class="nav__item" href="#"
+              ><span class="icon i-list-checks"></span>Zuweisungen<span class="nav__count">126</span></a
+            >
+            <a class="nav__item" href="#"
+              ><span class="icon i-users"></span>Nutzer und Gruppen<span class="nav__count">412</span></a
+            >
+            <a class="nav__item" href="#"><span class="icon i-chart-column"></span>Berichte</a>
+            <a class="nav__item" href="#"><span class="icon i-history"></span>Audit-Log</a>
+            <a class="nav__item" href="#"><span class="icon i-settings"></span>Einstellungen</a>
+          </div>
+        </section>
+
+        <div
+          class="splitter"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Navigation skalieren"
+          tabindex="0"
+        ></div>
+
+        <main class="manage__main">
+          <header class="page-header">
+            <h1>Kursbibliothek</h1>
+            <span class="muted">38 Kurse · 3 ausgewählt</span>
+          </header>
+          <div class="toolbar">
+            <span class="badge badge--neutral">Status: Alle</span>
+            <span class="badge badge--neutral">Format: Alle</span>
+            <span class="toolbar__spacer"></span>
+            <button class="tool"><span class="icon i-download"></span>CSV</button>
+            <button class="tool"><span class="icon i-download"></span>XLSX</button>
+          </div>
+          <div class="table-wrap">
+            <table class="table" aria-label="Kurse" aria-multiselectable="true">
+              <thead>
+                <tr>
+                  <th class="table__check"><input type="checkbox" aria-label="Alle auswählen" /></th>
+                  <th aria-sort="ascending">
+                    Titel<span class="icon i-chevron-down table__sort" aria-hidden="true"></span>
+                  </th>
+                  <th>Format</th>
+                  <th>Status</th>
+                  <th class="num">Zugewiesen</th>
+                  <th>Abschluss</th>
+                  <th class="num">Ø Punkte</th>
+                  <th class="num">Ø Dauer</th>
+                  <th>Geändert</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr aria-selected="true">
+                  <td><input type="checkbox" checked aria-label="Auswählen" /></td>
+                  <td>Arbeitssicherheit Grundlagen</td>
+                  <td>Lernwerk</td>
+                  <td><span class="badge badge--success">Veröffentlicht</span></td>
+                  <td class="num">212</td>
+                  <td>
+                    <span class="meter"><span class="meter__fill w-92"></span></span
+                    ><span class="num">92 %</span>
+                  </td>
+                  <td class="num">84,6</td>
+                  <td class="num">00:24:10</td>
+                  <td class="num">14.10.2026</td>
+                </tr>
+                <tr aria-selected="true">
+                  <td><input type="checkbox" checked aria-label="Auswählen" /></td>
+                  <td>Brandschutzhelfer Auffrischung</td>
+                  <td>SCORM 2004</td>
+                  <td><span class="badge badge--success">Veröffentlicht</span></td>
+                  <td class="num">48</td>
+                  <td>
+                    <span class="meter"><span class="meter__fill w-71"></span></span
+                    ><span class="num">71 %</span>
+                  </td>
+                  <td class="num">77,0</td>
+                  <td class="num">00:41:55</td>
+                  <td class="num">02.10.2026</td>
+                </tr>
+                <tr>
+                  <td><input type="checkbox" aria-label="Auswählen" /></td>
+                  <td>Datenschutz im Kundenkontakt</td>
+                  <td>Lernwerk</td>
+                  <td><span class="badge badge--warning">Überarbeitung</span></td>
+                  <td class="num">318</td>
+                  <td>
+                    <span class="meter"><span class="meter__fill w-48"></span></span
+                    ><span class="num">48 %</span>
+                  </td>
+                  <td class="num">69,3</td>
+                  <td class="num">00:18:02</td>
+                  <td class="num">29.09.2026</td>
+                </tr>
+                <tr aria-selected="true">
+                  <td><input type="checkbox" checked aria-label="Auswählen" /></td>
+                  <td>Erste Hilfe am Arbeitsplatz</td>
+                  <td>cmi5</td>
+                  <td><span class="badge badge--success">Veröffentlicht</span></td>
+                  <td class="num">95</td>
+                  <td>
+                    <span class="meter"><span class="meter__fill w-100"></span></span
+                    ><span class="num">100 %</span>
+                  </td>
+                  <td class="num">91,2</td>
+                  <td class="num">00:12:40</td>
+                  <td class="num">11.09.2026</td>
+                </tr>
+                <tr>
+                  <td><input type="checkbox" aria-label="Auswählen" /></td>
+                  <td>Gabelstapler Unterweisung</td>
+                  <td>SCORM 1.2</td>
+                  <td><span class="badge badge--danger">Importfehler</span></td>
+                  <td class="num">0</td>
+                  <td>
+                    <span class="meter"><span class="meter__fill w-0"></span></span
+                    ><span class="num">0 %</span>
+                  </td>
+                  <td class="num muted">–</td>
+                  <td class="num muted">–</td>
+                  <td class="num">08.09.2026</td>
+                </tr>
+                <tr>
+                  <td><input type="checkbox" aria-label="Auswählen" /></td>
+                  <td>Gesprächsführung: Reklamation</td>
+                  <td>Lernwerk</td>
+                  <td><span class="badge badge--neutral">Entwurf</span></td>
+                  <td class="num">0</td>
+                  <td>
+                    <span class="meter"><span class="meter__fill w-0"></span></span
+                    ><span class="num">0 %</span>
+                  </td>
+                  <td class="num muted">–</td>
+                  <td class="num muted">–</td>
+                  <td class="num">03.09.2026</td>
+                </tr>
+                <tr>
+                  <td><input type="checkbox" aria-label="Auswählen" /></td>
+                  <td>Informationssicherheit 2026</td>
+                  <td>xAPI</td>
+                  <td><span class="badge badge--success">Veröffentlicht</span></td>
+                  <td class="num">1.204</td>
+                  <td>
+                    <span class="meter"><span class="meter__fill w-12"></span></span
+                    ><span class="num">12 %</span>
+                  </td>
+                  <td class="num">88,1</td>
+                  <td class="num">00:35:18</td>
+                  <td class="num">28.08.2026</td>
+                </tr>
+                <tr>
+                  <td><input type="checkbox" aria-label="Auswählen" /></td>
+                  <td>Leitern und Tritte</td>
+                  <td>Lernwerk</td>
+                  <td><span class="badge badge--success">Veröffentlicht</span></td>
+                  <td class="num">64</td>
+                  <td>
+                    <span class="meter"><span class="meter__fill w-92"></span></span
+                    ><span class="num">92 %</span>
+                  </td>
+                  <td class="num">95,0</td>
+                  <td class="num">00:08:47</td>
+                  <td class="num">19.08.2026</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pager">
+            <span>1–8 von 38</span>
+            <button class="tool tool--icon" aria-label="Nächste Seite">
+              <span class="icon i-chevron-right"></span>
+            </button>
+          </div>
+
+          <!-- Dialog example -->
+          <div class="dialog pos-dialog" role="dialog" aria-labelledby="dlg-title">
+            <div class="dialog__title">
+              <span id="dlg-title">3 Kurse zuweisen</span
+              ><button class="tool tool--icon" aria-label="Schließen"><span class="icon i-x"></span></button>
+            </div>
+            <div class="dialog__body">
+              <div class="form">
+                <label class="form__label" for="d-to">Empfänger</label>
+                <span class="field"><input id="d-to" value="Gruppe: Lager Nord (38)" /></span>
+                <label class="form__label" for="d-due">Frist</label>
+                <span class="field"><input id="d-due" value="30.11.2026" /></span>
+                <label class="form__label" for="d-rem">Erinnerung</label>
+                <span class="field"
+                  ><select id="d-rem">
+                    <option>7 und 1 Tag vor Frist</option>
+                  </select></span
+                >
+                <span class="form__label"></span>
+                <label class="check"><input type="checkbox" checked /> Benachrichtigung per E-Mail</label>
+              </div>
+            </div>
+            <div class="dialog__footer">
+              <button class="button">Abbrechen</button>
+              <button class="button button--primary">Zuweisen</button>
+            </div>
+          </div>
+        </main>
+      </div>
+
+      <footer class="statusbar">
+        <span class="statusbar__item"><span class="status-dot" aria-hidden="true"></span>Verbunden</span>
+        <span class="statusbar__item"
+          ><span class="status-dot status-dot--warning" aria-hidden="true"></span>Konverter: 1 Auftrag in
+          Warteschlange</span
+        >
+        <span class="statusbar__item statusbar__item--end">412 Nutzer · 38 Kurse</span>
+        <span class="statusbar__item">DE</span>
+      </footer>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,33 @@
+{
+  "name": "@lernwerk/server",
+  "version": "0.0.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "bin": {
+    "lernwerk": "./dist/cli.js"
+  },
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "build": "node build.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fastify/helmet": "^13.2.0",
+    "@lernwerk/shared": "workspace:*",
+    "fastify": "^5.12.7",
+    "fastify-type-provider-zod": "^7.0.0",
+    "kysely": "^0.29.6",
+    "pg": "^8.23.1",
+    "pg-boss": "^12.38.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.23.1",
+    "esbuild": "^0.28.2",
+    "testcontainers": "^12.2.1"
+  },
+  "files": [
+    "dist"
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "$comment": "System programs in the container images. They run only as separate processes and are never linked. Source: Debian source packages (https://sources.debian.org/).",
+  "binaries": [
+    {
+      "name": "libreoffice-impress-nogui",
+      "image": "converter",
+      "license": "MPL-2.0 (plus various per component)",
+      "reason": "Render uploaded presentations to PDF for slide fallback images."
+    },
+    {
+      "name": "ffmpeg",
+      "image": "converter",
+      "license": "GPL-2.0-or-later (Debian build with libx264)",
+      "reason": "Transcode, trim and annotate media; MP4 (H.264/AAC) and WebM (VP9/Opus) output."
+    },
+    {
+      "name": "fonts-crosextra-carlito, fonts-crosextra-caladea, fonts-liberation, fonts-dejavu-core",
+      "image": "converter",
+      "license": "OFL-1.1 / Apache-2.0 / OFL-1.1 / Bitstream Vera",
+      "reason": "Metric-compatible fonts so imported presentations keep their layout."
+    },
+    {
+      "name": "postgresql-client",
+      "image": "app",
+      "license": "PostgreSQL",
+      "reason": "pg_dump and psql for backup and restore."
+    }
+  ]
+}

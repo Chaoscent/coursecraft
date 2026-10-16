@@ -1,0 +1,148 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * Design tokens — the only place where raw colors, sizes and fonts are
+ * defined. Components use these custom properties exclusively.
+ * See docs/design.md.
+ */
+
+:root {
+  /* Typography */
+  --font-sans: 'IBM Plex Sans', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'IBM Plex Mono', Consolas, 'Liberation Mono', monospace;
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-md: 13px;
+  --text-lg: 15px;
+  --text-xl: 18px;
+  --leading: 18px;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  /* Spacing (4 px grid with 2 px half-steps for dense controls) */
+  --space-0: 2px;
+  --space-1: 4px;
+  --space-2: 6px;
+  --space-3: 8px;
+  --space-4: 12px;
+  --space-5: 16px;
+  --space-6: 24px;
+
+  /* Sizes */
+  --control-height: 24px;
+  --control-height-sm: 20px;
+  --row-height: 24px;
+  --menubar-height: 24px;
+  --tabstrip-height: 24px;
+  --ribbon-height: 66px;
+  --statusbar-height: 22px;
+  --panel-header-height: 24px;
+  --icon-size: 16px;
+  --icon-size-lg: 20px;
+  --splitter-size: 4px;
+
+  /* Shape */
+  --radius: 2px;
+  --hairline: 1px;
+  --focus-width: 2px;
+  --shadow-popup: 0 2px 6px rgb(0 0 0 / 18%);
+
+  /* Motion: only state feedback, never decoration */
+  --duration-fast: 80ms;
+
+  /* Light theme (default) */
+  --color-app: #e8e9eb;
+  --color-panel: #f3f4f5;
+  --color-surface: #ffffff;
+  --color-surface-alt: #f8f8f9;
+  --color-workspace: #d4d6d9;
+  --color-border: #c3c6cb;
+  --color-border-strong: #9fa3a9;
+  --color-text: #1b1d20;
+  --color-text-muted: #565b63;
+  --color-text-disabled: #9a9ea5;
+  --color-hover: rgb(0 0 0 / 6%);
+  --color-pressed: rgb(0 0 0 / 11%);
+
+  --color-accent: #1f5fa6;
+  --color-accent-hover: #1a5290;
+  --color-accent-text: #ffffff;
+  --color-accent-subtle: #dbe6f3;
+  --color-selection: #1f5fa6;
+  --color-focus: #1f5fa6;
+
+  --color-success: #2e7031;
+  --color-success-subtle: #e2efe2;
+  --color-warning: #8f5600;
+  --color-warning-subtle: #f6ead6;
+  --color-danger: #b3261e;
+  --color-danger-subtle: #f6dedc;
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --color-app: #1e2023;
+    --color-panel: #25282c;
+    --color-surface: #2c2f34;
+    --color-surface-alt: #292c30;
+    --color-workspace: #161719;
+    --color-border: #3b3f45;
+    --color-border-strong: #555a62;
+    --color-text: #e2e4e7;
+    --color-text-muted: #a3a8b0;
+    --color-text-disabled: #6b7078;
+    --color-hover: rgb(255 255 255 / 7%);
+    --color-pressed: rgb(255 255 255 / 12%);
+
+    --color-accent: #5797dc;
+    --color-accent-hover: #6ea6e2;
+    --color-accent-text: #0f1114;
+    --color-accent-subtle: #22374f;
+    --color-selection: #5797dc;
+    --color-focus: #6ea6e2;
+
+    --color-success: #6dbb70;
+    --color-success-subtle: #1f3320;
+    --color-warning: #e0a245;
+    --color-warning-subtle: #3a2c14;
+    --color-danger: #ef7b72;
+    --color-danger-subtle: #3d1f1d;
+
+    --shadow-popup: 0 2px 8px rgb(0 0 0 / 50%);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --color-app: #1e2023;
+  --color-panel: #25282c;
+  --color-surface: #2c2f34;
+  --color-surface-alt: #292c30;
+  --color-workspace: #161719;
+  --color-border: #3b3f45;
+  --color-border-strong: #555a62;
+  --color-text: #e2e4e7;
+  --color-text-muted: #a3a8b0;
+  --color-text-disabled: #6b7078;
+  --color-hover: rgb(255 255 255 / 7%);
+  --color-pressed: rgb(255 255 255 / 12%);
+
+  --color-accent: #5797dc;
+  --color-accent-hover: #6ea6e2;
+  --color-accent-text: #0f1114;
+  --color-accent-subtle: #22374f;
+  --color-selection: #5797dc;
+  --color-focus: #6ea6e2;
+
+  --color-success: #6dbb70;
+  --color-success-subtle: #1f3320;
+  --color-warning: #e0a245;
+  --color-warning-subtle: #3a2c14;
+  --color-danger: #ef7b72;
+  --color-danger-subtle: #3d1f1d;
+
+  --shadow-popup: 0 2px 8px rgb(0 0 0 / 50%);
+  color-scheme: dark;
+}

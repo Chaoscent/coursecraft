@@ -1,0 +1,145 @@
+# SPDX-License-Identifier: Apache-2.0
+# Start everything with: docker compose up -d
+# Requires Docker Engine 26+ / Compose 2.30+ (volume subpaths).
+
+name: lernwerk
+
+x-hardening: &hardening
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  init: true
+  restart: unless-stopped
+
+x-app-image: &app-image
+  image: ${LERNWERK_APP_IMAGE:-lernwerk/app:local}
+  build:
+    context: .
+    dockerfile: docker/Dockerfile
+    target: app
+
+services:
+  # One-shot: creates per-service secrets on first start (idempotent).
+  init:
+    <<: *app-image
+    user: '0:0'
+    network_mode: none
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER]
+    security_opt: [no-new-privileges:true]
+    restart: 'no'
+    environment:
+      LERNWERK_DB_HOST: db
+      LERNWERK_DB_NAME: lernwerk
+    command: ['node', '/app/dist/cli.js', 'init-secrets', '/secrets']
+    volumes:
+      - secrets:/secrets
+
+  db:
+    image: postgres:17-trixie
+    restart: unless-stopped
+    depends_on:
+      init: { condition: service_completed_successfully }
+    environment:
+      POSTGRES_DB: lernwerk
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD_FILE: /run/lernwerk/postgres_password
+    volumes:
+      - db:/var/lib/postgresql/data
+      - ./docker/postgres-init:/docker-entrypoint-initdb.d:ro
+      - type: volume
+        source: secrets
+        target: /run/lernwerk
+        read_only: true
+        volume: { subpath: db }
+    networks: [backend]
+    shm_size: 128m
+    mem_limit: 384m
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d lernwerk']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # One-shot: migrations and job-queue schema, with the only DDL-capable role.
+  migrate:
+    <<: [*app-image, *hardening]
+    restart: 'no'
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      LERNWERK_MIGRATOR_DATABASE_URL_FILE: /run/lernwerk/database_url
+    command: ['node', '/app/dist/cli.js', 'migrate']
+    volumes:
+      - type: volume
+        source: secrets
+        target: /run/lernwerk
+        read_only: true
+        volume: { subpath: migrate }
+    networks: [backend]
+
+  app:
+    <<: [*app-image, *hardening]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    environment:
+      LERNWERK_PUBLIC_URL: ${LERNWERK_PUBLIC_URL:?set LERNWERK_PUBLIC_URL in .env}
+      LERNWERK_CONTENT_URL: ${LERNWERK_CONTENT_URL:-}
+      LERNWERK_TRUST_PROXY: ${LERNWERK_TRUST_PROXY:-false}
+      LERNWERK_LOG_LEVEL: ${LERNWERK_LOG_LEVEL:-info}
+      LERNWERK_DATABASE_URL_FILE: /run/lernwerk/database_url
+      LERNWERK_MASTER_KEY_FILE: /run/lernwerk/master_key
+      LERNWERK_IP_PEPPER_FILE: /run/lernwerk/ip_pepper
+    ports:
+      - '${LERNWERK_BIND_ADDRESS:-127.0.0.1}:${LERNWERK_HTTP_PORT:-3000}:3000'
+    volumes:
+      - data:/data
+      - work:/work
+      - type: volume
+        source: secrets
+        target: /run/lernwerk
+        read_only: true
+        volume: { subpath: app }
+    tmpfs:
+      - /tmp:size=256m
+    networks: [edge, backend]
+    mem_limit: 512m
+
+  converter:
+    <<: [*hardening]
+    image: ${LERNWERK_CONVERTER_IMAGE:-lernwerk/converter:local}
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: converter
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    environment:
+      LERNWERK_CONVERTER_DATABASE_URL_FILE: /run/lernwerk/database_url
+      LERNWERK_CONVERTER_CONCURRENCY: ${LERNWERK_CONVERTER_CONCURRENCY:-1}
+    volumes:
+      - work:/work
+      - type: volume
+        source: secrets
+        target: /run/lernwerk
+        read_only: true
+        volume: { subpath: converter }
+    tmpfs:
+      - /tmp:size=1g
+    networks: [backend]
+    mem_limit: 1g
+    cpus: ${LERNWERK_CONVERTER_CPUS:-2}
+    pids_limit: 256
+
+networks:
+  edge: {}
+  # No route to the outside world: database and converter live only here.
+  backend:
+    internal: true
+
+volumes:
+  db:
+  data:
+  work:
+  secrets:

@@ -1,0 +1,176 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* Generated icon classes for the static sample pages. */
+.i-align-center-horizontal {
+  --icon: url('../src/assets/icons/align-center-horizontal.svg');
+}
+.i-align-center-vertical {
+  --icon: url('../src/assets/icons/align-center-vertical.svg');
+}
+.i-align-end-horizontal {
+  --icon: url('../src/assets/icons/align-end-horizontal.svg');
+}
+.i-align-end-vertical {
+  --icon: url('../src/assets/icons/align-end-vertical.svg');
+}
+.i-align-start-horizontal {
+  --icon: url('../src/assets/icons/align-start-horizontal.svg');
+}
+.i-align-start-vertical {
+  --icon: url('../src/assets/icons/align-start-vertical.svg');
+}
+.i-arrow-right {
+  --icon: url('../src/assets/icons/arrow-right.svg');
+}
+.i-bar-chart-3 {
+  --icon: url('../src/assets/icons/bar-chart-3.svg');
+}
+.i-book-open {
+  --icon: url('../src/assets/icons/book-open.svg');
+}
+.i-bring-to-front {
+  --icon: url('../src/assets/icons/bring-to-front.svg');
+}
+.i-chart-column {
+  --icon: url('../src/assets/icons/chart-column.svg');
+}
+.i-chevron-down {
+  --icon: url('../src/assets/icons/chevron-down.svg');
+}
+.i-chevron-right {
+  --icon: url('../src/assets/icons/chevron-right.svg');
+}
+.i-circle-help {
+  --icon: url('../src/assets/icons/circle-help.svg');
+}
+.i-circle {
+  --icon: url('../src/assets/icons/circle.svg');
+}
+.i-clipboard-paste {
+  --icon: url('../src/assets/icons/clipboard-paste.svg');
+}
+.i-copy {
+  --icon: url('../src/assets/icons/copy.svg');
+}
+.i-download {
+  --icon: url('../src/assets/icons/download.svg');
+}
+.i-eye {
+  --icon: url('../src/assets/icons/eye.svg');
+}
+.i-file-plus {
+  --icon: url('../src/assets/icons/file-plus.svg');
+}
+.i-folder-open {
+  --icon: url('../src/assets/icons/folder-open.svg');
+}
+.i-grid-3x3 {
+  --icon: url('../src/assets/icons/grid-3x3.svg');
+}
+.i-group {
+  --icon: url('../src/assets/icons/group.svg');
+}
+.i-history {
+  --icon: url('../src/assets/icons/history.svg');
+}
+.i-image {
+  --icon: url('../src/assets/icons/image.svg');
+}
+.i-languages {
+  --icon: url('../src/assets/icons/languages.svg');
+}
+.i-layers {
+  --icon: url('../src/assets/icons/layers.svg');
+}
+.i-list-checks {
+  --icon: url('../src/assets/icons/list-checks.svg');
+}
+.i-lock {
+  --icon: url('../src/assets/icons/lock.svg');
+}
+.i-message-square {
+  --icon: url('../src/assets/icons/message-square.svg');
+}
+.i-mic {
+  --icon: url('../src/assets/icons/mic.svg');
+}
+.i-monitor {
+  --icon: url('../src/assets/icons/monitor.svg');
+}
+.i-mouse-pointer-click {
+  --icon: url('../src/assets/icons/mouse-pointer-click.svg');
+}
+.i-music {
+  --icon: url('../src/assets/icons/music.svg');
+}
+.i-panel-left {
+  --icon: url('../src/assets/icons/panel-left.svg');
+}
+.i-panel-right {
+  --icon: url('../src/assets/icons/panel-right.svg');
+}
+.i-play {
+  --icon: url('../src/assets/icons/play.svg');
+}
+.i-plus {
+  --icon: url('../src/assets/icons/plus.svg');
+}
+.i-redo-2 {
+  --icon: url('../src/assets/icons/redo-2.svg');
+}
+.i-save {
+  --icon: url('../src/assets/icons/save.svg');
+}
+.i-scissors {
+  --icon: url('../src/assets/icons/scissors.svg');
+}
+.i-search {
+  --icon: url('../src/assets/icons/search.svg');
+}
+.i-send-to-back {
+  --icon: url('../src/assets/icons/send-to-back.svg');
+}
+.i-settings {
+  --icon: url('../src/assets/icons/settings.svg');
+}
+.i-smartphone {
+  --icon: url('../src/assets/icons/smartphone.svg');
+}
+.i-square {
+  --icon: url('../src/assets/icons/square.svg');
+}
+.i-tablet {
+  --icon: url('../src/assets/icons/tablet.svg');
+}
+.i-timer {
+  --icon: url('../src/assets/icons/timer.svg');
+}
+.i-trash-2 {
+  --icon: url('../src/assets/icons/trash-2.svg');
+}
+.i-type {
+  --icon: url('../src/assets/icons/type.svg');
+}
+.i-undo-2 {
+  --icon: url('../src/assets/icons/undo-2.svg');
+}
+.i-ungroup {
+  --icon: url('../src/assets/icons/ungroup.svg');
+}
+.i-upload {
+  --icon: url('../src/assets/icons/upload.svg');
+}
+.i-users {
+  --icon: url('../src/assets/icons/users.svg');
+}
+.i-video {
+  --icon: url('../src/assets/icons/video.svg');
+}
+.i-x {
+  --icon: url('../src/assets/icons/x.svg');
+}
+.i-zoom-in {
+  --icon: url('../src/assets/icons/zoom-in.svg');
+}
+.i-zoom-out {
+  --icon: url('../src/assets/icons/zoom-out.svg');
+}

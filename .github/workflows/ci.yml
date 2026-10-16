@@ -1,0 +1,63 @@
+# SPDX-License-Identifier: Apache-2.0
+# Portable between GitHub Actions and Forgejo/Gitea Actions: only checkout and
+# setup-node are used; all logic lives in package.json scripts and scripts/ci.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+      - run: npm install -g "$(node -p "require('./package.json').packageManager")"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm check
+      - run: pnpm --filter @lernwerk/course-model schema:check
+      - run: pnpm build
+      - run: pnpm check:urls
+      - run: pnpm audit --audit-level high
+
+  db:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+      - run: npm install -g "$(node -p "require('./package.json').packageManager")"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test:db
+
+  images:
+    runs-on: ubuntu-latest
+    needs: checks
+    steps:
+      - uses: actions/checkout@v4
+      - run: scripts/ci/build-images.sh
+      - run: scripts/ci/test-offline.sh
+      - run: scripts/ci/scan.sh
+
+  multiarch:
+    runs-on: ubuntu-latest
+    needs: images
+    if: github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker run --privileged --rm tonistiigi/binfmt:qemu-v10.2.3 --install arm64
+      - run: docker buildx create --use
+      - run: PLATFORMS=linux/amd64,linux/arm64 scripts/ci/build-images.sh

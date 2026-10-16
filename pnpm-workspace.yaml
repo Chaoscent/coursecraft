@@ -1,0 +1,17 @@
+packages:
+  - apps/*
+  - packages/*
+
+# Lifecycle scripts (preinstall/install/postinstall) of dependencies are
+# blocked unless listed here. Every package that ships such a script must be
+# listed with true (allowed) or false (denied) and a reason in
+# docs/dependencies.md; `pnpm check:install-scripts` enforces this.
+strictDepBuilds: true
+allowBuilds:
+  # Verifies the platform binary from its optional dependency (npm registry fallback).
+  esbuild: true
+  # Optional native helpers of ssh2 (via testcontainers); pure-JS fallback is used.
+  cpu-features: false
+  ssh2: false
+  # Version notice only (via testcontainers/grpc); not needed.
+  protobufjs: false

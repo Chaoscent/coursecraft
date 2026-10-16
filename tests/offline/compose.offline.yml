@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: Apache-2.0
+# Overlay for the offline test: no network has a route to the outside.
+# Usage: scripts/ci/test-offline.sh
+networks:
+  edge:
+    internal: true
+
+services:
+  app:
+    environment:
+      LERNWERK_PUBLIC_URL: http://localhost:3000
+    # Ports cannot be published from internal-only networks.
+    ports: !reset []

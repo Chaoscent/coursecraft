@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: Apache-2.0
+# Caddy in front of Lernwerk on a LAN host without public DNS.
+# App origin:     https://lernwerk.lan
+# Content origin: https://lernwerk.lan:8443  (set LERNWERK_CONTENT_URL to this)
+#
+# .env:
+#   LERNWERK_PUBLIC_URL=https://lernwerk.lan
+#   LERNWERK_CONTENT_URL=https://lernwerk.lan:8443
+#   LERNWERK_TRUST_PROXY=true
+#
+# `tls internal` makes Caddy issue certificates from its own local CA. Import
+# that root certificate on every client once (see README in this folder).
+
+{
+	# Admin API reachable only from the host itself.
+	admin localhost:2019
+}
+
+lernwerk.lan {
+	tls internal
+	reverse_proxy 127.0.0.1:3000
+}
+
+lernwerk.lan:8443 {
+	tls internal
+	# The content listener is added in Phase 2; until then this site is unused.
+	reverse_proxy 127.0.0.1:3443
+}

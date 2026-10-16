@@ -1,0 +1,20 @@
+Lernwerk
+Copyright 2026 The Lernwerk Authors
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This product bundles the following separately licensed components:
+
+- IBM Plex Sans and IBM Plex Mono fonts
+  Copyright © 2017 IBM Corp. with Reserved Font Name "Plex"
+  Licensed under the SIL Open Font License, Version 1.1
+  (apps/web/src/assets/fonts/OFL.txt)
+
+- Lucide icons (selected icons)
+  Copyright (c) Lucide Contributors; parts Copyright (c) Cole Bemis (Feather)
+  Licensed under the ISC License (apps/web/src/assets/icons/LICENSE);
+  stroke width modified
+
+Third-party npm packages are listed with their licenses in
+docs/dependencies.md. System programs shipped in the container images are
+listed in THIRD_PARTY_NOTICES.md.
