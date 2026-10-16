@@ -104,7 +104,10 @@ describe('database roles', () => {
 
   it('the converter role cannot read application tables', async () => {
     await withDb('converter', async (db) => {
-      await expect(db.selectFrom('settings').selectAll().execute()).rejects.toThrow(/permission denied/);
+      // No USAGE on schema public: tables are not even visible to this role.
+      await expect(db.withSchema('public').selectFrom('settings').selectAll().execute()).rejects.toThrow(
+        /permission denied for schema public/,
+      );
     });
   });
 });

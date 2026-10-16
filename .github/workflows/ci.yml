@@ -21,7 +21,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version-file: .node-version
-      - run: npm install -g "$(node -p "require('./package.json').packageManager")"
+      - run: npm install -g --ignore-scripts "$(node -p "require('./package.json').packageManager")"
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm typecheck
@@ -39,9 +39,21 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version-file: .node-version
-      - run: npm install -g "$(node -p "require('./package.json').packageManager")"
+      - run: npm install -g --ignore-scripts "$(node -p "require('./package.json').packageManager")"
       - run: pnpm install --frozen-lockfile
       - run: pnpm test:db
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+      - run: npm install -g --ignore-scripts "$(node -p "require('./package.json').packageManager")"
+      - run: pnpm install --frozen-lockfile
+      # Official Playwright image: browsers and their system libraries included.
+      - run: CI=true scripts/ci/playwright.sh
 
   images:
     runs-on: ubuntu-latest

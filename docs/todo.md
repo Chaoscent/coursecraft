@@ -10,10 +10,10 @@ issue once the repository is published.
       release supports 7.x, upgrade both, run `pnpm lint && pnpm typecheck`,
       and remove the note in `docs/dependencies.md`. (Added 2026-10-16.)
 
-## Phase 0 completion (needs Docker)
+## Local tooling
 
-- [ ] Build both images (`scripts/ci/build-images.sh`).
-- [ ] `docker compose up -d` from a clean checkout; `/readyz` reports ready.
-- [ ] `pnpm test:db` (database role model) green.
-- [ ] `scripts/ci/test-offline.sh` green.
-- [ ] Run E2E/Playwright locally in the official Playwright container.
+- [ ] Install `docker-buildx` locally for multi-arch builds
+      (`PLATFORMS=linux/amd64,linux/arm64 scripts/ci/build-images.sh`). Not needed
+      for normal builds: Compose builds without it.
+- [ ] Publish images to a registry; until then `docker compose up` prints a
+      harmless "pull access denied" warning before building locally.

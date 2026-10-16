@@ -9,7 +9,7 @@ FROM ${NODE_IMAGE} AS build
 ENV PNPM_HOME=/pnpm PATH=/pnpm:$PATH CI=true
 WORKDIR /src
 COPY package.json ./
-RUN npm install -g "$(node -p "require('./package.json').packageManager")"
+RUN npm install -g --ignore-scripts "$(node -p "require('./package.json').packageManager")"
 COPY pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY apps/server/package.json apps/server/
 COPY apps/converter/package.json apps/converter/
@@ -26,10 +26,14 @@ RUN pnpm --filter @lernwerk/server --filter @lernwerk/converter --filter @lernwe
  && mkdir -p /out/app/public && cp -r apps/web/dist/. /out/app/public/
 
 # --- app: API, web UI, content host -------------------------------------------
+# Runtime images keep only node itself; npm and corepack are removed (not needed,
+# and their bundled dependencies would add attack surface).
 FROM ${NODE_IMAGE} AS app
 RUN apt-get update \
  && apt-get install -y --no-install-recommends postgresql-client-17 \
  && rm -rf /var/lib/apt/lists/* \
+ && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+      /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \
  && groupadd --gid 10000 lernwerk-work \
  && useradd --uid 10001 --gid 10000 --no-create-home --shell /usr/sbin/nologin lernwerk \
  && mkdir -p /data /work /run/lernwerk \
@@ -50,6 +54,8 @@ RUN apt-get update \
       libreoffice-impress-nogui ffmpeg \
       fonts-crosextra-carlito fonts-crosextra-caladea fonts-liberation fonts-dejavu-core \
  && rm -rf /var/lib/apt/lists/* \
+ && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+      /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \
  && groupadd --gid 10000 lernwerk-work \
  && useradd --uid 10002 --gid 10000 --no-create-home --shell /usr/sbin/nologin converter \
  && mkdir -p /work && chown 10002:10000 /work && chmod 2770 /work

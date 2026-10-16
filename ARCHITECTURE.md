@@ -522,7 +522,10 @@ TOTP secrets, OIDC client secrets, and SMTP passwords. The API returns only
   under `data/backups`; `lernwerk restore <file>` reverses it.
 - Memory budget, idle / peak: Postgres 150/250 MB, app 200/400 MB, converter
   60/900 MB (LibreOffice ≈ 400 MB, ffmpeg ≈ 300 MB, never at the same time
-  with concurrency 1). Total peak ≈ 1.6 GB.
+  with concurrency 1). Total peak ≈ 1.6 GB. Measured at the end of Phase 0
+  (idle, no users): db 51 MB, app 39 MB, converter 37 MB.
+- Image sizes (Phase 0, amd64): app 464 MB, converter 1.44 GB (LibreOffice
+  and ffmpeg with their libraries).
 
 ## 16. CI
 

@@ -20,7 +20,8 @@
     "check:terms": "tsx scripts/check-terms.ts",
     "check:urls": "tsx scripts/check-urls.ts",
     "check": "pnpm check:headers && pnpm check:terms && pnpm check:licenses && pnpm check:install-scripts",
-    "check:install-scripts": "tsx scripts/check-install-scripts.ts"
+    "check:install-scripts": "tsx scripts/check-install-scripts.ts",
+    "test:e2e": "scripts/ci/playwright.sh"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

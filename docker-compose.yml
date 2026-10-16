@@ -11,12 +11,10 @@ x-hardening: &hardening
   init: true
   restart: unless-stopped
 
+# init and migrate reuse the image that the app service builds.
 x-app-image: &app-image
   image: ${LERNWERK_APP_IMAGE:-lernwerk/app:local}
-  build:
-    context: .
-    dockerfile: docker/Dockerfile
-    target: app
+  pull_policy: never
 
 services:
   # One-shot: creates per-service secrets on first start (idempotent).
@@ -80,7 +78,12 @@ services:
     networks: [backend]
 
   app:
-    <<: [*app-image, *hardening]
+    <<: [*hardening]
+    image: ${LERNWERK_APP_IMAGE:-lernwerk/app:local}
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: app
     depends_on:
       migrate: { condition: service_completed_successfully }
     environment:

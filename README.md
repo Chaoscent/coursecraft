@@ -25,6 +25,10 @@ Check that everything is up: `curl http://localhost:3000/readyz` returns
 wizard at <http://localhost:3000> asks for a one-time setup token from
 `docker compose logs app` or `docker compose exec app lernwerk setup-token`.)
 
+The first start builds the images locally (about 2–5 minutes). Compose first
+tries to pull `lernwerk/app` and `lernwerk/converter` and prints "pull access
+denied"; that warning is expected until images are published.
+
 Secrets (database passwords, encryption key) are generated automatically on
 first start and stored in the `secrets` volume.
 
@@ -67,6 +71,9 @@ for database tests.
 pnpm install
 pnpm lint && pnpm typecheck && pnpm test   # unit tests
 pnpm test:db                               # PostgreSQL role tests (Docker)
+pnpm test:e2e                              # Playwright in the official container (Docker)
+scripts/ci/build-images.sh                 # build both images
+scripts/ci/test-offline.sh                 # full stack without network access
 pnpm check                                 # SPDX headers, forbidden terms, licenses
 pnpm --filter @lernwerk/web dev            # design samples at /sample/editor.html
 ```

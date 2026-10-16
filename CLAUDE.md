@@ -19,7 +19,7 @@ pnpm dev                 # server + web in watch mode
 pnpm lint                # eslint + prettier check
 pnpm typecheck
 pnpm test                # vitest
-pnpm test:e2e            # playwright against docker compose
+pnpm test:e2e            # playwright in the official container image
 pnpm test:security
 pnpm test:offline
 pnpm check:licenses
