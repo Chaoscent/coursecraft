@@ -137,6 +137,12 @@ Cross-Origin-Resource-Policy: same-origin
 
 Camera, microphone, and display capture are allowed only for the recorder.
 
+`index.html` responses add a per-response nonce to `style-src`
+(`'nonce-…'`) and a matching `<meta property="csp-nonce">`. The UI library
+(React Aria) uses it for one `<style>` element; style attributes, other inline
+styles, inline scripts and `eval` stay blocked. The web app runs Zod in
+`jitless` mode so it never probes `new Function`.
+
 ## 6. Cryptography
 
 - Session, CSRF, reset, review, launch, and setup tokens: 32 bytes from

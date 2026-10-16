@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import js from '@eslint/js';
+import i18next from 'eslint-plugin-i18next';
+import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
@@ -7,6 +9,8 @@ import tseslint from 'typescript-eslint';
 export const SQL_HELPERS_FILE = 'apps/server/src/db/migrations/sql-helpers.ts';
 /** The only file allowed to import the pg driver (to create the pool). */
 export const DB_CONNECTION_FILE = 'apps/server/src/db/connection.ts';
+/** Test-only: creates and drops per-test databases (no user input). */
+export const TEST_DATABASE_FILE = 'tests/support/database.ts';
 
 const DB_ESCAPE_HATCHES = {
   paths: [
@@ -118,12 +122,23 @@ export function createConfig({ tsconfigRootDir }) {
       },
     },
     {
-      files: [DB_CONNECTION_FILE],
+      files: [DB_CONNECTION_FILE, TEST_DATABASE_FILE],
       rules: {
         'no-restricted-imports': [
           'error',
           { ...DB_ESCAPE_HATCHES, paths: DB_ESCAPE_HATCHES.paths.filter((p) => p.name !== 'pg') },
         ],
+      },
+    },
+    {
+      // Tests inspect untyped JSON responses; `any` itself stays forbidden.
+      files: ['**/*.test.ts', 'tests/**/*.ts'],
+      rules: {
+        '@typescript-eslint/no-unsafe-member-access': 'off',
+        '@typescript-eslint/no-unsafe-assignment': 'off',
+        '@typescript-eslint/no-unsafe-argument': 'off',
+        '@typescript-eslint/no-unsafe-call': 'off',
+        '@typescript-eslint/no-unsafe-return': 'off',
       },
     },
     {
@@ -138,6 +153,24 @@ export function createConfig({ tsconfigRootDir }) {
     {
       files: ['apps/web/**', 'packages/player/**'],
       languageOptions: { globals: globals.browser },
+    },
+    {
+      files: ['apps/web/src/**/*.tsx', 'apps/web/src/**/*.ts'],
+      plugins: { 'react-hooks': reactHooks, i18next },
+      rules: {
+        ...reactHooks.configs.recommended.rules,
+        // UI text comes from the locale files (de, en).
+        'i18next/no-literal-string': ['error', { mode: 'jsx-text-only' }],
+        'no-restricted-globals': [
+          'error',
+          { name: 'fetch', message: 'Use api() from src/api/client.ts.' },
+          { name: 'XMLHttpRequest', message: 'Use api() from src/api/client.ts.' },
+        ],
+      },
+    },
+    {
+      files: ['apps/web/src/api/client.ts'],
+      rules: { 'no-restricted-globals': 'off' },
     },
   );
 }

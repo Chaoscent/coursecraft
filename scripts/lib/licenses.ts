@@ -18,9 +18,11 @@ export const ALLOWED_LICENSES = new Set([
   'MPL-2.0',
 ]);
 
-/** Allowed only for the listed packages (fonts). */
+/** Allowed only for the listed packages, each justified in docs/dependencies.md. */
 export const RESTRICTED_LICENSES: Readonly<Record<string, readonly string[]>> = {
   'OFL-1.1': ['@ibm/plex-sans', '@ibm/plex-mono'],
+  // Browser-support data used by build tools only; never shipped.
+  'CC-BY-4.0': ['caniuse-lite'],
 };
 
 const normalize = (license: string) =>

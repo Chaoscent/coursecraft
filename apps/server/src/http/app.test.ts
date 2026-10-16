@@ -9,6 +9,8 @@ const config = loadConfig({
   LERNWERK_PUBLIC_URL: 'https://lernwerk.example.org',
   LERNWERK_CONTENT_URL: 'https://lernwerk.example.org:8443',
   LERNWERK_DATABASE_URL: 'postgres://unused',
+  LERNWERK_MASTER_KEY: Buffer.alloc(32, 1).toString('base64'),
+  LERNWERK_IP_PEPPER: Buffer.alloc(32, 2).toString('base64'),
 });
 
 let close: (() => Promise<void>) | undefined;

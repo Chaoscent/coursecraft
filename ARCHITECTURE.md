@@ -204,9 +204,10 @@ short polling, so each is an ordinary validated request.
 users(id, email, display_name, password_hash, status, locale, totp_secret_enc, created_at, deleted_at)
 user_roles(user_id, role)          role: admin | author | trainer | learner
 groups(id, name, parent_id)        group_members(group_id, user_id)   -- departments are groups
-sessions(id, token_hash, user_id, csrf_hash, created_at, last_seen_at, idle_expires_at,
+sessions(id, token_hash, user_id, created_at, last_seen_at, idle_expires_at,
          absolute_expires_at, rotate_pending, ip_hmac, user_agent)
 setup_state(id = 1, completed_at, token_hash, token_expires_at)
+login_challenges(id, token_hash, user_id, expires_at, attempts)   -- pending 2FA step
 audit_log(id, at, actor_user_id, action, target_type, target_id, meta jsonb, ip_hmac)
 settings(key, value jsonb)         secrets(id, purpose, ciphertext, nonce, key_version, last4)
 assets(id, sha256, mime, size, owner_id, created_at)
@@ -334,20 +335,22 @@ HttpOnly; SameSite=Lax`.
 - **Deleted immediately** (all sessions of the user): deactivation, deletion,
   password reset by an admin. Own password change and "sign out everywhere"
   delete all other sessions. Logout deletes the current one.
-- HTTPS only. `http://localhost` is the development exception. Phase 1
-  includes tests in Chromium, Firefox, and WebKit that `__Host-`/`Secure`
-  cookies work on `http://localhost`, with documented workarounds where a
-  browser refuses.
+- HTTPS only. `http://localhost` is the development exception. Verified by
+  E2E tests: Chromium and Firefox keep the `__Host-`/`Secure` cookie on
+  `http://localhost`; **WebKit (Safari) does not**. Workaround for Safari:
+  a local reverse proxy with TLS (`docs/reverse-proxy/README.md`).
 - IP stored as HMAC-SHA-256 with a server pepper.
 
 ### 7.3 CSRF
 
-Synchronizer token per session (hash in `sessions.csrf_hash`), delivered via
-`GET /api/session`, sent as `X-CSRF-Token`. Every unsafe request must also
+Synchronizer token per session: `HMAC(pepper, session id)`, so it needs no
+storage and cannot be forged without the server key. Delivered via
+`GET /api/session` and every login response, sent as `X-CSRF-Token`. Every unsafe request must also
 carry an `Origin` matching `LERNWERK_PUBLIC_URL` (fallback:
 `Sec-Fetch-Site: same-origin`), and JSON bodies require `Content-Type:
-application/json`. Login and setup use a pre-session token bound to a
-short-lived cookie.
+application/json`. Requests without a session (login, setup) are protected by the
+same Origin/`Sec-Fetch-Site` check; `text/plain`, form and multipart bodies are
+rejected (415), so cross-site forms cannot reach the API.
 
 ### 7.4 Course playback on the content origin
 

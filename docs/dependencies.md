@@ -20,9 +20,9 @@ named, listed so the choice can be reviewed early.
 | pg                                   | in use              | MIT                                         | PostgreSQL driver for Kysely                                   | postgres.js (`unsafe()` API, less common with Kysely)      |
 | pg-boss                              | in use              | MIT                                         | Job queue in PostgreSQL                                        | graphile-worker (MIT; needs its own schema DDL at runtime) |
 | @opentelemetry/api                   | in use (transitive) | Apache-2.0                                  | Optional peer of pg-boss; API only, no exporter, sends nothing | —                                                          |
-| @fastify/rate-limit                  | planned (1)         | MIT                                         | Login/reset/AI rate limits                                     | own counter table                                          |
-| @node-rs/argon2                      | planned (1)         | MIT                                         | Argon2id with prebuilt amd64/arm64 binaries                    | argon2 (node-gyp build)                                    |
-| otplib                               | planned (1)         | MIT                                         | TOTP                                                           | own RFC 6238 code                                          |
+| @fastify/rate-limit                  | in use              | MIT                                         | Login/reset/AI rate limits                                     | own counter table                                          |
+| @node-rs/argon2                      | in use              | MIT                                         | Argon2id with prebuilt amd64/arm64 binaries                    | argon2 (node-gyp build)                                    |
+| otplib                               | in use              | MIT                                         | TOTP                                                           | own RFC 6238 code                                          |
 | @fastify/multipart                   | planned (2)         | MIT                                         | Streaming uploads                                              | busboy directly                                            |
 | file-type                            | planned (2)         | MIT                                         | Magic-byte MIME detection                                      | own signature table                                        |
 | yauzl / yazl                         | planned (2)         | MIT                                         | Streaming ZIP read/write with per-entry checks                 | adm-zip (loads whole archive in memory)                    |
@@ -35,20 +35,25 @@ named, listed so the choice can be reviewed early.
 | pdf-lib                              | planned (8)         | MIT                                         | Certificate PDFs                                               | pdfkit (MIT; heavier)                                      |
 | nodemailer                           | planned (8)         | MIT-0                                       | SMTP                                                           | —                                                          |
 | openid-client / @node-saml/node-saml | planned (8)         | MIT                                         | OIDC / SAML login                                              | passport strategies (more glue)                            |
+| @fastify/cookie                      | in use              | MIT                                         | Cookie parsing and setting for the session cookie              | hand-written header parsing                                |
+| @fastify/static                      | in use              | MIT                                         | Serves the built web app (SPA fallback handled by our route)   | nginx sidecar (one more container)                         |
+| csv-parse                            | in use              | MIT                                         | CSV parsing for bulk user import                               | own parser (quoting edge cases)                            |
 
 ## Web app (shipped as static files)
 
-| Package                         | Status      | License    | Purpose                            | Alternative considered                      |
-| ------------------------------- | ----------- | ---------- | ---------------------------------- | ------------------------------------------- |
-| vite                            | in use      | MIT        | Build tool and dev server          | webpack (slower, more config)               |
-| react, react-dom                | planned (1) | MIT        | UI                                 | preact (compatibility gaps with React Aria) |
-| react-aria-components           | planned (1) | Apache-2.0 | Unstyled accessible primitives     | Radix (MIT; weaker table/grid support)      |
-| react-router                    | planned (1) | MIT        | Routing                            | TanStack Router (MIT; younger)              |
-| i18next, react-i18next          | planned (1) | MIT        | DE/EN UI strings                   | FormatJS (BSD-3; heavier ICU setup)         |
-| zustand, immer                  | planned (2) | MIT        | Editor state and undo/redo patches | Redux Toolkit (more boilerplate)            |
-| react-resizable-panels          | planned (2) | MIT        | Splitters and panels               | own splitter code                           |
-| @tiptap/core (+ MIT extensions) | planned (2) | MIT        | Rich text editing, stored as JSON  | Lexical (MIT; own JSON format)              |
-| @xyflow/react                   | planned (6) | MIT        | Dialog simulation graph editor     | own SVG editor                              |
+| Package                         | Status      | License    | Purpose                                               | Alternative considered                      |
+| ------------------------------- | ----------- | ---------- | ----------------------------------------------------- | ------------------------------------------- |
+| vite                            | in use      | MIT        | Build tool and dev server                             | webpack (slower, more config)               |
+| react, react-dom                | in use      | MIT        | UI                                                    | preact (compatibility gaps with React Aria) |
+| react-aria-components           | in use      | Apache-2.0 | Unstyled accessible primitives                        | Radix (MIT; weaker table/grid support)      |
+| react-router                    | in use      | MIT        | Routing                                               | TanStack Router (MIT; younger)              |
+| i18next, react-i18next          | in use      | MIT        | DE/EN UI strings                                      | FormatJS (BSD-3; heavier ICU setup)         |
+| zustand, immer                  | planned (2) | MIT        | Editor state and undo/redo patches                    | Redux Toolkit (more boilerplate)            |
+| react-resizable-panels          | planned (2) | MIT        | Splitters and panels                                  | own splitter code                           |
+| @tiptap/core (+ MIT extensions) | planned (2) | MIT        | Rich text editing, stored as JSON                     | Lexical (MIT; own JSON format)              |
+| @xyflow/react                   | planned (6) | MIT        | Dialog simulation graph editor                        | own SVG editor                              |
+| qrcode                          | in use      | MIT        | QR code for 2FA setup (rendered to a data: URL image) | external QR service (forbidden: network)    |
+| @vitejs/plugin-react            | in use      | MIT        | React support in Vite                                 | —                                           |
 
 ## Assets in the repository (not npm)
 
@@ -71,6 +76,12 @@ named, listed so the choice can be reviewed early.
 | @types/node, @types/pg                         | MIT        | Type definitions                                              |
 | testcontainers                                 | MIT        | Real PostgreSQL in DB tests (role model test)                 |
 | lightningcss (transitive via vite)             | MPL-2.0    | CSS processing; unmodified, separate package                  |
+
+## License exceptions
+
+| Package        | License   | Why it is acceptable                                                                                                                                                                 |
+| -------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `caniuse-lite` | CC-BY-4.0 | Browser-support data read by build tools (via `@vitejs/plugin-react` → Babel → browserslist). Build time only, not part of any shipped artifact. CC-BY permits use with attribution. |
 
 ## Install scripts (lifecycle scripts of dependencies)
 

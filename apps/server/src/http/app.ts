@@ -9,9 +9,21 @@ import {
 } from 'fastify-type-provider-zod';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
+import fastifyCookie from '@fastify/cookie';
+import fastifyRateLimit from '@fastify/rate-limit';
+import { registerAuth } from '../auth/plugin.js';
 import type { AppConfig } from '../config/env.js';
+import { accountRoutes } from '../modules/account/routes.js';
+import { auditRoutes } from '../modules/audit/routes.js';
+import { authRoutes } from '../modules/auth/routes.js';
+import { groupRoutes } from '../modules/groups/routes.js';
+import { setupRoutes } from '../modules/setup/routes.js';
+import { userRoutes } from '../modules/users/routes.js';
+import type { AppContext } from './context.js';
+import { AppError } from './errors.js';
 import { enforceRouteDeclarations, type RegisteredRoute } from './routes.js';
 import { registerSecurityHeaders } from './security-headers.js';
+import { registerWebApp } from './static.js';
 
 export interface Readiness {
   database: boolean;
@@ -22,6 +34,8 @@ export interface AppDeps {
   config: AppConfig;
   checkReadiness: () => Promise<Readiness>;
   logger?: FastifyServerOptions['logger'];
+  /** Services for the API; without it only health endpoints exist (tests). */
+  ctx?: AppContext;
 }
 
 export interface BuiltApp {
@@ -55,6 +69,9 @@ export async function buildApp(deps: AppDeps): Promise<BuiltApp> {
   await registerSecurityHeaders(app, config);
 
   app.setErrorHandler((error, request, reply) => {
+    if (error instanceof AppError) {
+      return reply.status(error.status).send(errorBody(error.code, error.message, request.id));
+    }
     if (hasZodFastifySchemaValidationErrors(error)) {
       return reply.status(400).send(errorBody('bad_request', 'Invalid request', request.id));
     }
@@ -62,6 +79,14 @@ export async function buildApp(deps: AppDeps): Promise<BuiltApp> {
       typeof error === 'object' && error !== null && 'statusCode' in error ? Number(error.statusCode) : 500;
     if (status === 413) {
       return reply.status(413).send(errorBody('payload_too_large', 'Payload too large', request.id));
+    }
+    if (status === 415) {
+      return reply
+        .status(415)
+        .send(errorBody('unsupported_media_type', 'Unsupported content type', request.id));
+    }
+    if (status === 429) {
+      return reply.status(429).send(errorBody('rate_limited', 'Too many requests', request.id));
     }
     if (status >= 400 && status < 500) {
       return reply.status(400).send(errorBody('bad_request', 'Invalid request', request.id));
@@ -102,6 +127,24 @@ export async function buildApp(deps: AppDeps): Promise<BuiltApp> {
       return reply.status(503).send({ status: 'unavailable' as const });
     },
   );
+
+  if (deps.ctx) {
+    const ctx = deps.ctx;
+    // Only JSON bodies (and CSV for imports); no text/plain, which simple
+    // cross-site forms could send.
+    app.removeContentTypeParser('text/plain');
+    app.addContentTypeParser('text/csv', { parseAs: 'string' }, (_request, body, done) => done(null, body));
+    await app.register(fastifyCookie);
+    await app.register(fastifyRateLimit, { global: false });
+    registerAuth(app, ctx);
+    authRoutes(app, ctx);
+    setupRoutes(app, ctx);
+    accountRoutes(app, ctx);
+    userRoutes(app, ctx);
+    groupRoutes(app, ctx);
+    auditRoutes(app, ctx);
+    if (config.webDir) await registerWebApp(app, config.webDir, config);
+  }
 
   return { app, routes };
 }

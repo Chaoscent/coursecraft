@@ -3,6 +3,22 @@
 Lernwerk expects TLS termination in a reverse proxy. Plain HTTP is only
 supported on `localhost` (secure session cookies require HTTPS).
 
+## Local testing with Safari
+
+Safari (WebKit) does not store `Secure` cookies for `http://localhost`, so
+signing in over plain HTTP fails there; Chrome, Edge and Firefox work. For
+Safari, put Caddy in front even on your own machine:
+
+```
+localhost:8443 {
+	tls internal
+	reverse_proxy 127.0.0.1:3000
+}
+```
+
+Set `LERNWERK_PUBLIC_URL=https://localhost:8443`, run `caddy trust` once to
+install the local root certificate, and open https://localhost:8443.
+
 ## Caddy with an internal CA (LAN without public DNS)
 
 1. Install Caddy on the Docker host and use [`Caddyfile`](Caddyfile).

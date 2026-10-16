@@ -33,7 +33,9 @@ Secrets (database passwords, encryption key) are generated automatically on
 first start and stored in the `secrets` volume.
 
 For production, put Lernwerk behind a reverse proxy with TLS (examples in
-`docs/`). Plain HTTP is only supported on `localhost`.
+`docs/reverse-proxy/`). Plain HTTP is only supported on `localhost`, and only
+in Chrome, Edge and Firefox: Safari needs HTTPS even locally (see
+`docs/reverse-proxy/README.md`).
 
 ## Schnellstart (Deutsch)
 

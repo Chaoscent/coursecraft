@@ -1,0 +1,27 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+.notice {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  font-size: var(--text-sm);
+  border: var(--hairline) solid;
+}
+.notice > span {
+  margin-top: 1px;
+}
+.info {
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-alt);
+}
+.warning {
+  border-color: var(--color-warning);
+  background: var(--color-warning-subtle);
+}
+.danger {
+  border-color: var(--color-danger);
+  background: var(--color-danger-subtle);
+}
+.success {
+  border-color: var(--color-success);
+  background: var(--color-success-subtle);
+}

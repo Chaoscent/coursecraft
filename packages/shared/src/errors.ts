@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 export const ERROR_CODES = [
   'bad_request',
+  'invalid_credentials',
+  'password_change_required',
   'unauthenticated',
   'forbidden',
   'not_found',

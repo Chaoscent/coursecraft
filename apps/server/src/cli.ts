@@ -2,6 +2,8 @@
 import { readFileSync } from 'node:fs';
 import { initSecrets } from './cli/init-secrets.js';
 import { migrate } from './cli/migrate.js';
+import { createDatabase } from './db/connection.js';
+import { issueSetupToken } from './modules/setup/service.js';
 
 function secretFromEnv(name: string): string {
   const file = process.env[`${name}_FILE`];
@@ -15,6 +17,7 @@ const USAGE = `Usage: lernwerk <command>
 Commands:
   migrate               Apply database migrations and create job queues
   init-secrets <dir>    Create missing secrets for all services (first start)
+  setup-token           Create a new one-time setup token (invalidates the previous one)
 `;
 
 async function run(args: string[]): Promise<number> {
@@ -38,6 +41,20 @@ async function run(args: string[]): Promise<number> {
         chown: process.getuid?.() === 0,
       });
       console.log(created.length ? `Created: ${created.join(', ')}` : 'All secrets present.');
+      return 0;
+    }
+    case 'setup-token': {
+      const db = createDatabase(secretFromEnv('LERNWERK_DATABASE_URL'), { max: 1 });
+      try {
+        const setup = await issueSetupToken(db);
+        console.log(
+          setup
+            ? `Setup token: ${setup.token}\nValid until: ${setup.expiresAt.toISOString()}`
+            : 'Setup is already complete.',
+        );
+      } finally {
+        await db.destroy();
+      }
       return 0;
     }
     default:

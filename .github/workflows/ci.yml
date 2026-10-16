@@ -43,8 +43,9 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm test:db
 
-  e2e:
+  images:
     runs-on: ubuntu-latest
+    needs: checks
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -52,15 +53,9 @@ jobs:
           node-version-file: .node-version
       - run: npm install -g --ignore-scripts "$(node -p "require('./package.json').packageManager")"
       - run: pnpm install --frozen-lockfile
-      # Official Playwright image: browsers and their system libraries included.
-      - run: CI=true scripts/ci/playwright.sh
-
-  images:
-    runs-on: ubuntu-latest
-    needs: checks
-    steps:
-      - uses: actions/checkout@v4
       - run: scripts/ci/build-images.sh
+      # Playwright runs in its official image against a throwaway stack.
+      - run: CI=true scripts/ci/e2e.sh
       - run: scripts/ci/test-offline.sh
       - run: scripts/ci/scan.sh
 

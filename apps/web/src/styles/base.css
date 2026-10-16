@@ -120,3 +120,29 @@ table {
     animation-duration: 0ms !important;
   }
 }
+
+kbd {
+  display: inline-block;
+  min-width: 18px;
+  padding: 0 4px;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: 16px;
+  text-align: center;
+  background: var(--color-surface);
+  border: var(--hairline) solid var(--color-border-strong);
+  border-bottom-width: 2px;
+}
+
+#root {
+  height: 100vh;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

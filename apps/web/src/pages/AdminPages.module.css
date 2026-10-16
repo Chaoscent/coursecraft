@@ -1,0 +1,69 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+.stack {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-height: 0;
+}
+.checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-4);
+}
+.muted {
+  color: var(--color-text-muted);
+}
+.filter {
+  width: 220px;
+}
+.filter > div {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+.fileLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+}
+.importResult {
+  display: grid;
+  max-height: 300px;
+  border: var(--hairline) solid var(--color-border);
+}
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  min-height: 0;
+}
+.side {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: var(--space-2);
+  min-height: 0;
+  padding: var(--space-3);
+  border-left: var(--hairline) solid var(--color-border);
+  background: var(--color-panel);
+}
+.side h2 {
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+}
+.memberList {
+  display: grid;
+  align-content: start;
+  min-height: 0;
+  overflow: auto;
+  background: var(--color-surface);
+  border: var(--hairline) solid var(--color-border);
+}
+.member {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--row-height);
+  padding: 0 var(--space-1) 0 var(--space-2);
+  border-bottom: var(--hairline) solid var(--color-border);
+}
+.mono {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}

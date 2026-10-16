@@ -12,9 +12,15 @@ const SCANNED = /\.(js|mjs|css|html|json|svg)$/;
 /** Identifiers that look like URLs but are never fetched. */
 const ALLOWED = [
   /^http:\/\/127\.0\.0\.1[:/]/,
-  /^http:\/\/localhost[:/]/,
+  /^http:\/\/localhost([:/]|$)/,
+  // URL parsing helpers (IPv6 host templates) and JSON Schema identifiers.
+  /^http:\/\/\[\$\{/,
+  /^https?:\/\/json-schema\.org\//,
+  // Documentation links inside library error messages; shown as text, never requested.
+  /^https:\/\/react\.dev\/errors\//,
+  /^https:\/\/reactrouter\.com\//,
+  /^https:\/\/react\.i18next\.com\//,
   /^https?:\/\/www\.w3\.org\//,
-  /^https:\/\/json-schema\.org\//,
   /^https:\/\/lernwerk\.invalid\//,
   /^http:\/\/www\.imsglobal\.org\/xsd\//,
   /^http:\/\/www\.imsproject\.org\/xsd\//,

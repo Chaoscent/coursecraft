@@ -1,0 +1,92 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  height: var(--control-height);
+  padding: 0 var(--space-3);
+  border: var(--hairline) solid var(--color-border-strong);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--text-md);
+  white-space: nowrap;
+  outline: none;
+}
+.button[data-hovered] {
+  background: var(--color-surface-alt);
+  border-color: var(--color-text-muted);
+}
+.button[data-pressed] {
+  background: var(--color-pressed);
+}
+.button[data-focus-visible] {
+  outline: var(--focus-width) solid var(--color-focus);
+  outline-offset: 1px;
+}
+.button[data-disabled] {
+  color: var(--color-text-disabled);
+  background: var(--color-panel);
+  border-color: var(--color-border);
+}
+.default {
+}
+.primary {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-accent-text);
+}
+.primary[data-hovered] {
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+}
+.danger {
+  color: var(--color-danger);
+}
+
+.tool {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: var(--control-height-sm);
+  padding: 0 var(--space-1);
+  border: var(--hairline) solid transparent;
+  border-radius: var(--radius);
+  background: none;
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+  outline: none;
+}
+.tool[data-hovered] {
+  background: var(--color-hover);
+  border-color: var(--color-border);
+}
+.tool[data-pressed],
+.tool[data-selected] {
+  background: var(--color-accent-subtle);
+  border-color: var(--color-accent);
+}
+.tool[data-focus-visible] {
+  outline: var(--focus-width) solid var(--color-focus);
+  outline-offset: -1px;
+}
+.tool[data-disabled] {
+  color: var(--color-text-disabled);
+  background: none;
+  border-color: transparent;
+}
+.iconOnly {
+  justify-content: center;
+  width: var(--control-height-sm);
+  padding: 0;
+}
+.large {
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-0);
+  height: 44px;
+  min-width: 44px;
+  line-height: 14px;
+}

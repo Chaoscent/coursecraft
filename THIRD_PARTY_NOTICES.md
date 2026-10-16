@@ -32,11 +32,11 @@ The full license texts are included in each image under
 
 ## Fonts and icons in the web application
 
-| Component                                               | Version / source         | License                   | Location                     | License file                        |
-| ------------------------------------------------------- | ------------------------ | ------------------------- | ---------------------------- | ----------------------------------- |
-| IBM Plex Sans (Regular, Italic, Medium, SemiBold, Bold) | IBM Plex release (woff2) | SIL Open Font License 1.1 | `apps/web/src/assets/fonts/` | `apps/web/src/assets/fonts/OFL.txt` |
-| IBM Plex Mono (Regular)                                 | IBM Plex release (woff2) | SIL Open Font License 1.1 | `apps/web/src/assets/fonts/` | `apps/web/src/assets/fonts/OFL.txt` |
-| Lucide icons (59 selected, stroke width changed to 1.5) | lucide-static 1.57       | ISC                       | `apps/web/src/assets/icons/` | `apps/web/src/assets/icons/LICENSE` |
+| Component                                                | Version / source         | License                   | Location                     | License file                        |
+| -------------------------------------------------------- | ------------------------ | ------------------------- | ---------------------------- | ----------------------------------- |
+| IBM Plex Sans (Regular, Italic, Medium, SemiBold, Bold)  | IBM Plex release (woff2) | SIL Open Font License 1.1 | `apps/web/src/assets/fonts/` | `apps/web/src/assets/fonts/OFL.txt` |
+| IBM Plex Mono (Regular)                                  | IBM Plex release (woff2) | SIL Open Font License 1.1 | `apps/web/src/assets/fonts/` | `apps/web/src/assets/fonts/OFL.txt` |
+| Lucide icons (149 selected, stroke width changed to 1.5) | lucide-static 1.57       | ISC                       | `apps/web/src/assets/icons/` | `apps/web/src/assets/icons/LICENSE` |
 
 Copyright © 2017 IBM Corp. with Reserved Font Name "Plex". The fonts are
 distributed unmodified and are not sold separately. The web build copies

@@ -5,12 +5,19 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { loadConfig } from './env.js';
 
+const KEY = Buffer.alloc(32, 7).toString('base64');
 const base = {
   LERNWERK_PUBLIC_URL: 'https://lernwerk.example.org',
   LERNWERK_DATABASE_URL: 'postgres://app:secret@db/lernwerk',
+  LERNWERK_MASTER_KEY: KEY,
+  LERNWERK_IP_PEPPER: KEY,
 };
 
 describe('loadConfig', () => {
+  it('requires 32-byte keys', () => {
+    expect(() => loadConfig({ ...base, LERNWERK_MASTER_KEY: 'c2hvcnQ=' })).toThrow('masterKey');
+  });
+
   it('applies defaults', () => {
     const config = loadConfig(base);
     expect(config.port).toBe(3000);
@@ -38,13 +45,14 @@ describe('loadConfig', () => {
     const file = join(dir, 'db');
     writeFileSync(file, 'postgres://app:from-file@db/lernwerk\n');
     const config = loadConfig({
-      LERNWERK_PUBLIC_URL: base.LERNWERK_PUBLIC_URL,
+      ...base,
+      LERNWERK_DATABASE_URL: undefined,
       LERNWERK_DATABASE_URL_FILE: file,
     });
     expect(config.databaseUrl).toBe('postgres://app:from-file@db/lernwerk');
 
-    expect(() => loadConfig({ LERNWERK_PUBLIC_URL: 'nope', LERNWERK_DATABASE_URL: 'secret-value' })).toThrow(
-      /^(?!.*secret-value)/s,
-    );
+    expect(() =>
+      loadConfig({ ...base, LERNWERK_PUBLIC_URL: 'nope', LERNWERK_DATABASE_URL: 'secret-value' }),
+    ).toThrow(/^(?!.*secret-value)/s);
   });
 });

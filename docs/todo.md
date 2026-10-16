@@ -10,6 +10,11 @@ issue once the repository is published.
       release supports 7.x, upgrade both, run `pnpm lint && pnpm typecheck`,
       and remove the note in `docs/dependencies.md`. (Added 2026-10-16.)
 
+## Testing
+
+- [ ] Run the WebKit E2E project over HTTPS (Caddy with `tls internal` in the
+      E2E stack). Over plain HTTP WebKit rejects the secure session cookie.
+
 ## Local tooling
 
 - [ ] Install `docker-buildx` locally for multi-arch builds

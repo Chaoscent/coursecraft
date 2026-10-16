@@ -1,0 +1,26 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+.qr {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+.qr img {
+  border: var(--hairline) solid var(--color-border-strong);
+  background: #ffffff;
+}
+.secret {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  word-break: break-all;
+}
+.sessions {
+  display: grid;
+  border: var(--hairline) solid var(--color-border);
+}
+.agent {
+  display: inline-block;
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+}

@@ -5,7 +5,7 @@
  * which can be created from string literals in code but never from runtime
  * strings.
  */
-import { sql, type RawBuilder } from 'kysely';
+import { sql, type Kysely, type RawBuilder } from 'kysely';
 
 declare const trusted: unique symbol;
 export type TrustedIdentifier = string & { readonly [trusted]: true };
@@ -30,3 +30,28 @@ export const emptyJsonObject = (): RawBuilder<unknown> => sql`'{}'::jsonb`;
 /** Lower-case unique index expression, e.g. for e-mail addresses. */
 export const lower = (column: TrustedIdentifier): RawBuilder<string> =>
   sql<string>`lower(${sql.ref(column)})`;
+
+/** CHECK expression `column IN (...)` for values defined as code constants. */
+export const oneOf = (column: TrustedIdentifier, values: readonly string[]): RawBuilder<boolean> =>
+  sql<boolean>`${sql.ref(column)} in (${sql.join(values.map((v) => sql.lit(v)))})`;
+
+/** CHECK expression `column = value` for a numeric constant (singleton tables). */
+export const equals = (column: TrustedIdentifier, value: number): RawBuilder<boolean> =>
+  sql<boolean>`${sql.ref(column)} = ${sql.lit(value)}`;
+
+/**
+ * Makes a table append-only for a role (audit log). Skipped when the role does
+ * not exist, e.g. in development databases without the role setup.
+ */
+export async function revokeWrites<DB>(
+  db: Kysely<DB>,
+  table: TrustedIdentifier,
+  role: TrustedIdentifier,
+): Promise<void> {
+  const result = await sql<{
+    n: number;
+  }>`select count(*)::int as n from pg_roles where rolname = ${role}`.execute(db);
+  if (result.rows[0]?.n) {
+    await sql`revoke update, delete, truncate on ${sql.table(table)} from ${sql.id(role)}`.execute(db);
+  }
+}

@@ -14,7 +14,8 @@ export default defineConfig({
       {
         test: {
           name: 'db',
-          include: ['apps/**/*.db.test.ts'],
+          include: ['apps/**/*.db.test.ts', 'tests/security/**/*.test.ts', 'tests/integration/**/*.test.ts'],
+          globalSetup: ['tests/support/global-setup.ts'],
           testTimeout: 60_000,
           hookTimeout: 120_000,
         },

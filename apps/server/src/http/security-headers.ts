@@ -11,30 +11,37 @@ const PERMISSIONS_POLICY = [
   'payment=()',
   'usb=()',
   'serial=()',
-  'bluetooth=()',
 ].join(', ');
+
+function directives(config: AppConfig, styleNonce?: string): Record<string, string[]> {
+  return {
+    'default-src': ["'self'"],
+    'script-src': ["'self'"],
+    // A per-response nonce admits only the <style> element that the UI
+    // library inserts; style attributes and other inline styles stay blocked.
+    'style-src': styleNonce ? ["'self'", `'nonce-${styleNonce}'`] : ["'self'"],
+    'img-src': ["'self'", 'data:', 'blob:'],
+    'media-src': ["'self'", 'blob:'],
+    'font-src': ["'self'"],
+    'connect-src': ["'self'"],
+    'object-src': ["'none'"],
+    'base-uri': ["'none'"],
+    'form-action': ["'self'"],
+    'frame-src': config.contentUrl ? [config.contentUrl.origin] : ["'none'"],
+    'frame-ancestors': ["'none'"],
+  };
+}
+
+export function contentSecurityPolicy(config: AppConfig, styleNonce?: string): string {
+  return Object.entries(directives(config, styleNonce))
+    .map(([name, values]) => `${name} ${values.join(' ')}`)
+    .join('; ');
+}
 
 /** Headers for the app origin. See SECURITY.md §5. */
 export async function registerSecurityHeaders(app: FastifyInstance, config: AppConfig): Promise<void> {
-  const frameSrc = config.contentUrl ? [config.contentUrl.origin] : ["'none'"];
   await app.register(helmet, {
-    contentSecurityPolicy: {
-      useDefaults: false,
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'"],
-        styleSrc: ["'self'"],
-        imgSrc: ["'self'", 'data:', 'blob:'],
-        mediaSrc: ["'self'", 'blob:'],
-        fontSrc: ["'self'"],
-        connectSrc: ["'self'"],
-        objectSrc: ["'none'"],
-        baseUri: ["'none'"],
-        formAction: ["'self'"],
-        frameSrc,
-        frameAncestors: ["'none'"],
-      },
-    },
+    contentSecurityPolicy: { useDefaults: false, directives: directives(config) },
     strictTransportSecurity:
       config.publicUrl.protocol === 'https:' ? { maxAge: 31_536_000, includeSubDomains: true } : false,
     referrerPolicy: { policy: 'same-origin' },

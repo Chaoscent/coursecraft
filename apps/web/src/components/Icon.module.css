@@ -1,0 +1,13 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+.icon {
+  display: inline-block;
+  flex: none;
+  width: var(--icon-size);
+  height: var(--icon-size);
+  background-color: currentColor;
+  mask: var(--icon) center / contain no-repeat;
+}
+.lg {
+  width: var(--icon-size-lg);
+  height: var(--icon-size-lg);
+}
