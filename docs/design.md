@@ -4,6 +4,9 @@ Lernwerk looks and behaves like professional desktop software (office, DTP,
 IDE): dense, calm, keyboard-driven. It does not look like a marketing site or
 a typical SaaS dashboard.
 
+Status: design and sample pages approved on 2026-10-16. Changes to tokens or
+rules need a new approval.
+
 **Sample pages** (static HTML, the binding reference for every UI change):
 
 - `apps/web/sample/editor.html`: course editor with menu bar, ribbon, slide
