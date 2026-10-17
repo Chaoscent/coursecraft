@@ -5,7 +5,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ToolButton } from '../components/Button.js';
 import { Icon } from '../components/Icon.js';
-import { addChapter, addSlide, deleteSlide, duplicateSlide, moveSlide } from './actions.js';
+import { addChapter, addSlide, deleteSlide, duplicateSlide, insertNode, moveSlide } from './actions.js';
+import { newQuestion, newQuiz, newSurvey } from './quizModel.js';
 import { useRenderContext } from './Canvas.js';
 import { useEditor, useEditorStore } from './context.js';
 import styles from './Editor.module.css';
@@ -55,6 +56,31 @@ export function SlideList() {
           aria-label={t('editor.newSlide')}
           isDisabled={readOnly}
           onPress={() => addSlide(store, t('editor.untitledSlide'))}
+        />
+        <ToolButton
+          icon="list-checks"
+          aria-label={t('quiz.newQuiz')}
+          isDisabled={readOnly}
+          onPress={() =>
+            insertNode(
+              store,
+              newQuiz(
+                lang,
+                t('quiz.newQuizTitle'),
+                newQuestion('singleChoice', lang, {
+                  prompt: t('quiz.newPrompt'),
+                  option: t('quiz.option'),
+                  blankText: t('quiz.newBlankText'),
+                }),
+              ),
+            )
+          }
+        />
+        <ToolButton
+          icon="clipboard-list"
+          aria-label={t('quiz.newSurvey')}
+          isDisabled={readOnly}
+          onPress={() => insertNode(store, newSurvey(lang, t('quiz.newSurveyTitle'), t('quiz.newPrompt')))}
         />
         <ToolButton
           icon="copy"
@@ -132,7 +158,19 @@ export function SlideList() {
                       {node.kind === 'slide' ? (
                         <Thumbnail slide={node} />
                       ) : (
-                        <span className={styles.thumbFrame} />
+                        <span className={styles.thumbPlaceholder} style={{ width: THUMB_WIDTH }}>
+                          <Icon
+                            name={
+                              node.kind === 'quiz'
+                                ? 'list-checks'
+                                : node.kind === 'survey'
+                                  ? 'clipboard-list'
+                                  : 'layout-grid'
+                            }
+                            size="lg"
+                          />
+                          {t(`quiz.kinds.${node.kind}`)}
+                        </span>
                       )}
                       <span className={styles.thumbCaption}>{node.title[lang] ?? ''}</span>
                     </button>

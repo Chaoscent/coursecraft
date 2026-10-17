@@ -8,13 +8,16 @@
 import type { Course } from '@lernwerk/course-model';
 import { assetFileName } from '@lernwerk/course-model/assets';
 import { Player } from './runtime/player.js';
+import { cmi5Tracker } from './tracking/cmi5.js';
 import { scorm12Tracker } from './tracking/scorm12.js';
+import { scorm2004Tracker } from './tracking/scorm2004.js';
 import { noTracking, type Tracker } from './tracking/types.js';
+import { xapiTracker } from './tracking/xapi.js';
 
 declare global {
   interface Window {
     LERNWERK_COURSE?: unknown;
-    LERNWERK_EXPORT?: { tracking: 'none' | 'scorm12' };
+    LERNWERK_EXPORT?: { tracking: 'none' | 'scorm12' | 'scorm2004' | 'xapi' | 'cmi5' };
   }
 }
 
@@ -23,7 +26,18 @@ function start(): void {
   if (!root) return;
   // Validated and migrated by the server when the package was exported.
   const course = window.LERNWERK_COURSE as Course;
-  const trackers: Record<string, () => Tracker> = { none: () => noTracking, scorm12: () => scorm12Tracker() };
+  const info = {
+    id: course.id,
+    title: course.meta.title[course.languages.default] ?? '',
+    lang: course.languages.default,
+  };
+  const trackers: Record<string, () => Tracker> = {
+    none: () => noTracking,
+    scorm12: () => scorm12Tracker(),
+    scorm2004: () => scorm2004Tracker(),
+    xapi: () => xapiTracker(info),
+    cmi5: () => cmi5Tracker(info),
+  };
   const tracker = (trackers[window.LERNWERK_EXPORT?.tracking ?? 'none'] ?? (() => noTracking))();
   new Player(root, {
     course,

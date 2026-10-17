@@ -104,7 +104,7 @@ export const listVersionsResponseSchema = z.object({ items: z.array(versionSchem
 export const createVersionRequestSchema = z.object({ note: z.string().trim().max(500).default('') }).strict();
 export const versionParamsSchema = z.object({ id: uuidSchema, versionId: uuidSchema });
 
-export const EXPORT_FORMATS = ['html5', 'scorm12'] as const;
+export const EXPORT_FORMATS = ['html5', 'scorm12', 'scorm2004-3', 'scorm2004-4', 'xapi', 'cmi5'] as const;
 export const exportQuerySchema = z.object({ format: z.enum(EXPORT_FORMATS) });
 
 export const courseMembersResponseSchema = z.object({

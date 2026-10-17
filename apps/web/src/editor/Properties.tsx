@@ -10,6 +10,7 @@ import { uploadFile } from './actions.js';
 import { useEditor, useEditorStore } from './context.js';
 import { newId } from './ids.js';
 import { slideOf } from './model.js';
+import { QuizSettings } from './QuizEditor.js';
 import styles from './Editor.module.css';
 
 type Element = SlideElement;
@@ -822,6 +823,7 @@ export function Properties() {
   const nodeId = useEditor((s) => s.nodeId);
   const selection = useEditor((s) => s.selection);
   const slide = slideOf(course, nodeId);
+  const node = nodeId ? course.nodes[nodeId] : undefined;
   const element =
     slide && selection.length === 1 ? slide.elements.find((e) => e.id === selection[0]) : undefined;
   return (
@@ -839,6 +841,7 @@ export function Properties() {
         ) : null}
         {slide && !selection.length ? <SlideProperties slide={slide} /> : null}
         {slide ? <ObjectList slide={slide} /> : null}
+        {node?.kind === 'quiz' ? <QuizSettings quiz={node} /> : null}
       </div>
     </aside>
   );

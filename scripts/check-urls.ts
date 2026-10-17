@@ -33,6 +33,7 @@ const ALLOWED = [
   /^http:\/\/adlnet\.gov\/expapi\//,
   /^https:\/\/w3id\.org\/xapi\//,
   /^http:\/\/purl\.imsglobal\.org\//,
+  /^http:\/\/projecttincan\.com\/tincan\.xsd$/,
   /^urn:/,
 ];
 

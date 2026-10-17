@@ -70,6 +70,10 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
           onChange={setFormat}
           options={[
             { id: 'scorm12', label: 'SCORM 1.2' },
+            { id: 'scorm2004-4', label: 'SCORM 2004 (4th Edition)' },
+            { id: 'scorm2004-3', label: 'SCORM 2004 (3rd Edition)' },
+            { id: 'xapi', label: 'xAPI (Tin Can)' },
+            { id: 'cmi5', label: 'cmi5' },
             { id: 'html5', label: t('editor.formats.html5') },
           ]}
         />
@@ -198,16 +202,41 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
             { id: 'linear', label: t('editor.navLinear') },
           ]}
         />
-        <TextField
-          label={t('editor.completionPercent')}
-          value={String(percent)}
-          isDisabled={readOnly || s.completion.type !== 'viewedPercent'}
-          onChange={(v) => {
-            const n = Math.round(Number(v));
-            if (n >= 1 && n <= 100)
-              set((d) => void (d.settings.completion = { type: 'viewedPercent', percent: n }));
-          }}
+        <SelectField
+          label={t('editor.completion')}
+          value={s.completion.type === 'quizPassed' ? `quiz:${s.completion.quizId}` : 'viewed'}
+          isDisabled={readOnly}
+          onChange={(v) =>
+            set(
+              (d) =>
+                void (d.settings.completion =
+                  v === 'viewed'
+                    ? { type: 'viewedPercent', percent }
+                    : { type: 'quizPassed', quizId: v.slice(5) }),
+            )
+          }
+          options={[
+            { id: 'viewed', label: t('editor.completionViewed') },
+            ...Object.values(course.nodes)
+              .filter((n) => n.kind === 'quiz')
+              .map((n) => ({
+                id: `quiz:${n.id}`,
+                label: t('editor.completionQuiz', { title: n.title[lang] ?? n.id }),
+              })),
+          ]}
         />
+        {s.completion.type === 'viewedPercent' ? (
+          <TextField
+            label={t('editor.completionPercent')}
+            value={String(percent)}
+            isDisabled={readOnly}
+            onChange={(v) => {
+              const n = Math.round(Number(v));
+              if (n >= 1 && n <= 100)
+                set((d) => void (d.settings.completion = { type: 'viewedPercent', percent: n }));
+            }}
+          />
+        ) : null}
         <SelectField
           label={t('editor.sidebar')}
           value={s.player.sidebar}

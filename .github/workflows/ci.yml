@@ -41,6 +41,8 @@ jobs:
           node-version-file: .node-version
       - run: npm install -g --ignore-scripts "$(node -p "require('./package.json').packageManager")"
       - run: pnpm install --frozen-lockfile
+      # Export tests package the built player.
+      - run: pnpm --filter @lernwerk/player build
       - run: pnpm test:db
 
   images:

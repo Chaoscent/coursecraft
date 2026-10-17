@@ -3,6 +3,51 @@
 Short summary per phase: what was built, how it was verified, and what is
 deliberately left open. Newest first.
 
+## Phase 3 — Quizzes, surveys, SCORM 2004, xAPI and cmi5
+
+**Built**
+
+- Scoring for all 14 question types as pure functions in the course model
+  (partial credit, penalties for wrong choices, tolerant text matching,
+  numeric ranges, manual grading for essays, unscored Likert items), random
+  pools with reproducible draws, quiz results with pass state.
+- Player: quiz flow (intro, per-question attempts, feedback per state and per
+  choice, branching to nodes or quiz end, quiz-level time limit, result,
+  review, retakes) and surveys. All question types use native, labelled form
+  controls; drag and drop, hotspots and sequences have keyboard-only paths.
+- Tracking adapters: SCORM 2004 (completion/success/score, interactions with
+  type-specific response formats, progress measure, ISO durations),
+  xAPI/Tin Can (initialized, experienced, answered, completed, passed/failed,
+  terminated; resume via State API) and cmi5 (one-time token fetch,
+  LMS.LaunchData, context template, cmi5 and moveOn categories, mastery
+  score, Browse/Review without results, returnURL exit). SCORM 1.2 now also
+  reports interactions.
+- Exports: SCORM 2004 3rd and 4th edition (sequencing with mastery
+  objective), xAPI (`tincan.xml`), cmi5 (`cmi5.xml` with moveOn and
+  masteryScore). xAPI/cmi5 packages may only connect to an LRS
+  (`connect-src https: http:`); all other packages keep `connect-src 'none'`.
+- Editor: quiz editor (question list, pools with draw count, forms for every
+  type including blank templates synced with `{{placeholders}}`, drop zones,
+  hotspot drawing on the image, Likert scales), quiz settings, survey editor,
+  completion rule "quiz passed", new export formats.
+
+**Verified**
+
+- 113 unit tests (all question types scored; DOM rendering in jsdom incl.
+  labels and keyboard alternatives; SCORM 2004 response formats).
+- 76 DB/integration tests incl. manifests for every format.
+- E2E (Chromium, Firefox): SCORM 2004 package against scorm-again
+  (passed, completed, scaled 0.667, three interactions with correct types);
+  cmi5 against a protocol-checking mock LRS (token fetched once, statement
+  order, registration and session id on every statement, categories, Browse
+  mode without results, exit to returnURL); xAPI with resume from the State
+  API; quiz authoring in the editor with preview and reload.
+
+**Open / later**
+
+- Real LRS and LMS-side launch for xAPI/cmi5 (Phase 5), manual grading of
+  essays (Phase 5), Moodle/ADL conformance runs (nightly, todo).
+
 ## Phase 2 — Slide editor, player, HTML5 and SCORM 1.2 export
 
 **Built**

@@ -430,7 +430,7 @@ TOTP secrets, OIDC client secrets, and SMTP passwords. The API returns only
 
 ## 9. Player (`packages/player`)
 
-- Vanilla TypeScript, target ≤ 80 KB gzip without course data (Phase 2: about 9 KB).
+- Vanilla TypeScript, target ≤ 80 KB gzip without course data (Phase 3: about 19 KB with quizzes and all tracking adapters).
   The player does not bundle a schema library; exports contain courses that
   the server validated and migrated.
 - Tracking adapters: `none` (HTML5), `scorm12`, `scorm2004`, `xapi`, `cmi5`.

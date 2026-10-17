@@ -93,3 +93,82 @@ describe('export', () => {
     expect(files.get('data/course.js')?.toString()).toContain('"tracking":"none"');
   });
 });
+
+describe('export formats with quizzes', () => {
+  async function courseWithQuiz() {
+    const { id, doc } = await openCourse(t, author, 'Quizkurs');
+    const chapter = doc.course.structure.chapters[0];
+    const first = chapter?.nodeIds[0] ?? '';
+    const quiz = {
+      kind: 'quiz',
+      id: 'quiz1',
+      title: { de: 'Test' },
+      settings: { passingPercent: 60 },
+      items: [
+        {
+          type: 'question',
+          question: {
+            id: 'q1',
+            type: 'trueFalse',
+            prompt: { de: { type: 'doc', content: [] } },
+            correct: true,
+          },
+        },
+      ],
+    };
+    const structure = { chapters: [{ ...chapter, nodeIds: [first, 'quiz1'] }] };
+    const save = await t.request(author, 'POST', `/api/courses/${id}/save`, {
+      rev: doc.rev,
+      structure,
+      upsertNodes: [quiz],
+      settings: { completion: { type: 'quizPassed', quizId: 'quiz1' } },
+    });
+    expect(save.statusCode).toBe(200);
+    return id;
+  }
+
+  it('SCORM 2004 4th edition manifest with mastery objective', async () => {
+    const id = await courseWithQuiz();
+    const files = await unzip(
+      (await t.request(author, 'GET', `/api/courses/${id}/export?format=scorm2004-4`)).rawPayload,
+    );
+    const manifest = files.get('imsmanifest.xml')?.toString() ?? '';
+    expect(manifest).toContain('<schemaversion>2004 4th Edition</schemaversion>');
+    expect(manifest).toContain('adlcp:scormType="sco"');
+    expect(manifest).toContain('<imsss:minNormalizedMeasure>0.60</imsss:minNormalizedMeasure>');
+    expect(files.get('data/course.js')?.toString()).toContain('"tracking":"scorm2004"');
+  });
+
+  it('SCORM 2004 3rd edition is labelled accordingly', async () => {
+    const id = await courseWithQuiz();
+    const files = await unzip(
+      (await t.request(author, 'GET', `/api/courses/${id}/export?format=scorm2004-3`)).rawPayload,
+    );
+    expect(files.get('imsmanifest.xml')?.toString()).toContain('2004 3rd Edition');
+  });
+
+  it('cmi5 course structure uses moveOn Passed and the mastery score', async () => {
+    const id = await courseWithQuiz();
+    const files = await unzip(
+      (await t.request(author, 'GET', `/api/courses/${id}/export?format=cmi5`)).rawPayload,
+    );
+    const structure = files.get('cmi5.xml')?.toString() ?? '';
+    expect(structure).toContain(`<course id="urn:lernwerk:course:${id}">`);
+    expect(structure).toContain('moveOn="Passed"');
+    expect(structure).toContain('masteryScore="0.60"');
+    expect(structure).toContain('<url>index.html</url>');
+    expect(files.get('index.html')?.toString()).toContain('connect-src https: http:');
+  });
+
+  it('xAPI package has tincan.xml; SCORM packages keep connect-src none', async () => {
+    const id = await courseWithQuiz();
+    const xapi = await unzip(
+      (await t.request(author, 'GET', `/api/courses/${id}/export?format=xapi`)).rawPayload,
+    );
+    expect(xapi.get('tincan.xml')?.toString()).toContain('<launch lang="und">index.html</launch>');
+    const scorm = await unzip(
+      (await t.request(author, 'GET', `/api/courses/${id}/export?format=scorm12`)).rawPayload,
+    );
+    expect(scorm.get('index.html')?.toString()).toContain("connect-src 'none'");
+  });
+});

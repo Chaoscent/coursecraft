@@ -23,3 +23,8 @@ export function svg<K extends keyof SVGElementTagNameMap>(
   for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, String(v));
   return el;
 }
+
+/** Children without the placeholders of optional parts. */
+export function present(...nodes: (Node | null | undefined)[]): Node[] {
+  return nodes.filter((n): n is Node => !!n);
+}

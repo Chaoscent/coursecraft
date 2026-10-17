@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { Course, SlideElement, SlideNode } from '@lernwerk/course-model';
+import type { Course, CourseNode, SlideElement, SlideNode } from '@lernwerk/course-model';
 import type { Draft } from 'immer';
 import { newId } from './ids.js';
 import {
@@ -91,6 +91,23 @@ export async function uploadFile(store: EditorStore, accept: string): Promise<st
   return (await uploadInto(store, accept))?.asset.sha256 ?? null;
 }
 
+/** Inserts any node after the current one (same chapter). */
+export function insertNode(store: EditorStore, node: CourseNode): void {
+  const { nodeId, course } = store.getState();
+  const chapterIndex = Math.max(
+    0,
+    course.structure.chapters.findIndex((c) => nodeId && c.nodeIds.includes(nodeId)),
+  );
+  store.getState().change((draft) => {
+    draft.nodes[node.id] = node;
+    const chapter = draft.structure.chapters[chapterIndex];
+    if (!chapter) return;
+    const at = nodeId ? chapter.nodeIds.indexOf(nodeId) + 1 : chapter.nodeIds.length;
+    chapter.nodeIds.splice(at, 0, node.id);
+  });
+  store.getState().selectNode(node.id);
+}
+
 export function addSlide(store: EditorStore, title: string): void {
   const { nodeId, lang, course } = store.getState();
   const slide = blankSlide(lang, title);
@@ -140,6 +157,10 @@ export function deleteSlide(store: EditorStore): void {
     for (const chapter of draft.structure.chapters)
       chapter.nodeIds = chapter.nodeIds.filter((id) => id !== nodeId);
     delete draft.nodes[nodeId];
+    // The completion rule must not point at a deleted quiz.
+    if (draft.settings.completion.type === 'quizPassed' && draft.settings.completion.quizId === nodeId) {
+      draft.settings.completion = { type: 'viewedPercent', percent: 100 };
+    }
   });
   if (next) store.getState().selectNode(next);
 }

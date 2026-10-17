@@ -3,7 +3,8 @@ import type { Course, CourseNode, SlideNode } from '@lernwerk/course-model';
 import { localized, type RenderContext } from '../render/context.js';
 import { h } from '../render/dom.js';
 import { renderSlide, renderTextView, type RenderedSlide } from '../render/slide.js';
-import type { Tracker } from '../tracking/types.js';
+import { renderQuiz, renderSurvey } from '../quiz/quiz.js';
+import type { InteractionRecord, ResumeState, Tracker } from '../tracking/types.js';
 import { stringsFor, type Strings } from './strings.js';
 import { SlideTimeline } from './timeline.js';
 
@@ -172,13 +173,30 @@ export class Player {
       outline.hidden = true;
       outlineToggle.setAttribute('aria-expanded', 'false');
     }
-    const resume = opts.tracker.start();
-    if (resume) {
-      for (const i of resume.viewed) if (i >= 0 && i < this.#entries.length) this.#viewed.add(i);
-      this.#index = Math.min(Math.max(0, resume.location), this.#entries.length - 1);
-    }
-    this.#renderOutline();
-    this.#show();
+    const begin = (resume: ResumeState | null) => {
+      if (resume) {
+        for (const i of resume.viewed) if (i >= 0 && i < this.#entries.length) this.#viewed.add(i);
+        this.#index = Math.min(Math.max(0, resume.location), this.#entries.length - 1);
+      }
+      const exit = opts.tracker.exitUrl?.();
+      if (exit && /^https?:\/\//i.test(exit)) {
+        const button = h('button', {
+          class: 'lw-button',
+          attrs: { type: 'button' },
+          text: this.#strings.exit,
+        });
+        button.addEventListener('click', () => {
+          opts.tracker.finish();
+          window.location.assign(exit);
+        });
+        this.#root.querySelector('.lw-bar')?.append(button);
+      }
+      this.#renderOutline();
+      this.#show();
+    };
+    const started = opts.tracker.start();
+    if (started instanceof Promise) void started.catch(() => null).then(begin);
+    else begin(started);
   }
 
   get index(): number {
@@ -273,10 +291,20 @@ export class Player {
     this.#viewToggle.textContent = this.#textView ? this.#strings.slideView : this.#strings.textView;
     this.#viewToggle.hidden = node.kind !== 'slide';
 
+    const track = (record: InteractionRecord) => this.#opts.tracker.interaction(record);
     if (node.kind === 'slide') {
       if (this.#textView) this.#stage.replaceChildren(renderTextView(node, this.#ctx));
       else this.#showSlide(node);
+      this.#opts.tracker.experienced(node.id, localized(this.#ctx, node.title) ?? '');
       this.#markViewed();
+    } else if (node.kind === 'quiz') {
+      this.#stage.replaceChildren(
+        h('div', { class: 'lw-node-scroll' }, [renderQuiz(node, this.#nodeApi(), track)]),
+      );
+    } else if (node.kind === 'survey') {
+      this.#stage.replaceChildren(
+        h('div', { class: 'lw-node-scroll' }, [renderSurvey(node, this.#nodeApi(), track)]),
+      );
     } else {
       const custom = this.#opts.renderNode?.(node, this.#nodeApi());
       if (custom) this.#stage.replaceChildren(custom);

@@ -43,6 +43,23 @@ export function findScorm12Api(start: Window = window): Scorm12Api | null {
   return search(start) ?? (start.opener ? search(start.opener as Window) : null);
 }
 
+const SCORM12_TYPES: Record<string, string> = {
+  singleChoice: 'choice',
+  multipleChoice: 'choice',
+  trueFalse: 'true-false',
+  shortAnswer: 'fill-in',
+  fillInBlanks: 'fill-in',
+  selectBlanks: 'fill-in',
+  wordBank: 'fill-in',
+  essay: 'fill-in',
+  matching: 'matching',
+  dragDrop: 'matching',
+  sequence: 'sequencing',
+  hotspot: 'choice',
+  likert: 'likert',
+  numeric: 'numeric',
+};
+
 export function scorm12Tracker(api: Scorm12Api | null = findScorm12Api()): Tracker {
   const startedAt = Date.now();
   let active = false;
@@ -81,6 +98,28 @@ export function scorm12Tracker(api: Scorm12Api | null = findScorm12Api()): Track
         result.passed === undefined ? 'completed' : result.passed ? 'passed' : 'failed',
       );
       if (active) api?.LMSCommit('');
+    },
+    interaction(record) {
+      if (!active || !api) return;
+      const n = Number(api.LMSGetValue('cmi.interactions._count')) || 0;
+      const type = SCORM12_TYPES[record.questionType] ?? 'performance';
+      set(`cmi.interactions.${n}.id`, record.id.slice(0, 255));
+      set(`cmi.interactions.${n}.type`, type);
+      set(`cmi.interactions.${n}.student_response`, record.response.slice(0, 255));
+      set(
+        `cmi.interactions.${n}.result`,
+        record.result === 'correct'
+          ? 'correct'
+          : record.result === 'incorrect' || record.result === 'partial'
+            ? 'wrong'
+            : 'neutral',
+      );
+      if (record.score) set(`cmi.interactions.${n}.weighting`, String(record.score.max));
+      set(`cmi.interactions.${n}.latency`, scorm12Time(record.latencyMs));
+      api.LMSCommit('');
+    },
+    experienced() {
+      // SCORM 1.2 has no per-page statements; progress goes into suspend data.
     },
     finish() {
       if (!active || finished) return;

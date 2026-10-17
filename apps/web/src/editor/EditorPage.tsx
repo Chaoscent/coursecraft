@@ -36,6 +36,7 @@ import { Canvas } from './Canvas.js';
 import { EditorContext, useEditor, useEditorStore } from './context.js';
 import { ExportDialog, PreviewDialog, SettingsDialog, VersionsDialog } from './dialogs.js';
 import { Properties } from './Properties.js';
+import { QuizEditor, SurveyEditor } from './QuizEditor.js';
 import { Ribbon } from './Ribbon.js';
 import { SlideList } from './SlideList.js';
 import { createEditorStore, type EditorStore } from './store.js';
@@ -78,6 +79,14 @@ function TopMenu({ label, items }: { label: string; items: (MenuEntry | 'separat
       </Popover>
     </MenuTrigger>
   );
+}
+
+/** Canvas for slides, form editors for quizzes and surveys. */
+function Center() {
+  const node = useEditor((s) => (s.nodeId ? s.course.nodes[s.nodeId] : undefined));
+  if (node?.kind === 'quiz') return <QuizEditor key={node.id} quiz={node} />;
+  if (node?.kind === 'survey') return <SurveyEditor key={node.id} survey={node} />;
+  return <Canvas />;
 }
 
 function StatusBar() {
@@ -344,7 +353,7 @@ function EditorShell({ onReload }: { onReload: () => void }) {
         </Panel>
         <PanelSeparator className={styles.splitter} />
         <Panel minSize={300}>
-          <Canvas />
+          <Center />
         </Panel>
         <PanelSeparator className={styles.splitter} />
         <Panel defaultSize={290} minSize={240} maxSize={480}>

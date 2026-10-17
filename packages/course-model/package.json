@@ -6,7 +6,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./assets": "./src/assets.ts"
+    "./assets": "./src/assets.ts",
+    "./scoring": "./src/scoring.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
