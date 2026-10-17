@@ -391,6 +391,42 @@ export interface PathAssignmentsTable {
   created_at: CreatedAt;
 }
 
+export interface SsoProvidersTable {
+  id: Generated<string>;
+  kind: 'oidc' | 'saml';
+  name: string;
+  enabled: ColumnType<boolean, boolean | undefined, boolean>;
+  config: JSONColumnType<Record<string, unknown>, string, string>;
+  secret: JSONColumnType<SealedJson | null, string | null | undefined, string | null>;
+  secret_last4: string | null;
+  allowed_domains: JSONColumnType<string[], string | undefined, string>;
+  auto_create: ColumnType<boolean, boolean | undefined, boolean>;
+  default_role: ColumnType<
+    'learner' | 'author' | 'trainer',
+    'learner' | 'author' | 'trainer' | undefined,
+    'learner' | 'author' | 'trainer'
+  >;
+  email_trusted: ColumnType<boolean, boolean | undefined, boolean>;
+  created_at: CreatedAt;
+  updated_at: DefaultedTimestamp;
+}
+
+export interface SsoStatesTable {
+  state_hash: string;
+  provider_id: string;
+  binder_hash: string;
+  nonce: string | null;
+  code_verifier: JSONColumnType<SealedJson | null, string | null | undefined, string | null>;
+  expires_at: Timestamp;
+}
+
+export interface UserIdentitiesTable {
+  provider_id: string;
+  subject: string;
+  user_id: string;
+  created_at: CreatedAt;
+}
+
 export interface Database {
   settings: SettingsTable;
   kysely_migration: KyselyMigrationTable;
@@ -429,4 +465,7 @@ export interface Database {
   learning_paths: LearningPathsTable;
   path_steps: PathStepsTable;
   path_assignments: PathAssignmentsTable;
+  sso_providers: SsoProvidersTable;
+  sso_states: SsoStatesTable;
+  user_identities: UserIdentitiesTable;
 }

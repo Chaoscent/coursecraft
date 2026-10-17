@@ -44,7 +44,8 @@
     "grading": "Grading",
     "ai": "AI",
     "mail": "E-mail",
-    "paths": "Learning paths"
+    "paths": "Learning paths",
+    "sso": "Single sign-on"
   },
   "roles": {
     "admin": "Administrator",
@@ -83,7 +84,20 @@
     "verify": "Verify",
     "code": "Code",
     "codeHint": "Six-digit code from your authenticator app",
-    "forgot": "Forgot password?"
+    "forgot": "Forgot password?",
+    "sso": {
+      "or": "or",
+      "with": "Sign in with {{name}}",
+      "errors": {
+        "failed": "Signing in with the provider failed.",
+        "denied": "The provider refused the sign-in.",
+        "domain": "This e-mail domain may not sign in.",
+        "no_account": "There is no account for this address. Please contact an administrator.",
+        "disabled": "This account is disabled.",
+        "no_email": "The provider did not deliver a verified e-mail address.",
+        "expired": "The sign-in expired. Please try again."
+      }
+    }
   },
   "fields": {
     "email": "E-mail",
@@ -1129,5 +1143,33 @@
     "anyOrder": "Any order",
     "assignments": "Assignments",
     "archivedBadge": "Archived"
+  },
+  "sso": {
+    "title": "Single sign-on",
+    "count_one": "{{count}} provider",
+    "count_other": "{{count}} providers",
+    "new": "New provider …",
+    "edit": "Edit …",
+    "delete": "Delete",
+    "deleteConfirm": "Delete provider “{{name}}”? Linked sign-ins are removed; the accounts stay.",
+    "empty": "No provider yet. Without one, everybody signs in with e-mail and password.",
+    "name": "Name",
+    "nameHint": "Shown on the sign-in page: “Sign in with …”",
+    "issuer": "Issuer URL",
+    "issuerHint": "The address under which /.well-known/openid-configuration is served.",
+    "clientId": "Client ID",
+    "clientSecret": "Client secret",
+    "secretHint": "Stored encrypted. Leave empty for public clients (PKCE only).",
+    "secretStored": "Stored, ends in {{last4}}. Leave empty to keep it.",
+    "removeSecret": "Remove secret",
+    "scopes": "Scopes",
+    "domains": "Allowed e-mail domains",
+    "domainsHint": "Comma-separated; empty = all.",
+    "emailTrusted": "The provider verifies e-mail addresses (even if the token does not say so)",
+    "autoCreate": "Create new accounts at first sign-in",
+    "defaultRole": "Role of new accounts",
+    "callbackHint": "Enter this redirect URI at the provider: {{url}}",
+    "callbackHintNew": "After saving, this page shows the redirect URI to enter at the provider.",
+    "privacyNote": "Coursecraft contacts the provider only while signing in. Existing accounts are linked through a verified e-mail address."
   }
 }

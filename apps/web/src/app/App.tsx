@@ -15,6 +15,7 @@ import { HomePage } from '../pages/HomePage.js';
 import { LoginPage } from '../pages/LoginPage.js';
 import { MailPage } from '../pages/MailPage.js';
 import { ResetPasswordPage } from '../pages/ResetPasswordPage.js';
+import { SsoPage } from '../pages/SsoPage.js';
 import { SetupPage } from '../pages/SetupPage.js';
 import { UsersPage } from '../pages/UsersPage.js';
 import { GradingPage } from '../pages/GradingPage.js';
@@ -125,6 +126,14 @@ const router = createBrowserRouter([
         element: (
           <Allowed permission="groups.manage">
             <GroupsPage />
+          </Allowed>
+        ),
+      },
+      {
+        path: 'admin/sso',
+        element: (
+          <Allowed permission="settings.manage">
+            <SsoPage />
           </Allowed>
         ),
       },

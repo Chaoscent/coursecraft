@@ -588,6 +588,16 @@ TOTP secrets, OIDC client secrets, and SMTP passwords. The API returns only
   enforces the lock when the launch is requested (403), not only the UI.
 - Archived paths and archived courses disappear from learners' view.
 
+## 12d. Single sign-on (Phase 8)
+
+- `sso_providers` (kind, settings, sealed secret, allowed domains, auto-create
+  and default role), `sso_states` (pending logins), `user_identities`
+  (provider + subject → user). Public endpoints list enabled providers and
+  start the login; the callback is a GET on `/api/auth/sso/callback`.
+- OpenID Connect through `openid-client` (discovery cached per provider
+  version). The fake provider in `tests/support/oidc-idp.ts` drives the
+  integration tests on loopback.
+
 ## 13. Privacy
 
 - Per-user export: ZIP with JSON and files (profile, sessions, registrations,

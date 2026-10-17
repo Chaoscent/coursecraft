@@ -29,6 +29,12 @@ issue once the repository is published.
 - [ ] Trainers limited to their own groups (today: one organisation, all
       learners visible to `reports.read`).
 
+## Single sign-on
+
+- [ ] Map provider groups or claims to Coursecraft groups and roles.
+- [ ] Single logout and back-channel logout.
+- [ ] Per-provider button icons.
+
 ## Learning paths
 
 - [ ] E-mail notice when a path is assigned, and reminders for path due

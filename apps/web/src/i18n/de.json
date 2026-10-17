@@ -44,7 +44,8 @@
     "grading": "Bewertung",
     "ai": "KI",
     "mail": "E-Mail",
-    "paths": "Lernpfade"
+    "paths": "Lernpfade",
+    "sso": "Single Sign-on"
   },
   "roles": {
     "admin": "Administration",
@@ -83,7 +84,20 @@
     "verify": "Bestätigen",
     "code": "Code",
     "codeHint": "Sechsstelliger Code aus der Authenticator-App",
-    "forgot": "Passwort vergessen?"
+    "forgot": "Passwort vergessen?",
+    "sso": {
+      "or": "oder",
+      "with": "Anmelden mit {{name}}",
+      "errors": {
+        "failed": "Die Anmeldung beim Anbieter ist fehlgeschlagen.",
+        "denied": "Der Anbieter hat die Anmeldung abgelehnt.",
+        "domain": "Diese E-Mail-Domain darf sich nicht anmelden.",
+        "no_account": "Für diese Adresse gibt es kein Konto. Bitte wenden Sie sich an die Administration.",
+        "disabled": "Dieses Konto ist deaktiviert.",
+        "no_email": "Der Anbieter hat keine bestätigte E-Mail-Adresse geliefert.",
+        "expired": "Die Anmeldung ist abgelaufen. Bitte erneut versuchen."
+      }
+    }
   },
   "fields": {
     "email": "E-Mail",
@@ -1129,5 +1143,33 @@
     "anyOrder": "Beliebig",
     "assignments": "Zuweisungen",
     "archivedBadge": "Archiviert"
+  },
+  "sso": {
+    "title": "Single Sign-on",
+    "count_one": "{{count}} Anbieter",
+    "count_other": "{{count}} Anbieter",
+    "new": "Neuer Anbieter …",
+    "edit": "Bearbeiten …",
+    "delete": "Löschen",
+    "deleteConfirm": "Anbieter „{{name}}“ löschen? Verknüpfte Anmeldungen entfallen; die Konten bleiben bestehen.",
+    "empty": "Noch kein Anbieter. Ohne Anbieter melden sich alle mit E-Mail und Passwort an.",
+    "name": "Name",
+    "nameHint": "Erscheint auf der Anmeldeseite: „Anmelden mit …“",
+    "issuer": "Aussteller (Issuer-URL)",
+    "issuerHint": "Die Adresse, unter der /.well-known/openid-configuration erreichbar ist.",
+    "clientId": "Client-ID",
+    "clientSecret": "Client-Geheimnis",
+    "secretHint": "Wird verschlüsselt gespeichert. Leer lassen bei öffentlichen Clients (nur PKCE).",
+    "secretStored": "Gespeichert, endet auf {{last4}}. Leer lassen, um es zu behalten.",
+    "removeSecret": "Geheimnis entfernen",
+    "scopes": "Scopes",
+    "domains": "Erlaubte E-Mail-Domains",
+    "domainsHint": "Durch Komma getrennt; leer = alle.",
+    "emailTrusted": "Der Anbieter bestätigt E-Mail-Adressen (auch wenn er das nicht im Token angibt)",
+    "autoCreate": "Neue Konten beim ersten Anmelden anlegen",
+    "defaultRole": "Rolle neuer Konten",
+    "callbackHint": "Tragen Sie beim Anbieter diese Weiterleitungs-URI (Redirect URI) ein: {{url}}",
+    "callbackHintNew": "Nach dem Speichern zeigt diese Seite die Weiterleitungs-URI, die Sie beim Anbieter eintragen.",
+    "privacyNote": "Coursecraft kontaktiert den Anbieter nur beim Anmelden. Bestehende Konten werden über eine bestätigte E-Mail-Adresse verknüpft."
   }
 }

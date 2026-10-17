@@ -237,6 +237,30 @@ change:
   inject markup or extra headers (nodemailer encodes headers; newlines in
   values are folded).
 
+## 5d. Single sign-on (OpenID Connect)
+
+- Providers are set up by administrators only (`settings.manage`); the
+  client secret is sealed, shown as "set" with the last four characters, and
+  never logged. Addresses carry no credentials or fragment.
+- Authorization code flow with PKCE (S256), `state` and `nonce`. `state` is
+  stored hashed, single use, valid 10 minutes, and bound to the browser that
+  started the login by a `__Host-` cookie (HttpOnly, Secure, SameSite=Lax):
+  a code obtained by an attacker cannot be completed in a victim's browser
+  (login CSRF). The ID token's signature, issuer, audience, expiry and nonce
+  are verified by `openid-client`; the response `iss` is checked.
+- Requests to the provider have a timeout; plain `http://` is used only if
+  the administrator entered an `http` address (local providers).
+- Accounts: a known identity (provider and subject) signs in; otherwise an
+  existing account with the same e-mail address is linked **only if** the
+  provider reports the address as verified (or the administrator marks the
+  provider as verifying); otherwise a new account is created only when
+  allowed, with the configured role (never administrator). Allowed e-mail
+  domains are enforced at every sign-in. Disabled and deleted accounts cannot
+  sign in. SSO accounts get an unusable random password.
+- The provider is trusted to authenticate; local 2FA is not asked again.
+  Failures redirect to the login page with a fixed reason code (no provider
+  text is shown) and are written to the audit log.
+
 ## 8. Known limitations
 
 - Third-party packages run arbitrary JavaScript on the content origin. They
@@ -253,6 +277,9 @@ change:
 - Report CSV files prefix cells starting with `= + - @` so spreadsheets do
   not evaluate them (CSV injection).
 - The converter role can read all job payloads in the `pgboss` schema.
+- Single sign-on adds a third outbound connection (to the administrator's
+  identity provider, during sign-in only). A compromised provider can sign in
+  as any user it asserts; restrict domains and review who may sign in.
 - AI base URLs may point to private addresses on purpose (local model
   servers such as Ollama). This is an administrator decision; the app does
   not resolve and block private ranges.

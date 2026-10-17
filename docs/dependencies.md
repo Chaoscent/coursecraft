@@ -32,9 +32,8 @@ named, listed so the choice can be reviewed early.
 | pdfjs-dist + @napi-rs/canvas         | in use (converter)               | Apache-2.0 / MIT                            | Render PPTX slides (via PDF from LibreOffice) to PNG           | node-canvas (links Cairo), Poppler (GPL), MuPDF (AGPL). pdf.js ships fonts and decoders with their own permissive licenses, see THIRD_PARTY_NOTICES.md     |
 | scorm-again                          | in use (runtime, content origin) | MIT                                         | SCORM 1.2/2004 runtime API                                     | own implementation                                                                                                                                         |
 | exceljs                              | planned (5)                      | MIT                                         | XLSX report export                                             | SheetJS (npm build outdated)                                                                                                                               |
-| pdf-lib                              | planned (8)                      | MIT                                         | Certificate PDFs                                               | pdfkit (MIT; heavier)                                                                                                                                      |
-| nodemailer                           | planned (8)                      | MIT-0                                       | SMTP                                                           | —                                                                                                                                                          |
-| openid-client / @node-saml/node-saml | planned (8)                      | MIT                                         | OIDC / SAML login                                              | passport strategies (more glue)                                                                                                                            |
+| nodemailer                           | in use                           | MIT-0                                       | SMTP                                                           | —                                                                                                                                                          |
+| openid-client / @node-saml/node-saml | in use (OIDC); SAML next         | MIT                                         | OIDC / SAML login                                              | passport strategies (more glue)                                                                                                                            |
 | @fastify/cookie                      | in use                           | MIT                                         | Cookie parsing and setting for the session cookie              | hand-written header parsing                                                                                                                                |
 | @fastify/static                      | in use                           | MIT                                         | Serves the built web app (SPA fallback handled by our route)   | nginx sidecar (one more container)                                                                                                                         |
 | csv-parse                            | in use                           | MIT                                         | CSV parsing for bulk user import                               | own parser (quoting edge cases)                                                                                                                            |
@@ -64,19 +63,29 @@ named, listed so the choice can be reviewed early.
 
 ## Development only (not shipped)
 
-| Package                                        | License    | Purpose                                                       |
-| ---------------------------------------------- | ---------- | ------------------------------------------------------------- |
-| typescript (6.0)                               | Apache-2.0 | Type checking. 7.x is not yet supported by typescript-eslint. |
-| tsx                                            | MIT        | Run TypeScript in development and scripts                     |
-| esbuild                                        | MIT        | Bundle server and converter for production                    |
-| vitest                                         | MIT        | Unit tests                                                    |
-| @playwright/test                               | Apache-2.0 | E2E tests, design sample screenshots                          |
-| eslint, @eslint/js, typescript-eslint, globals | MIT        | Linting incl. security rules                                  |
-| prettier                                       | MIT        | Formatting                                                    |
-| @types/node, @types/pg                         | MIT        | Type definitions                                              |
-| testcontainers                                 | MIT        | Real PostgreSQL in DB tests (role model test)                 |
-| yazl (root)                                    | MIT        | Builds PPTX fixtures for tests                                |
-| lightningcss (transitive via vite)             | MPL-2.0    | CSS processing; unmodified, separate package                  |
+| Package                                        | License     | Purpose                                                       |
+| ---------------------------------------------- | ----------- | ------------------------------------------------------------- |
+| typescript (6.0)                               | Apache-2.0  | Type checking. 7.x is not yet supported by typescript-eslint. |
+| tsx                                            | MIT         | Run TypeScript in development and scripts                     |
+| esbuild                                        | MIT         | Bundle server and converter for production                    |
+| vitest                                         | MIT         | Unit tests                                                    |
+| @playwright/test                               | Apache-2.0  | E2E tests, design sample screenshots                          |
+| eslint, @eslint/js, typescript-eslint, globals | MIT         | Linting incl. security rules                                  |
+| prettier                                       | MIT         | Formatting                                                    |
+| @types/node, @types/pg                         | MIT         | Type definitions                                              |
+| testcontainers                                 | MIT         | Real PostgreSQL in DB tests (role model test)                 |
+| yazl (root)                                    | MIT         | Builds PPTX fixtures for tests                                |
+| smtp-server, @types/smtp-server (root)         | MIT-0 / MIT | Local mail server in the e-mail integration tests             |
+| jose (root)                                    | MIT         | Signs ID tokens of the fake OpenID provider in tests          |
+| lightningcss (transitive via vite)             | MPL-2.0     | CSS processing; unmodified, separate package                  |
+
+## Certificates without a PDF library
+
+Certificates are written by a small built-in PDF writer
+(`apps/server/src/modules/certificates/pdf.ts`): one page, the standard
+Helvetica fonts, text and lines. `pdf-lib` was considered and rejected: its
+dependency `pako` is licensed `MIT AND Zlib`, and Zlib is not on the license
+allowlist. Revisit if embedded fonts (names outside WinAnsi) become necessary.
 
 ## License exceptions
 

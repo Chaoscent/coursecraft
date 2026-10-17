@@ -11,6 +11,7 @@ import * as m0006 from './0006-ai.js';
 import * as m0007 from './0007-mail.js';
 import * as m0008 from './0008-certificates.js';
 import * as m0009 from './0009-paths.js';
+import * as m0010 from './0010-sso.js';
 
 /** Ordered list of all migrations. Released migrations never change. */
 export const MIGRATIONS: Readonly<Record<string, Migration>> = {
@@ -23,6 +24,7 @@ export const MIGRATIONS: Readonly<Record<string, Migration>> = {
   '0007-mail': m0007,
   '0008-certificates': m0008,
   '0009-paths': m0009,
+  '0010-sso': m0010,
 };
 
 /**
