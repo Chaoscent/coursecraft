@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { SsoProvider, SsoProviderInput } from '@coursecraft/shared';
 import type { FastifyReply, FastifyRequest } from 'fastify';
+import { SAML, type Profile as SamlProfile } from '@node-saml/node-saml';
 import * as client from 'openid-client';
 import { hashPassword } from '../../auth/passwords.js';
 import { hashToken, randomToken, safeEqual } from '../../crypto/tokens.js';
@@ -18,6 +19,9 @@ const secretAad = (id: string) => `sso-secret:${id}`;
 const verifierAad = (stateHash: string) => `sso-verifier:${stateHash}`;
 export const callbackUrl = (ctx: AppContext) =>
   new URL('/api/auth/sso/callback', ctx.config.publicUrl).toString();
+export const acsUrl = (ctx: AppContext) => new URL('/api/auth/sso/saml/acs', ctx.config.publicUrl).toString();
+export const metadataUrl = (ctx: AppContext, id: string) =>
+  new URL(`/api/auth/sso/${id}/metadata`, ctx.config.publicUrl).toString();
 
 type Row = {
   id: string;
@@ -45,7 +49,8 @@ const toProvider = (ctx: AppContext, r: Row): SsoProvider => ({
   emailTrusted: r.email_trusted,
   config: r.config,
   secret: { set: r.secret !== null, last4: r.secret_last4 },
-  callbackUrl: callbackUrl(ctx),
+  callbackUrl: r.kind === 'saml' ? acsUrl(ctx) : callbackUrl(ctx),
+  metadataUrl: r.kind === 'saml' ? metadataUrl(ctx, r.id) : null,
   updatedAt: r.updated_at.toISOString(),
 });
 
@@ -70,7 +75,16 @@ export async function saveProvider(
   id: string | null,
   input: SsoProviderInput,
 ): Promise<string> {
-  const config = { issuer: input.issuer.replace(/\/+$/, ''), clientId: input.clientId, scopes: input.scopes };
+  const config =
+    input.kind === 'oidc'
+      ? { issuer: input.issuer.replace(/\/+$/, ''), clientId: input.clientId, scopes: input.scopes }
+      : {
+          entryPoint: input.entryPoint,
+          idpIssuer: input.idpIssuer,
+          idpCert: input.idpCert,
+          spEntityId: input.spEntityId,
+        };
+  const secret = input.kind === 'oidc' ? input.clientSecret : undefined;
   const fields = {
     kind: input.kind,
     name: input.name,
@@ -101,15 +115,15 @@ export async function saveProvider(
       target = (await tx.insertInto('sso_providers').values(fields).returning('id').executeTakeFirstOrThrow())
         .id;
     }
-    if (input.clientSecret !== undefined) {
+    if (secret !== undefined) {
       await tx
         .updateTable('sso_providers')
         .set(
-          input.clientSecret === null
+          secret === null
             ? { secret: null, secret_last4: null }
             : {
-                secret: JSON.stringify(ctx.box.seal(input.clientSecret, secretAad(target))),
-                secret_last4: input.clientSecret.slice(-4),
+                secret: JSON.stringify(ctx.box.seal(secret, secretAad(target))),
+                secret_last4: secret.slice(-4),
               },
         )
         .where('id', '=', target)
@@ -121,12 +135,7 @@ export async function saveProvider(
         action: id ? 'sso.provider_updated' : 'sso.provider_created',
         targetType: 'sso_provider',
         targetId: target,
-        meta: {
-          kind: input.kind,
-          issuer: config.issuer,
-          enabled: input.enabled,
-          secretChanged: input.clientSecret !== undefined,
-        },
+        meta: { kind: input.kind, enabled: input.enabled, secretChanged: secret !== undefined },
       },
       tx,
     );
@@ -402,4 +411,118 @@ export async function resolveUser(ctx: AppContext, row: Row, profile: Profile): 
     return user.id;
   });
   return { userId };
+}
+
+/* ---------- SAML 2.0 (HTTP-Redirect request, HTTP-POST response) ---------- */
+
+type SamlConfig = { entryPoint: string; idpIssuer: string; idpCert: string; spEntityId: string };
+
+function samlFor(ctx: AppContext, row: Row): SAML {
+  const c = row.config as unknown as SamlConfig;
+  return new SAML({
+    entryPoint: c.entryPoint,
+    callbackUrl: acsUrl(ctx),
+    issuer: c.spEntityId,
+    // The assertion must be addressed to us and signed by the provider's certificate.
+    audience: c.spEntityId,
+    idpCert: c.idpCert,
+    idpIssuer: c.idpIssuer,
+    wantAssertionsSigned: true,
+    wantAuthnResponseSigned: false,
+    acceptedClockSkewMs: 60_000,
+    maxAssertionAgeMs: 10 * 60_000,
+    disableRequestedAuthnContext: true,
+    signatureAlgorithm: 'sha256',
+  });
+}
+
+/** Starts a login with whichever protocol the provider speaks. */
+export async function startLogin(ctx: AppContext, reply: FastifyReply, providerId: string): Promise<string> {
+  const row = await ctx.db
+    .selectFrom('sso_providers')
+    .select('kind')
+    .where('id', '=', providerId)
+    .where('enabled', '=', true)
+    .executeTakeFirst();
+  if (!row) throw notFound('Provider not found');
+  return row.kind === 'saml' ? startSaml(ctx, reply, providerId) : startOidc(ctx, reply, providerId);
+}
+
+export async function startSaml(ctx: AppContext, reply: FastifyReply, providerId: string): Promise<string> {
+  const row = await enabledProvider(ctx, providerId, 'saml');
+  const { state, binder } = await createState(ctx, row.id);
+  // The provider answers with a cross-site POST, which only carries cookies marked SameSite=None.
+  setBinderCookie(reply, binder, 'none');
+  return samlFor(ctx, row).getAuthorizeUrlAsync(state, undefined, {});
+}
+
+export function spMetadata(ctx: AppContext, row: Row): string {
+  return samlFor(ctx, row).generateServiceProviderMetadata(null, null);
+}
+
+export async function providerMetadata(ctx: AppContext, id: string): Promise<string> {
+  return spMetadata(ctx, await enabledProvider(ctx, id, 'saml'));
+}
+
+const MAIL_ATTRIBUTES = [
+  'email',
+  'mail',
+  'urn:oid:0.9.2342.19200300.100.1.3',
+  'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress',
+];
+const NAME_ATTRIBUTES = [
+  'displayName',
+  'name',
+  'cn',
+  'urn:oid:2.16.840.1.113730.3.1.241',
+  'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name',
+];
+
+const first = (value: unknown): string | null => {
+  const v: unknown = Array.isArray(value) ? (value as unknown[])[0] : value;
+  return typeof v === 'string' && v.trim() ? v.trim() : null;
+};
+
+export function samlProfile(p: SamlProfile): Profile {
+  const fromAttributes = (names: string[]) => names.map((n) => first(p[n])).find((v) => v !== null) ?? null;
+  const nameIdEmail = p.nameIDFormat?.endsWith('emailAddress') && p.nameID.includes('@') ? p.nameID : null;
+  return {
+    // The same person keeps the same identifier, whichever attributes the provider sends.
+    subject: p.nameID,
+    email: fromAttributes(MAIL_ATTRIBUTES) ?? nameIdEmail,
+    // The assertion is signed by the provider: its attributes are the provider's statement.
+    emailVerified: true,
+    name: fromAttributes(NAME_ATTRIBUTES),
+    locale: first(p['locale']),
+  };
+}
+
+export async function finishSaml(
+  ctx: AppContext,
+  body: { SAMLResponse: string; RelayState?: string | undefined },
+  binder: string | undefined,
+  reply: FastifyReply,
+): Promise<Outcome> {
+  reply.clearCookie(BINDER_COOKIE, { path: '/', httpOnly: true, secure: true, sameSite: 'none' });
+  const pending = await takeState(ctx, body.RelayState, binder);
+  if (!pending) return { error: 'expired' };
+  try {
+    const row = await enabledProvider(ctx, pending.providerId, 'saml');
+    const { profile } = await samlFor(ctx, row).validatePostResponseAsync({
+      SAMLResponse: body.SAMLResponse,
+      ...(body.RelayState ? { RelayState: body.RelayState } : {}),
+    });
+    if (!profile?.nameID) return { error: 'failed' };
+    // node-saml checks the issuer for logout messages only. The signing key may belong to a
+    // provider that serves several parties, so the issuer has to be pinned here.
+    const expected = (row.config as unknown as SamlConfig).idpIssuer;
+    if (profile.issuer !== expected) {
+      ctx.log.warn({ provider: row.id }, 'SAML assertion from an unexpected issuer');
+      return { error: 'failed' };
+    }
+    return resolveUser(ctx, row, samlProfile(profile));
+  } catch (error) {
+    ctx.log.warn({ err: error, provider: pending.providerId }, 'SAML sign-in failed');
+    return { error: 'failed' };
+  }
 }

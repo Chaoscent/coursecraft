@@ -1170,6 +1170,21 @@
     "defaultRole": "Rolle neuer Konten",
     "callbackHint": "Tragen Sie beim Anbieter diese Weiterleitungs-URI (Redirect URI) ein: {{url}}",
     "callbackHintNew": "Nach dem Speichern zeigt diese Seite die Weiterleitungs-URI, die Sie beim Anbieter eintragen.",
-    "privacyNote": "Coursecraft kontaktiert den Anbieter nur beim Anmelden. Bestehende Konten werden über eine bestätigte E-Mail-Adresse verknüpft."
+    "privacyNote": "Coursecraft kontaktiert den Anbieter nur beim Anmelden. Bestehende Konten werden über eine bestätigte E-Mail-Adresse verknüpft.",
+    "kind": "Protokoll",
+    "kinds": {
+      "oidc": "OpenID Connect",
+      "saml": "SAML 2.0"
+    },
+    "entryPoint": "Single-Sign-on-URL des Anbieters",
+    "entryPointHint": "Dorthin wird der Browser zum Anmelden geschickt (HTTP-Redirect).",
+    "idpIssuer": "Entity-ID des Anbieters",
+    "idpIssuerHint": "Assertions anderer Aussteller werden abgelehnt.",
+    "idpCert": "Signaturzertifikat des Anbieters (PEM)",
+    "idpCertHint": "Öffentliches Zertifikat, mit dem der Anbieter Assertions signiert.",
+    "spEntityId": "Entity-ID von Coursecraft",
+    "spEntityIdHint": "Wird beim Anbieter als Service Provider eingetragen; muss dort übereinstimmen.",
+    "acsHint": "Tragen Sie beim Anbieter diese Assertion-Consumer-URL (ACS) ein: {{url}}",
+    "metadataHint": "Metadaten zum Import: {{url}}"
   }
 }

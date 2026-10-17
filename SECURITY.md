@@ -261,6 +261,26 @@ change:
   Failures redirect to the login page with a fixed reason code (no provider
   text is shown) and are written to the audit log.
 
+## 5e. Single sign-on (SAML 2.0)
+
+- Requests go out by HTTP-Redirect, responses come back by HTTP-POST to a
+  single assertion consumer URL. The assertion must be **signed** by the
+  certificate pinned for the provider (`@node-saml/node-saml` verifies the
+  signature, validity window with 60 s skew, audience = our entity ID and
+  recipient). The assertion issuer is checked against the configured entity ID
+  by Coursecraft itself, because the library does that only for logout.
+- The ACS route is the only one that skips the origin check (`crossSite`), as
+  the post comes from the provider's site. It parses forms in its own
+  scope only (all other routes still answer 415 to form posts), requires the
+  relay state, which is single use, expires after 10 minutes and must match
+  the `__Host-` cookie of the browser that started the login. That cookie is
+  `SameSite=None` for SAML only, because cross-site posts carry no other
+  cookies.
+- The e-mail address comes from signed attributes and counts as verified;
+  accounts are linked, created and restricted as for OpenID Connect.
+  Responses are replay-limited by the single-use relay state and the short
+  validity window; encrypted assertions and single logout are not supported.
+
 ## 8. Known limitations
 
 - Third-party packages run arbitrary JavaScript on the content origin. They

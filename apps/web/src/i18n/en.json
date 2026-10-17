@@ -1170,6 +1170,21 @@
     "defaultRole": "Role of new accounts",
     "callbackHint": "Enter this redirect URI at the provider: {{url}}",
     "callbackHintNew": "After saving, this page shows the redirect URI to enter at the provider.",
-    "privacyNote": "Coursecraft contacts the provider only while signing in. Existing accounts are linked through a verified e-mail address."
+    "privacyNote": "Coursecraft contacts the provider only while signing in. Existing accounts are linked through a verified e-mail address.",
+    "kind": "Protocol",
+    "kinds": {
+      "oidc": "OpenID Connect",
+      "saml": "SAML 2.0"
+    },
+    "entryPoint": "Provider sign-on URL",
+    "entryPointHint": "The browser is sent here to sign in (HTTP-Redirect).",
+    "idpIssuer": "Provider entity ID",
+    "idpIssuerHint": "Assertions from other issuers are refused.",
+    "idpCert": "Provider signing certificate (PEM)",
+    "idpCertHint": "The public certificate the provider signs assertions with.",
+    "spEntityId": "Coursecraft entity ID",
+    "spEntityIdHint": "Registered at the provider as the service provider; must match there.",
+    "acsHint": "Enter this assertion consumer URL (ACS) at the provider: {{url}}",
+    "metadataHint": "Metadata for import: {{url}}"
   }
 }

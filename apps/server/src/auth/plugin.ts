@@ -76,7 +76,7 @@ export function registerAuth(app: FastifyInstance, ctx: AppContext): void {
       }
     }
 
-    if (UNSAFE.has(request.method)) {
+    if (UNSAFE.has(request.method) && !request.routeOptions.config.crossSite) {
       if (!sameOrigin(request, expectedOrigin))
         throw new AppError('forbidden', 'Cross-origin request rejected');
       const type = request.headers['content-type'] ?? '';

@@ -55,7 +55,29 @@ const oidcInput = z
   })
   .strict();
 
-export const ssoProviderInputSchema = z.discriminatedUnion('kind', [oidcInput]);
+const samlInput = z
+  .object({
+    kind: z.literal('saml'),
+    ...common,
+    /** The provider's single sign-on address (HTTP-Redirect binding). */
+    entryPoint: urlSchema,
+    /** Entity ID of the provider; assertions from other issuers are refused. */
+    idpIssuer: z.string().trim().min(1).max(500),
+    /** The provider's signing certificate (PEM, public). */
+    idpCert: z
+      .string()
+      .trim()
+      .max(20_000)
+      .refine(
+        (v) => /-----BEGIN CERTIFICATE-----[\s\S]+-----END CERTIFICATE-----/.test(v),
+        'PEM certificate',
+      ),
+    /** Our entity ID towards the provider. */
+    spEntityId: z.string().trim().min(1).max(500),
+  })
+  .strict();
+
+export const ssoProviderInputSchema = z.discriminatedUnion('kind', [oidcInput, samlInput]);
 export type SsoProviderInput = z.infer<typeof ssoProviderInputSchema>;
 
 export const ssoProviderSchema = z.object({
@@ -70,8 +92,10 @@ export const ssoProviderSchema = z.object({
   /** Kind-specific settings without secrets. */
   config: z.record(z.string(), z.unknown()),
   secret: z.object({ set: z.boolean(), last4: z.string().nullable() }),
-  /** Addresses to enter at the identity provider. */
+  /** Address the provider sends the browser back to (redirect URI / assertion consumer service). */
   callbackUrl: z.string(),
+  /** SAML: address of our service provider metadata. */
+  metadataUrl: z.string().nullable(),
   updatedAt: z.string(),
 });
 export type SsoProvider = z.infer<typeof ssoProviderSchema>;

@@ -41,6 +41,8 @@ const ALLOWED = [
   /^http:\/\/ltsc\.ieee\.org\/xsd\//,
   /^http:\/\/adlnet\.gov\/expapi\//,
   /^https:\/\/w3id\.org\/xapi\//,
+  // SAML attribute names (claim identifiers matched against assertions, never requested).
+  /^http:\/\/schemas\.xmlsoap\.org\/ws\/2005\/05\/identity\/claims\//,
   /^http:\/\/purl\.imsglobal\.org\//,
   /^http:\/\/projecttincan\.com\/tincan\.xsd$/,
   /^urn:/,

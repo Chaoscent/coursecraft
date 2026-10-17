@@ -16,10 +16,13 @@ import { startSession } from '../auth/routes.js';
 import {
   deleteProvider,
   finishOidc,
+  finishSaml,
   listProviders,
   publicProviders,
   saveProvider,
-  startOidc,
+  providerMetadata,
+  startLogin,
+  BINDER_COOKIE,
   type Outcome,
 } from './service.js';
 
@@ -78,13 +81,53 @@ export function ssoRoutes(app: FastifyInstance, ctx: AppContext): void {
     { config: { permission: 'public', rateLimit: rate }, schema: { params: idParamSchema } },
     async (request, reply) => {
       try {
-        return reply.redirect(await startOidc(ctx, reply, request.params.id));
+        return reply.redirect(await startLogin(ctx, reply, request.params.id));
       } catch (error) {
         if (!(error instanceof AppError)) ctx.log.warn({ err: error }, 'single sign-on could not start');
         return reply.redirect('/login?sso_error=failed');
       }
     },
   );
+
+  r.get(
+    '/api/auth/sso/:id/metadata',
+    { config: { permission: 'public' }, schema: { params: idParamSchema } },
+    async (request, reply) =>
+      reply
+        .type('application/samlmetadata+xml; charset=utf-8')
+        .send(await providerMetadata(ctx, request.params.id)),
+  );
+
+  // The provider posts the assertion from its own site. This scope alone parses forms, and the
+  // route skips the origin check: the login state bound to the browser takes its place.
+  app.register((scope, _options, done) => {
+    scope.addContentTypeParser(
+      'application/x-www-form-urlencoded',
+      { parseAs: 'string', bodyLimit: 1_048_576 },
+      (_request, body, parsed) => {
+        try {
+          parsed(null, Object.fromEntries(new URLSearchParams(body as string)));
+        } catch (error) {
+          parsed(error as Error);
+        }
+      },
+    );
+    scope.withTypeProvider<ZodTypeProvider>().post(
+      '/api/auth/sso/saml/acs',
+      {
+        config: { permission: 'public', rateLimit: rate, crossSite: true },
+        schema: {
+          body: z.object({
+            SAMLResponse: z.string().min(1).max(1_000_000),
+            RelayState: z.string().max(200).optional(),
+          }),
+        },
+      },
+      async (request, reply) =>
+        conclude(request, reply, await finishSaml(ctx, request.body, request.cookies[BINDER_COOKIE], reply)),
+    );
+    done();
+  });
 
   r.get(
     '/api/sso/providers',

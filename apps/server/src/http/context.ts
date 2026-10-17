@@ -54,6 +54,11 @@ declare module 'fastify' {
     allowDuringPasswordChange?: boolean;
     /** Route accepts multipart/form-data (file uploads). */
     allowMultipart?: boolean;
+    /**
+     * Receives a form post from another site (SAML assertion consumer). The
+     * origin check is replaced by the login state bound to the browser.
+     */
+    crossSite?: boolean;
     /** Authenticated by a launch token in the path; cookies are ignored. */
     tokenAuth?: boolean;
   }

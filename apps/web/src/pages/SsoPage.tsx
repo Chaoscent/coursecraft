@@ -2,6 +2,7 @@
 import {
   idParamSchema,
   okSchema,
+  SSO_KINDS,
   SSO_ROLES,
   ssoProvidersResponseSchema,
   type SsoProvider,
@@ -36,7 +37,12 @@ function ProviderDialog({
   onSaved: () => void;
 }) {
   const { t } = useTranslation();
+  const [kind, setKind] = useState<(typeof SSO_KINDS)[number]>(provider?.kind ?? 'oidc');
   const [name, setName] = useState(provider?.name ?? '');
+  const [entryPoint, setEntryPoint] = useState(cfg(provider, 'entryPoint'));
+  const [idpIssuer, setIdpIssuer] = useState(cfg(provider, 'idpIssuer'));
+  const [idpCert, setIdpCert] = useState(cfg(provider, 'idpCert'));
+  const [spEntityId, setSpEntityId] = useState(cfg(provider, 'spEntityId', `${window.location.origin}/sp`));
   const [issuer, setIssuer] = useState(cfg(provider, 'issuer'));
   const [clientId, setClientId] = useState(cfg(provider, 'clientId'));
   const [secret, setSecret] = useState('');
@@ -51,13 +57,9 @@ function ProviderDialog({
 
   const save = async () => {
     try {
-      const body = {
-        kind: 'oidc',
+      const shared = {
         name,
         enabled,
-        issuer,
-        clientId,
-        scopes,
         allowedDomains: domains
           .split(/[\s,;]+/)
           .map((d) => d.trim().toLowerCase())
@@ -65,8 +67,18 @@ function ProviderDialog({
         autoCreate,
         defaultRole: role,
         emailTrusted,
-        ...(removeSecret ? { clientSecret: null } : secret ? { clientSecret: secret } : {}),
       };
+      const body =
+        kind === 'saml'
+          ? { kind, ...shared, entryPoint, idpIssuer, idpCert, spEntityId }
+          : {
+              kind,
+              ...shared,
+              issuer,
+              clientId,
+              scopes,
+              ...(removeSecret ? { clientSecret: null } : secret ? { clientSecret: secret } : {}),
+            };
       if (provider) await api(idParamSchema, `/api/sso/providers/${provider.id}`, { method: 'PUT', body });
       else await api(idParamSchema, '/api/sso/providers', { method: 'POST', body });
       onSaved();
@@ -93,11 +105,21 @@ function ProviderDialog({
     >
       {error ? <Notice tone="danger">{error}</Notice> : null}
       {provider ? (
-        <Notice tone="info">{t('sso.callbackHint', { url: provider.callbackUrl })}</Notice>
+        <Notice tone="info">
+          {t(kind === 'saml' ? 'sso.acsHint' : 'sso.callbackHint', { url: provider.callbackUrl })}
+          {provider.metadataUrl ? ` ${t('sso.metadataHint', { url: provider.metadataUrl })}` : ''}
+        </Notice>
       ) : (
         <Notice tone="info">{t('sso.callbackHintNew')}</Notice>
       )}
       <FormGrid wide>
+        <SelectField
+          label={t('sso.kind')}
+          value={kind}
+          onChange={setKind}
+          isDisabled={!!provider}
+          options={SSO_KINDS.map((k) => ({ id: k, label: t(`sso.kinds.${k}`) }))}
+        />
         <TextField
           label={t('sso.name')}
           value={name}
@@ -106,46 +128,84 @@ function ProviderDialog({
           autoFocus
           description={t('sso.nameHint')}
         />
-        <TextField
-          label={t('sso.issuer')}
-          value={issuer}
-          onChange={setIssuer}
-          isRequired
-          description={t('sso.issuerHint')}
-        />
-        <TextField label={t('sso.clientId')} value={clientId} onChange={setClientId} isRequired />
-        <TextField
-          label={t('sso.clientSecret')}
-          type="password"
-          autoComplete="off"
-          value={secret}
-          onChange={setSecret}
-          isDisabled={removeSecret}
-          description={
-            provider?.secret.set
-              ? t('sso.secretStored', { last4: provider.secret.last4 ?? '' })
-              : t('sso.secretHint')
-          }
-        />
-        {provider?.secret.set ? (
-          <FormRow label="">
-            <Checkbox isSelected={removeSecret} onChange={setRemoveSecret}>
-              {t('sso.removeSecret')}
-            </Checkbox>
-          </FormRow>
-        ) : null}
-        <TextField label={t('sso.scopes')} value={scopes} onChange={setScopes} />
+        {kind === 'oidc' ? (
+          <>
+            <TextField
+              label={t('sso.issuer')}
+              value={issuer}
+              onChange={setIssuer}
+              isRequired
+              description={t('sso.issuerHint')}
+            />
+            <TextField label={t('sso.clientId')} value={clientId} onChange={setClientId} isRequired />
+            <TextField
+              label={t('sso.clientSecret')}
+              type="password"
+              autoComplete="off"
+              value={secret}
+              onChange={setSecret}
+              isDisabled={removeSecret}
+              description={
+                provider?.secret.set
+                  ? t('sso.secretStored', { last4: provider.secret.last4 ?? '' })
+                  : t('sso.secretHint')
+              }
+            />
+            {provider?.secret.set ? (
+              <FormRow label="">
+                <Checkbox isSelected={removeSecret} onChange={setRemoveSecret}>
+                  {t('sso.removeSecret')}
+                </Checkbox>
+              </FormRow>
+            ) : null}
+            <TextField label={t('sso.scopes')} value={scopes} onChange={setScopes} />
+          </>
+        ) : (
+          <>
+            <TextField
+              label={t('sso.entryPoint')}
+              value={entryPoint}
+              onChange={setEntryPoint}
+              isRequired
+              description={t('sso.entryPointHint')}
+            />
+            <TextField
+              label={t('sso.idpIssuer')}
+              value={idpIssuer}
+              onChange={setIdpIssuer}
+              isRequired
+              description={t('sso.idpIssuerHint')}
+            />
+            <TextField
+              label={t('sso.idpCert')}
+              multiline
+              value={idpCert}
+              onChange={setIdpCert}
+              isRequired
+              description={t('sso.idpCertHint')}
+            />
+            <TextField
+              label={t('sso.spEntityId')}
+              value={spEntityId}
+              onChange={setSpEntityId}
+              isRequired
+              description={t('sso.spEntityIdHint')}
+            />
+          </>
+        )}
         <TextField
           label={t('sso.domains')}
           value={domains}
           onChange={setDomains}
           description={t('sso.domainsHint')}
         />
-        <FormRow label="">
-          <Checkbox isSelected={emailTrusted} onChange={setEmailTrusted}>
-            {t('sso.emailTrusted')}
-          </Checkbox>
-        </FormRow>
+        {kind === 'oidc' ? (
+          <FormRow label="">
+            <Checkbox isSelected={emailTrusted} onChange={setEmailTrusted}>
+              {t('sso.emailTrusted')}
+            </Checkbox>
+          </FormRow>
+        ) : null}
         <FormRow label="">
           <Checkbox isSelected={autoCreate} onChange={setAutoCreate}>
             {t('sso.autoCreate')}
@@ -221,7 +281,8 @@ export function SsoPage() {
           empty={t('sso.empty')}
           columns={[
             { id: 'name', label: t('sso.name'), isRowHeader: true, render: (p) => p.name },
-            { id: 'issuer', label: t('sso.issuer'), render: (p) => cfg(p, 'issuer') },
+            { id: 'kind', label: t('sso.kind'), render: (p) => t(`sso.kinds.${p.kind}`) },
+            { id: 'issuer', label: t('sso.issuer'), render: (p) => cfg(p, 'issuer') || cfg(p, 'entryPoint') },
             {
               id: 'create',
               label: t('sso.autoCreate'),

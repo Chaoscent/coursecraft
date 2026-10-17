@@ -32,7 +32,8 @@ issue once the repository is published.
 ## Single sign-on
 
 - [ ] Map provider groups or claims to Coursecraft groups and roles.
-- [ ] Single logout and back-channel logout.
+- [ ] Single logout and back-channel logout; encrypted SAML assertions.
+- [ ] E2E run against a real provider container (Keycloak) in a nightly job.
 - [ ] Per-provider button icons.
 
 ## Learning paths

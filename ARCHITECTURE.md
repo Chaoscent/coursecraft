@@ -594,6 +594,10 @@ TOTP secrets, OIDC client secrets, and SMTP passwords. The API returns only
   and default role), `sso_states` (pending logins), `user_identities`
   (provider + subject → user). Public endpoints list enabled providers and
   start the login; the callback is a GET on `/api/auth/sso/callback`.
+- SAML 2.0 through `@node-saml/node-saml` (SP-initiated, signed assertions
+  only); the test provider in `tests/support/saml-idp.ts` signs responses with a
+  throwaway key (needs `openssl`). Service provider metadata is served per
+  provider.
 - OpenID Connect through `openid-client` (discovery cached per provider
   version). The fake provider in `tests/support/oidc-idp.ts` drives the
   integration tests on loopback.
