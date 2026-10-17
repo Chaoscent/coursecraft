@@ -131,7 +131,7 @@ export const courseSchema = z
     }
     if (course.settings.completion.type === 'quizPassed') {
       const target = course.nodes[course.settings.completion.quizId];
-      if (target?.kind !== 'quiz') {
+      if (target?.kind !== 'quiz' && target?.kind !== 'dialog') {
         ctx.addIssue({
           code: 'custom',
           message: 'Completion quiz not found',

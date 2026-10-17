@@ -60,15 +60,28 @@ export async function probe(file: string): Promise<Probe> {
 
 export class UnsupportedMediaError extends Error {}
 
+export type Trim = MediaJob['trim'];
+
+/** Input seeking before `-i` (fast) and a duration limit after it. */
+export function trimArgs(trim: Trim): { before: string[]; after: string[] } {
+  if (!trim) return { before: [], after: [] };
+  const seconds = (ms: number) => (ms / 1000).toFixed(3);
+  return {
+    before: trim.startMs > 0 ? ['-ss', seconds(trim.startMs)] : [],
+    after: trim.endMs !== undefined ? ['-t', seconds(trim.endMs - trim.startMs)] : [],
+  };
+}
+
 /** Audio: AAC in MP4 (plays everywhere), optional EBU R128 loudness normalisation. */
-export function audioArgs(input: string, output: string, normalize: boolean): string[] {
+export function audioArgs(input: string, output: string, normalize: boolean, trim?: Trim): string[] {
+  const cut = trimArgs(trim);
   return [
     ...INPUT_GUARD,
     '-y',
+    ...cut.before,
     '-i',
     input,
-    '-t',
-    String(MAX_DURATION_S),
+    ...(cut.after.length ? cut.after : ['-t', String(MAX_DURATION_S)]),
     '-map',
     '0:a:0',
     '-vn',
@@ -87,7 +100,8 @@ export function audioArgs(input: string, output: string, normalize: boolean): st
   ];
 }
 
-export function videoArgs(input: string, output: string, format: 'mp4' | 'webm'): string[] {
+export function videoArgs(input: string, output: string, format: 'mp4' | 'webm', trim?: Trim): string[] {
+  const cut = trimArgs(trim);
   const codec =
     format === 'mp4'
       ? [
@@ -127,8 +141,10 @@ export function videoArgs(input: string, output: string, format: 'mp4' | 'webm')
   return [
     ...INPUT_GUARD,
     '-y',
+    ...cut.before,
     '-i',
     input,
+    ...(cut.after.length ? cut.after : ['-t', String(MAX_DURATION_S)]),
     '-map',
     '0:v:0',
     '-map',
@@ -154,26 +170,40 @@ export async function convertMedia(
   if (info.durationMs > MAX_DURATION_S * 1000) throw new UnsupportedMediaError('duration');
   // Browser recordings (WebM) often declare no duration; the output is capped instead.
   const seconds = info.durationMs > 0 ? Math.ceil(info.durationMs / 1000) : MAX_DURATION_S / 10;
+  if (job.trim && info.durationMs > 0 && job.trim.startMs >= info.durationMs) {
+    throw new UnsupportedMediaError('trim outside the media');
+  }
   const out = (file: string) => join(dir, 'out', file);
   if (job.target === 'audio') {
     if (!info.hasAudio) throw new UnsupportedMediaError('no audio stream');
-    await run('ffmpeg', audioArgs(input, out(CONVERTER_OUTPUT.audio), job.normalize), limits(seconds));
+    await run(
+      'ffmpeg',
+      audioArgs(input, out(CONVERTER_OUTPUT.audio), job.normalize, job.trim),
+      limits(seconds),
+    );
     const result = await probe(out(CONVERTER_OUTPUT.audio));
     if (result.durationMs <= 0) throw new UnsupportedMediaError('empty');
     return { outputs: [CONVERTER_OUTPUT.audio], durationMs: result.durationMs };
   }
   if (!info.hasVideo) throw new UnsupportedMediaError('no video stream');
-  await run('ffmpeg', videoArgs(input, out(CONVERTER_OUTPUT.videoMp4), 'mp4'), limits(seconds));
-  await run('ffmpeg', videoArgs(input, out(CONVERTER_OUTPUT.videoWebm), 'webm'), limits(seconds * 2));
+  await run('ffmpeg', videoArgs(input, out(CONVERTER_OUTPUT.videoMp4), 'mp4', job.trim), limits(seconds));
+  await run(
+    'ffmpeg',
+    videoArgs(input, out(CONVERTER_OUTPUT.videoWebm), 'webm', job.trim),
+    limits(seconds * 2),
+  );
+  // Poster from the converted file, so it matches the trimmed start.
+  const converted = await probe(out(CONVERTER_OUTPUT.videoMp4));
+  if (converted.durationMs <= 0) throw new UnsupportedMediaError('empty');
   await run(
     'ffmpeg',
     [
       ...INPUT_GUARD,
       '-y',
       '-ss',
-      String(Math.min(1, seconds / 2)),
+      String(Math.min(1, converted.durationMs / 2000)),
       '-i',
-      input,
+      out(CONVERTER_OUTPUT.videoMp4),
       '-frames:v',
       '1',
       out(CONVERTER_OUTPUT.poster),
@@ -182,6 +212,6 @@ export async function convertMedia(
   );
   return {
     outputs: [CONVERTER_OUTPUT.videoMp4, CONVERTER_OUTPUT.videoWebm, CONVERTER_OUTPUT.poster],
-    durationMs: info.durationMs,
+    durationMs: converted.durationMs,
   };
 }

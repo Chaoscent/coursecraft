@@ -3,6 +3,48 @@
 Short summary per phase: what was built, how it was verified, and what is
 deliberately left open. Newest first.
 
+## Phase 6 — Interactions, dialog simulation, screen recording
+
+**Built**
+
+- Player: seven interaction layouts (accordion, tabs with WAI-ARIA keyboard
+  model, steps, cycle, timeline, searchable glossary, labeled graphic with
+  marker buttons) with optional "open every entry" gating, and a branching
+  dialog simulation (characters with moods, speech with optional audio,
+  responses with points and feedback, outcomes by score, retry). Dialog
+  choices are tracked as interactions; the score is reported scaled to the
+  best reachable path, and a dialog can be the completion target.
+- Editor: form editors for interactions (layout switch keeps the entries)
+  and dialogs (scene list with start and unreachable markers, characters
+  with mood portraits, outcomes, follow-up scenes from a response), new
+  insert buttons in the slide list. Shared form controls moved out of the
+  quiz editor.
+- Screen recording in the browser (`getDisplayMedia` + `MediaRecorder`,
+  optional microphone and tab/system audio mixed into one track), preview
+  and trimming; video files of any format go through the same dialog. The
+  converter cuts the trim range and produces MP4, WebM and a poster frame;
+  the app ingests all three after validation and the player offers the WebM
+  before the MP4 (`webmSources`).
+
+**Verified**
+
+- Unit tests: dialog scoring (loops, clamping, outcomes), interaction
+  renderers (gating, roving tabindex, steps/cycle, glossary filter, markers),
+  editor models (variant conversion keeps entries and stays valid, scene and
+  character removal, reachability), converter trim arguments.
+- Integration: trim range reaches the job and is validated; MP4, WebM and
+  poster are ingested and served; a fake WebM alternative is dropped.
+- E2E in Chromium and Firefox: an author builds tabs and a branching dialog
+  and plays both in the preview (gating, keyboard, outcome, retry); a screen
+  recording (canvas stand-in for the shared screen) is trimmed, converted by
+  the real converter and inserted with poster and both sources.
+
+**Open / later**
+
+- Graph view for dialog scenes (the format keeps editor positions), rich
+  text (instead of plain paragraphs) in interaction entries, caption editor
+  for recordings, webcam overlay and cursor highlighting (docs/todo.md).
+
 ## Phase 5 — LMS core
 
 **Built**

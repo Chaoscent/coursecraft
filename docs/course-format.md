@@ -90,8 +90,25 @@ the player moves on when the clock reaches `durationMs`.
 the slide title as its text alternative.
 
 Images and shapes carry `altText` per language or `decorative: true`.
-Videos have per-language captions (WebVTT assets). Hotspots have an
-accessible `label` and are keyboard-focusable in the player.
+Videos have per-language captions (WebVTT assets) and may carry
+`webmSources`, a WebM alternative per language that the player offers before
+the MP4 `sources`. Hotspots have an accessible `label` and are
+keyboard-focusable in the player.
+
+### Interactions and dialogs
+
+An `interaction` node shows its entries in one of seven layouts. With
+`requireAllViewed: true` the learner must open every entry (panel, tab,
+step, event or marker) before the node counts as viewed; the glossary never
+requires this. Labeled-graphic markers use relative positions (0–1).
+
+A `dialog` node starts at `startSceneId`. Each response adds its `points`
+and either leads to another scene or ends the conversation. At the end the
+outcome with the highest `minScore` not above the score applies (or the
+lowest outcome if none is reached). The player reports the score scaled to
+the best reachable path (cycles are not followed) and the outcome's
+`passed`, and records each choice as an interaction of type `dialog`. A
+dialog can be the target of the `quizPassed` completion rule.
 
 ### Question types
 

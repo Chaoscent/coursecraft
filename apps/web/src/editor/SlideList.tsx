@@ -5,7 +5,17 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ToolButton } from '../components/Button.js';
 import { Icon } from '../components/Icon.js';
-import { addChapter, addSlide, deleteSlide, duplicateSlide, insertNode, moveSlide } from './actions.js';
+import {
+  addChapter,
+  addSlide,
+  deleteSlide,
+  duplicateSlide,
+  insertNode,
+  moveSlide,
+  uploadFile,
+} from './actions.js';
+import { newDialog } from './dialogModel.js';
+import { newInteraction } from './interactionModel.js';
 import { newQuestion, newQuiz, newSurvey } from './quizModel.js';
 import { useRenderContext } from './Canvas.js';
 import { useEditor, useEditorStore } from './context.js';
@@ -81,6 +91,49 @@ export function SlideList() {
           aria-label={t('quiz.newSurvey')}
           isDisabled={readOnly}
           onPress={() => insertNode(store, newSurvey(lang, t('quiz.newSurveyTitle'), t('quiz.newPrompt')))}
+        />
+        <ToolButton
+          icon="layout-grid"
+          aria-label={t('interaction.new')}
+          isDisabled={readOnly}
+          onPress={() =>
+            insertNode(
+              store,
+              newInteraction(lang, {
+                title: t('interaction.newTitle'),
+                entry: t('interaction.entry'),
+                body: t('interaction.newBody'),
+              }),
+            )
+          }
+        />
+        <ToolButton
+          icon="message-circle"
+          aria-label={t('dialog.new')}
+          isDisabled={readOnly}
+          onPress={() =>
+            void uploadFile(store, 'image/png,image/jpeg,image/webp,image/svg+xml').then(
+              (sha) =>
+                sha &&
+                insertNode(
+                  store,
+                  newDialog(
+                    lang,
+                    {
+                      title: t('dialog.newTitle'),
+                      character: t('dialog.character'),
+                      altText: '',
+                      speech: t('dialog.newSpeech'),
+                      good: t('dialog.goodResponse'),
+                      bad: t('dialog.badResponse'),
+                      passed: t('dialog.passedTitle'),
+                      failed: t('dialog.failedTitle'),
+                    },
+                    sha,
+                  ),
+                ),
+            )
+          }
         />
         <ToolButton
           icon="copy"
@@ -165,7 +218,9 @@ export function SlideList() {
                                 ? 'list-checks'
                                 : node.kind === 'survey'
                                   ? 'clipboard-list'
-                                  : 'layout-grid'
+                                  : node.kind === 'dialog'
+                                    ? 'message-circle'
+                                    : 'layout-grid'
                             }
                             size="lg"
                           />

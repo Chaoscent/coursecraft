@@ -26,7 +26,7 @@ import {
   group,
   insertHotspot,
   insertImage,
-  insertMedia,
+  insertAudio,
   insertText,
   nudge,
   reorder,
@@ -37,14 +37,17 @@ import { Timeline } from './Timeline.js';
 import { EditorContext, useEditor, useEditorStore } from './context.js';
 import { ExportDialog, PreviewDialog, SettingsDialog, VersionsDialog } from './dialogs.js';
 import { Properties } from './Properties.js';
+import { DialogEditor } from './DialogEditor.js';
+import { InteractionEditor } from './InteractionEditor.js';
 import { QuizEditor, SurveyEditor } from './QuizEditor.js';
+import { VideoDialog } from './VideoDialog.js';
 import { Ribbon } from './Ribbon.js';
 import { SlideList } from './SlideList.js';
 import { createEditorStore, type EditorStore } from './store.js';
 import { startSync } from './sync.js';
 import styles from './Editor.module.css';
 
-type DialogKind = 'export' | 'versions' | 'settings' | 'preview' | 'shortcuts' | null;
+type DialogKind = 'export' | 'versions' | 'settings' | 'preview' | 'shortcuts' | 'video' | 'screen' | null;
 
 interface MenuEntry {
   id: string;
@@ -82,11 +85,13 @@ function TopMenu({ label, items }: { label: string; items: (MenuEntry | 'separat
   );
 }
 
-/** Canvas for slides, form editors for quizzes and surveys. */
+/** Canvas for slides, form editors for quizzes, surveys, interactions and dialogs. */
 function Center() {
   const node = useEditor((s) => (s.nodeId ? s.course.nodes[s.nodeId] : undefined));
   if (node?.kind === 'quiz') return <QuizEditor key={node.id} quiz={node} />;
   if (node?.kind === 'survey') return <SurveyEditor key={node.id} survey={node} />;
+  if (node?.kind === 'interaction') return <InteractionEditor key={node.id} node={node} />;
+  if (node?.kind === 'dialog') return <DialogEditor key={node.id} dialog={node} />;
   if (node?.kind !== 'slide') return <Canvas />;
   return (
     <PanelGroup orientation="vertical" disableCursor>
@@ -314,13 +319,19 @@ function EditorShell({ onReload }: { onReload: () => void }) {
               id: 'video',
               label: t('editor.insert.videoMenu'),
               disabled: readOnly,
-              run: () => void insertMedia(store, 'video'),
+              run: () => open('video'),
+            },
+            {
+              id: 'screen',
+              label: t('editor.insert.screenMenu'),
+              disabled: readOnly,
+              run: () => open('screen'),
             },
             {
               id: 'audio',
               label: t('editor.insert.audioMenu'),
               disabled: readOnly,
-              run: () => void insertMedia(store, 'audio'),
+              run: () => void insertAudio(store),
             },
             {
               id: 'hotspot',
@@ -346,7 +357,11 @@ function EditorShell({ onReload }: { onReload: () => void }) {
         <span className={styles.spacer} />
         <span className={styles.docTitle}>{title}</span>
       </nav>
-      <Ribbon onPreview={() => open('preview')} onExport={() => open('export')} />
+      <Ribbon
+        onPreview={() => open('preview')}
+        onExport={() => open('export')}
+        onVideo={(mode) => open(mode === 'record' ? 'screen' : 'video')}
+      />
       <div className={styles.bannerSlot}>
         {lockHolder !== null || save.kind === 'conflict' || readOnly ? (
           <div className={styles.banner}>
@@ -385,6 +400,9 @@ function EditorShell({ onReload }: { onReload: () => void }) {
       ) : null}
       {dialog === 'settings' ? <SettingsDialog onClose={() => setDialog(null)} /> : null}
       {dialog === 'preview' ? <PreviewDialog onClose={() => setDialog(null)} /> : null}
+      {dialog === 'video' || dialog === 'screen' ? (
+        <VideoDialog mode={dialog === 'screen' ? 'record' : 'file'} onClose={() => setDialog(null)} />
+      ) : null}
       <ShortcutHelp isOpen={dialog === 'shortcuts'} onClose={() => setDialog(null)} editor />
     </div>
   );

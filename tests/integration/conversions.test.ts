@@ -60,6 +60,24 @@ const M4A = Buffer.concat([
 
 const wav = () => sineWav(0.1);
 
+/** MP4 header (ftyp brand isom). */
+const MP4 = Buffer.concat([
+  Buffer.from([0, 0, 0, 0x18]),
+  Buffer.from('ftypisom', 'latin1'),
+  Buffer.from([0, 0, 2, 0]),
+  Buffer.from('isomiso2', 'latin1'),
+  Buffer.alloc(64),
+]);
+
+/** EBML header with DocType "webm". */
+const WEBM = Buffer.concat([
+  Buffer.from([0x1a, 0x45, 0xdf, 0xa3, 0x9f, 0x42, 0x86, 0x81, 0x01, 0x42, 0xf7, 0x81, 0x01]),
+  Buffer.from([0x42, 0xf2, 0x81, 0x04, 0x42, 0xf3, 0x81, 0x08, 0x42, 0x82, 0x84]),
+  Buffer.from('webm', 'latin1'),
+  Buffer.from([0x42, 0x87, 0x81, 0x04, 0x42, 0x85, 0x81, 0x02]),
+  Buffer.alloc(64),
+]);
+
 describe('PPTX import', () => {
   it('parses at once, queues rendering and creates the course with rendered slides', async () => {
     const id = await startImport();
@@ -220,6 +238,81 @@ describe('media conversion', () => {
     });
     const served = await t.request(author, 'GET', `/api/courses/${courseId}/assets/${s.asset.sha256}`);
     expect(served.statusCode).toBe(200);
+  });
+
+  it('passes the trim range to the converter and ingests MP4, WebM and poster', async () => {
+    const { id: courseId } = await openCourse(t, author);
+    const bad = await uploadTo(
+      t,
+      author,
+      `/api/courses/${courseId}/media?target=video&trimStartMs=5000&trimEndMs=4000`,
+      'clip.webm',
+      wav(),
+    );
+    expect(bad.statusCode).toBe(400);
+    const res = await uploadTo(
+      t,
+      author,
+      `/api/courses/${courseId}/media?target=video&normalize=false&trimStartMs=1500&trimEndMs=4000`,
+      'Bildschirmaufnahme.webm',
+      wav(),
+    );
+    expect(res.statusCode, res.body).toBe(200);
+    const id = res.json<{ conversionId: string }>().conversionId;
+    const job = sent().find((j) => j.queue === QUEUES.media && (j.data as { jobId: string }).jobId === id);
+    expect(job?.data).toEqual({
+      jobId: id,
+      target: 'video',
+      normalize: false,
+      trim: { startMs: 1500, endMs: 4000 },
+    });
+
+    writeFileSync(join(work, id, 'out', 'video.mp4'), MP4);
+    writeFileSync(join(work, id, 'out', 'video.webm'), WEBM);
+    writeFileSync(join(work, id, 'out', 'poster.png'), solidPng(16, 9, [0, 0, 255]));
+    await handleConvertDone(t.ctx, {
+      jobId: id,
+      queue: QUEUES.media,
+      ok: true,
+      outputs: ['video.mp4', 'video.webm', 'poster.png'],
+      durationMs: 2500,
+    });
+    const s = (await status(id)).json<{
+      status: string;
+      asset: { sha256: string; webm: { sha256: string } | null; poster: { sha256: string } | null };
+    }>();
+    expect(s).toMatchObject({
+      status: 'done',
+      asset: {
+        mime: 'video/mp4',
+        name: 'Bildschirmaufnahme.mp4',
+        durationMs: 2500,
+        webm: { mime: 'video/webm', name: 'Bildschirmaufnahme.webm' },
+        poster: { mime: 'image/png', name: 'Bildschirmaufnahme.png' },
+      },
+    });
+    for (const sha of [s.asset.sha256, s.asset.webm?.sha256, s.asset.poster?.sha256]) {
+      const served = await t.request(author, 'GET', `/api/courses/${courseId}/assets/${sha ?? ''}`);
+      expect(served.statusCode).toBe(200);
+    }
+  });
+
+  it('skips a WebM alternative that is not one', async () => {
+    const { id: courseId } = await openCourse(t, author);
+    const res = await uploadTo(t, author, `/api/courses/${courseId}/media?target=video`, 'v.webm', wav());
+    const id = res.json<{ conversionId: string }>().conversionId;
+    writeFileSync(join(work, id, 'out', 'video.mp4'), MP4);
+    writeFileSync(join(work, id, 'out', 'video.webm'), M4A);
+    await handleConvertDone(t.ctx, {
+      jobId: id,
+      queue: QUEUES.media,
+      ok: true,
+      outputs: ['video.mp4', 'video.webm'],
+    });
+    expect((await status(id)).json()).toMatchObject({
+      status: 'done',
+      asset: { mime: 'video/mp4', webm: null, poster: null },
+    });
   });
 
   it('marks failed and unanswered conversions, refuses unknown formats and foreign courses', async () => {

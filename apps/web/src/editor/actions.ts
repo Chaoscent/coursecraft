@@ -10,7 +10,6 @@ import {
   shapeElement,
   slideOf,
   textElement,
-  videoElement,
 } from './model.js';
 import type { EditorStore } from './store.js';
 import { chooseFile, imageSize, uploadAsset } from './upload.js';
@@ -73,17 +72,11 @@ export async function insertImage(store: EditorStore): Promise<void> {
   addElement(store, imageElement(result.asset.sha256, size, store.getState().course.settings.canvas));
 }
 
-export async function insertMedia(store: EditorStore, kind: 'video' | 'audio'): Promise<void> {
-  const result = await uploadInto(
-    store,
-    kind === 'video' ? 'video/mp4,video/webm' : 'audio/mpeg,audio/mp4,audio/ogg,audio/wav',
-  );
+/** Videos go through the video dialog (conversion, trimming); audio is inserted as is. */
+export async function insertAudio(store: EditorStore): Promise<void> {
+  const result = await uploadInto(store, 'audio/mpeg,audio/mp4,audio/ogg,audio/wav');
   if (!result) return;
-  const lang = store.getState().lang;
-  addElement(
-    store,
-    kind === 'video' ? videoElement(lang, result.asset.sha256) : audioElement(lang, result.asset.sha256),
-  );
+  addElement(store, audioElement(store.getState().lang, result.asset.sha256));
 }
 
 /** Uploads a file and returns its hash (replace image, captions, logo). */

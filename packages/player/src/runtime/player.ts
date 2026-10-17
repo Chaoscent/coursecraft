@@ -3,6 +3,8 @@ import type { Course, CourseNode, SlideNode } from '@lernwerk/course-model';
 import { localized, type RenderContext } from '../render/context.js';
 import { h } from '../render/dom.js';
 import { renderSlide, renderTextView, type RenderedSlide } from '../render/slide.js';
+import { renderDialog } from '../dialog/dialog.js';
+import { renderInteraction } from '../interactions/interaction.js';
 import { renderQuiz, renderSurvey } from '../quiz/quiz.js';
 import type { InteractionRecord, ResumeState, Tracker } from '../tracking/types.js';
 import { stringsFor, type Strings } from './strings.js';
@@ -191,7 +193,6 @@ export class Player {
         });
         this.#root.querySelector('.lw-bar')?.append(button);
       }
-      this.#renderOutline();
       this.#show();
     };
     const started = opts.tracker.start();
@@ -305,6 +306,14 @@ export class Player {
       this.#stage.replaceChildren(
         h('div', { class: 'lw-node-scroll' }, [renderSurvey(node, this.#nodeApi(), track)]),
       );
+    } else if (node.kind === 'interaction') {
+      this.#stage.replaceChildren(
+        h('div', { class: 'lw-node-scroll' }, [renderInteraction(node, this.#nodeApi())]),
+      );
+    } else if (node.kind === 'dialog') {
+      this.#stage.replaceChildren(
+        h('div', { class: 'lw-node-scroll' }, [renderDialog(node, this.#nodeApi(), track)]),
+      );
     } else {
       const custom = this.#opts.renderNode?.(node, this.#nodeApi());
       if (custom) this.#stage.replaceChildren(custom);
@@ -315,6 +324,8 @@ export class Player {
       }
     }
     document.title = localized(this.#ctx, node.title) ?? document.title;
+    // Nodes that are not viewed on entry (quizzes, interactions, dialogs) still move the current marker.
+    this.#renderOutline();
     this.#updateChrome();
   }
 

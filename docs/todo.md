@@ -30,6 +30,16 @@ issue once the repository is published.
 - [ ] Trainers limited to their own groups (today: one organisation, all
       learners visible to `reports.read`).
 
+## Interactions and media
+
+- [ ] Graph view for dialog scenes (positions are already stored).
+- [ ] Rich-text editing (bold, lists, links) in interaction entries and
+      dialog feedback; today plain paragraphs.
+- [ ] Caption editor for recordings and videos (today: upload a WebVTT file).
+- [ ] Webcam overlay and cursor highlighting in screen recordings.
+- [ ] Image hotspots by drag in the labeled-graphic editor (today: click to
+      place the selected marker).
+
 ## PPTX import
 
 - [ ] Check import and rendering quality against a corpus of real-world

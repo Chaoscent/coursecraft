@@ -22,6 +22,13 @@ export const importWarningSchema = z.object({
 });
 export type ImportWarning = z.infer<typeof importWarningSchema>;
 
+const convertedAssetSchema = z.object({
+  sha256: z.string(),
+  mime: z.string(),
+  size: z.number().int(),
+  name: z.string(),
+});
+
 export const conversionResponseSchema = z.object({
   id: uuidSchema,
   kind: z.enum(CONVERSION_KINDS),
@@ -32,13 +39,12 @@ export const conversionResponseSchema = z.object({
   courseId: z.uuid().nullable(),
   warnings: z.array(importWarningSchema),
   /** media: the converted file, attached to the course. */
-  asset: z
-    .object({
-      sha256: z.string(),
-      mime: z.string(),
-      size: z.number().int(),
-      name: z.string(),
+  asset: convertedAssetSchema
+    .extend({
       durationMs: z.number().int().nullable(),
+      /** video: WebM alternative and poster frame, when the converter produced them. */
+      webm: convertedAssetSchema.nullable(),
+      poster: convertedAssetSchema.nullable(),
     })
     .nullable(),
 });
@@ -52,4 +58,16 @@ export const mediaUploadQuerySchema = z.object({
     .enum(['true', 'false'])
     .default('true')
     .transform((v) => v === 'true'),
+  trimStartMs: z.coerce
+    .number()
+    .int()
+    .min(0)
+    .max(24 * 3_600_000)
+    .optional(),
+  trimEndMs: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(24 * 3_600_000)
+    .optional(),
 });

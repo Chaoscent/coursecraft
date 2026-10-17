@@ -15,7 +15,7 @@ import {
   group,
   insertHotspot,
   insertImage,
-  insertMedia,
+  insertAudio,
   insertShape,
   insertText,
   reorder,
@@ -176,7 +176,15 @@ function TextTools() {
   );
 }
 
-export function Ribbon({ onPreview, onExport }: { onPreview: () => void; onExport: () => void }) {
+export function Ribbon({
+  onPreview,
+  onExport,
+  onVideo,
+}: {
+  onPreview: () => void;
+  onExport: () => void;
+  onVideo: (mode: 'record' | 'file') => void;
+}) {
   const { t } = useTranslation();
   const store = useEditorStore();
   const readOnly = useEditor((s) => s.readOnly);
@@ -376,13 +384,16 @@ export function Ribbon({ onPreview, onExport }: { onPreview: () => void; onExpor
             </ToolButton>
           </Stack>
           <Stack>
-            <ToolButton icon="video" isDisabled={readOnly} onPress={() => void insertMedia(store, 'video')}>
+            <ToolButton icon="video" isDisabled={readOnly} onPress={() => onVideo('file')}>
               {t('editor.insert.video')}
             </ToolButton>
-            <ToolButton icon="music" isDisabled={readOnly} onPress={() => void insertMedia(store, 'audio')}>
+            <ToolButton icon="music" isDisabled={readOnly} onPress={() => void insertAudio(store)}>
               {t('editor.insert.audio')}
             </ToolButton>
           </Stack>
+          <ToolButton icon="monitor-up" large isDisabled={readOnly} onPress={() => onVideo('record')}>
+            {t('editor.insert.screen')}
+          </ToolButton>
         </Group>
         {view}
       </TabPanel>

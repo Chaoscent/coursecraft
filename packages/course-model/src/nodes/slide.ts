@@ -134,6 +134,8 @@ const videoElementSchema = z
     ...mediaOptions,
     type: z.literal('video'),
     sources: localizedAssetSchema,
+    /** Optional WebM (VP9/Opus) alternative per language; offered before the MP4 source. */
+    webmSources: localizedAssetSchema.optional(),
     poster: assetRefSchema.optional(),
     /** WebVTT captions per language. */
     captions: localizedAssetSchema.default({}),

@@ -270,13 +270,13 @@ MIME type, and `Content-Disposition` for anything not displayed inline.
 
 ### 5.7 Jobs
 
-| Queue                                                                 | Runs in   | Notes                                                                                       |
-| --------------------------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------- |
-| `convert.pptx-render`                                                 | converter | soffice → PDF (hidden slides included) → pdf.js/Skia → PNG per slide                        |
-| `convert.media`                                                       | converter | ffprobe, then AAC/M4A for audio (optional EBU R128 loudness), MP4 + WebM + poster for video |
-| `convert.done`                                                        | app       | Converter → app: result message; the app validates and ingests outputs                      |
-| `export.build`, `package.import`                                      | app       | ZIP read/write with limits                                                                  |
-| `mail.send`, `reminders.cron`, `retention.cron`, `certificate.render` | app       |                                                                                             |
+| Queue                                                                 | Runs in   | Notes                                                                                                       |
+| --------------------------------------------------------------------- | --------- | ----------------------------------------------------------------------------------------------------------- |
+| `convert.pptx-render`                                                 | converter | soffice → PDF (hidden slides included) → pdf.js/Skia → PNG per slide                                        |
+| `convert.media`                                                       | converter | ffprobe, optional trim range, AAC/M4A for audio (optional EBU R128 loudness), MP4 + WebM + poster for video |
+| `convert.done`                                                        | app       | Converter → app: result message; the app validates and ingests outputs                                      |
+| `export.build`, `package.import`                                      | app       | ZIP read/write with limits                                                                                  |
+| `mail.send`, `reminders.cron`, `retention.cron`, `certificate.render` | app       |                                                                                                             |
 
 Converter: concurrency 1 by default; per-job timeout; each child process runs
 under `prlimit` (CPU seconds, file size, open files, no core dumps) with a
@@ -420,6 +420,10 @@ TOTP secrets, OIDC client secrets, and SMTP passwords. The API returns only
 - Areas: **Author** (courses, editor, quiz editor, dialog editor, recorder),
   **Manage** (users, groups, library, assignments, paths, reports, settings,
   audit log), **Learn** (portal, player host, certificates).
+- Non-slide nodes (quizzes, surveys, interactions, dialogs) have form
+  editors in place of the canvas. Videos are inserted through one dialog:
+  screen recording in the browser or a file, both with a trim range; all
+  but plain MP4 files are converted (MP4 + WebM + poster).
 - Editor canvas: the player's renderer plus an editing overlay (selection,
   handles, guides, grid). Commands produce Immer patches; undo and redo apply
   inverse patches.
@@ -443,10 +447,15 @@ TOTP secrets, OIDC client secrets, and SMTP passwords. The API returns only
 
 ## 9. Player (`packages/player`)
 
-- Vanilla TypeScript, target ≤ 80 KB gzip without course data (Phase 3: about 19 KB with quizzes and all tracking adapters).
+- Vanilla TypeScript, target ≤ 80 KB gzip without course data (Phase 6: about 22 KB with quizzes, interactions, dialogs and all tracking adapters).
   The player does not bundle a schema library; exports contain courses that
   the server validated and migrated.
 - Tracking adapters: `none` (HTML5), `scorm12`, `scorm2004`, `xapi`, `cmi5`.
+- Node renderers: slides, quizzes, surveys, interactions (seven layouts) and
+  dialog simulations. Every renderer builds DOM nodes directly and reports
+  through the same node API (viewed, allow next, score). Dialog choices are
+  tracked as interactions of type `dialog` (SCORM `performance`/`other`,
+  xAPI `other`).
 - Works from `file://`: classic IIFE bundle and course data in `data/course.js`
   assigning a global (no ES modules, no `fetch`).
 - No network access except what the standard requires (LMS JS API for SCORM,

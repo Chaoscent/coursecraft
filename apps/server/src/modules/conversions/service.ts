@@ -39,6 +39,8 @@ const MAX_PAGE_BYTES = 30 * 1024 * 1024;
 interface MediaResult {
   asset: StoredAsset;
   durationMs: number | null;
+  webm?: StoredAsset | null;
+  poster?: StoredAsset | null;
 }
 
 export async function getConversion(
@@ -63,7 +65,14 @@ export async function getConversion(
     createdAt: row.created_at.toISOString(),
     courseId: row.kind === 'pptx-import' ? row.course_id : null,
     warnings: result.warnings ?? [],
-    asset: result.media ? { ...result.media.asset, durationMs: result.media.durationMs } : null,
+    asset: result.media
+      ? {
+          ...result.media.asset,
+          durationMs: result.media.durationMs,
+          webm: result.media.webm ?? null,
+          poster: result.media.poster ?? null,
+        }
+      : null,
   };
 }
 
@@ -181,8 +190,16 @@ export async function startMediaConversion(
   courseId: string,
   bytes: Buffer,
   name: string,
-  options: { target: 'audio' | 'video'; normalize: boolean },
+  options: {
+    target: 'audio' | 'video';
+    normalize: boolean;
+    trimStartMs?: number | undefined;
+    trimEndMs?: number | undefined;
+  },
 ): Promise<string> {
+  const { trimStartMs: startMs = 0, trimEndMs: endMs } = options;
+  if (endMs !== undefined && endMs <= startMs)
+    throw new AppError('bad_request', 'Trim end must be after start');
   const type = await fileTypeFromBuffer(bytes);
   const ext = type ? MEDIA_INPUT[type.mime] : undefined;
   if (!ext) throw new AppError('unsupported_media_type', 'Unsupported media format');
@@ -202,7 +219,14 @@ export async function startMediaConversion(
     ctx.work.prepare(id, `source.${ext}`, bytes);
     await ctx.jobs.send(
       QUEUES.media,
-      { jobId: id, target: options.target, normalize: options.normalize },
+      {
+        jobId: id,
+        target: options.target,
+        normalize: options.normalize,
+        ...(startMs > 0 || endMs !== undefined
+          ? { trim: { startMs, ...(endMs !== undefined ? { endMs } : {}) } }
+          : {}),
+      },
       { expireInSeconds: ctx.config.conversionTimeoutMinutes * 60 },
     );
   } catch (error) {
@@ -264,8 +288,30 @@ async function ingestMedia(
   );
   const expected = target === 'audio' ? 'audio/mp4' : 'video/mp4';
   if (asset.mime !== expected) return null;
-  await attachAssets(ctx.db, row.course_id, [asset]);
-  return asset;
+  const extras = target === 'video' ? await ingestVideoExtras(ctx, job, base, row.created_by) : {};
+  await attachAssets(ctx.db, row.course_id, [asset, ...Object.values(extras)]);
+  return { asset, webm: extras.webm ?? null, poster: extras.poster ?? null };
+}
+
+/** Optional WebM alternative and poster frame; skipped when missing or not what they claim to be. */
+async function ingestVideoExtras(ctx: AppContext, job: ConvertDoneJob, base: string, userId: string) {
+  const extras: { webm?: StoredAsset; poster?: StoredAsset } = {};
+  const files = [
+    ['webm', CONVERTER_OUTPUT.videoWebm, 'video/webm', `${base}.webm`, ctx.config.uploadMaxMb * 1024 * 1024],
+    ['poster', CONVERTER_OUTPUT.poster, 'image/png', `${base}.png`, MAX_PAGE_BYTES],
+  ] as const;
+  for (const [key, file, mime, name, limit] of files) {
+    if (!job.outputs.includes(file)) continue;
+    const bytes = ctx.work.readOutput(job.jobId, file, limit);
+    if (!bytes) continue;
+    try {
+      const stored = await storeAsset(ctx.db, ctx.assets, bytes, name, userId);
+      if (stored.mime === mime) extras[key] = stored;
+    } catch {
+      // Not a valid file: the video works without it.
+    }
+  }
+  return extras;
 }
 
 /** Handles the converter's completion message. Outputs are validated before use. */
@@ -285,15 +331,15 @@ export async function handleConvertDone(ctx: AppContext, job: ConvertDoneJob): P
       return;
     }
     if (!job.ok) return await fail(ctx, job.jobId, job.error ?? 'failed');
-    const asset = await ingestMedia(ctx, job, row);
-    if (!asset) return await fail(ctx, job.jobId, 'failed');
+    const media = await ingestMedia(ctx, job, row);
+    if (!media) return await fail(ctx, job.jobId, 'failed');
     await ctx.db
       .updateTable('conversions')
       .set({
         status: 'done',
         finished_at: new Date(),
         payload: JSON.stringify({}),
-        result: JSON.stringify({ media: { asset, durationMs: job.durationMs ?? null } }),
+        result: JSON.stringify({ media: { ...media, durationMs: job.durationMs ?? null } }),
       })
       .where('id', '=', job.jobId)
       .where('status', '=', 'pending')

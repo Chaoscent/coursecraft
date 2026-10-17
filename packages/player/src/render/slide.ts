@@ -137,9 +137,11 @@ function mediaSources(
   sources: Record<string, { $asset: string }>,
   captions: Record<string, { $asset: string }>,
   ctx: RenderContext,
+  alternatives?: Record<string, { $asset: string }>,
 ): void {
-  const source = localized(ctx, sources);
-  if (source) {
+  // The browser plays the first source it supports, so the alternative goes first.
+  for (const source of [localized(ctx, alternatives), localized(ctx, sources)]) {
+    if (!source) continue;
     const mime = ctx.assetMime(source.$asset);
     media.append(
       h('source', { attrs: { src: ctx.assetUrl(source.$asset), ...(mime ? { type: mime } : {}) } }),
@@ -218,7 +220,7 @@ function renderElement(
       if (el.loop) video.loop = true;
       if (el.poster) video.poster = ctx.assetUrl(el.poster.$asset);
       if (el.autoplay && !options.static) video.dataset['autoplay'] = 'true';
-      mediaSources(video, el.sources, el.captions, ctx);
+      mediaSources(video, el.sources, el.captions, ctx, el.webmSources);
       box.append(video);
       out.media.set(el.id, video);
       break;
@@ -337,7 +339,8 @@ export function renderTextView(slide: SlideNode, ctx: RenderContext): HTMLElemen
           const media = h(el.type, {
             attrs: { controls: '', preload: 'metadata', 'aria-label': localized(ctx, el.title) ?? '' },
           });
-          mediaSources(media, el.sources, el.type === 'video' ? el.captions : {}, ctx);
+          if (el.type === 'video') mediaSources(media, el.sources, el.captions, ctx, el.webmSources);
+          else mediaSources(media, el.sources, {}, ctx);
           article.append(media);
           break;
         }

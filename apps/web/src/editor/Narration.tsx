@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { SlideNode } from '@lernwerk/course-model';
-import { assetSchema, conversionResponseSchema, startConversionResponseSchema } from '@lernwerk/shared';
+import { assetSchema } from '@lernwerk/shared';
 import type { Draft } from 'immer';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/client.js';
 import { Button } from '../components/Button.js';
 import { Checkbox } from '../components/Field.js';
-import { errorMessage } from '../lib/errors.js';
 import { useEditor, useEditorStore } from './context.js';
+import { convertMedia, describeMediaError as describe, MediaError } from './media.js';
 import { Row, Section } from './PropertyControls.js';
 import type { EditorStore } from './store.js';
 import { assetUrl, chooseFile } from './upload.js';
@@ -24,11 +24,6 @@ const DIRECT_AUDIO = new Set([
   'audio/x-wav',
 ]);
 const RECORDING_TYPES = ['audio/webm;codecs=opus', 'audio/ogg;codecs=opus', 'audio/mp4'];
-const POLL_MS = 1000;
-
-/** Error whose message is already translated for the author. */
-class NarrationError extends Error {}
-const describe = (e: unknown) => (e instanceof NarrationError ? e.message : errorMessage(e));
 
 type Asset = { sha256: string; mime: string; size: number; name: string };
 
@@ -68,21 +63,8 @@ export function audioDuration(url: string): Promise<number | null> {
 }
 
 /** Sends a recording or an uncommon audio file to the converter and waits for the result. */
-async function convert(courseId: string, file: Blob, name: string, normalize: boolean, failed: string) {
-  const form = new FormData();
-  form.append('file', file, name);
-  const { conversionId } = await api(startConversionResponseSchema, `/api/courses/${courseId}/media`, {
-    method: 'POST',
-    form,
-    query: { target: 'audio', normalize: String(normalize) },
-  });
-  for (;;) {
-    await new Promise((r) => setTimeout(r, POLL_MS));
-    const c = await api(conversionResponseSchema, `/api/conversions/${conversionId}`);
-    if (c.status === 'failed') throw new NarrationError(failed);
-    if (c.status === 'done' && c.asset) return c.asset;
-  }
-}
+const convert = (courseId: string, file: Blob, name: string, normalize: boolean, failed: string) =>
+  convertMedia(courseId, file, name, { target: 'audio', normalize }, failed);
 
 function useRecorder(onDone: (blob: Blob, type: string) => void) {
   const recorder = useRef<MediaRecorder | null>(null);
@@ -183,7 +165,7 @@ export function NarrationSection({ slide }: { slide: SlideNode }) {
           const form = new FormData();
           form.append('file', file, file.name);
           const asset = await api(assetSchema, `/api/courses/${courseId}/assets`, { method: 'POST', form });
-          if (asset.mime !== 'text/vtt') throw new NarrationError(t('editor.narration.notVtt'));
+          if (asset.mime !== 'text/vtt') throw new MediaError(t('editor.narration.notVtt'));
           store.getState().change((draft) => {
             draft.assets[asset.sha256] = { mime: asset.mime, size: asset.size, name: asset.name };
             const s = draft.nodes[slide.id];

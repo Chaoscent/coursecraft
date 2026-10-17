@@ -99,11 +99,36 @@ export function imageElement(
   };
 }
 
-export function videoElement(lang: string, sha256: string): SlideElement {
+/** Video box: 800 px wide (or narrower to fit), centered, in the video's aspect ratio. */
+function videoFrame(size?: { width: number; height: number }, canvas = { width: 1280, height: 720 }) {
+  if (!size || size.width <= 0 || size.height <= 0) return { x: 240, y: 140, width: 800, height: 450 };
+  const scale = Math.min(800 / size.width, (canvas.height * 0.8) / size.height);
+  const width = Math.round(size.width * scale);
+  const height = Math.round(size.height * scale);
   return {
-    ...base('Video', { x: 240, y: 140, width: 800, height: 450 }),
+    x: Math.round((canvas.width - width) / 2),
+    y: Math.round((canvas.height - height) / 2),
+    width,
+    height,
+  };
+}
+
+export function videoElement(
+  lang: string,
+  sha256: string,
+  extra: {
+    webm?: string;
+    poster?: string;
+    size?: { width: number; height: number };
+    canvas?: { width: number; height: number };
+  } = {},
+): SlideElement {
+  return {
+    ...base('Video', videoFrame(extra.size, extra.canvas)),
     type: 'video',
     sources: { [lang]: { $asset: sha256 } },
+    ...(extra.webm ? { webmSources: { [lang]: { $asset: extra.webm } } } : {}),
+    ...(extra.poster ? { poster: { $asset: extra.poster } } : {}),
     captions: {},
     title: { [lang]: '' },
     autoplay: false,

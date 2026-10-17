@@ -34,6 +34,15 @@ export const mediaJobSchema = z
     target: mediaTargetSchema,
     /** Loudness normalisation (EBU R128) for narration. */
     normalize: z.boolean(),
+    /** Keeps only this part of the input (screen recordings, uploads). */
+    trim: z
+      .object({
+        startMs: z.number().int().min(0),
+        endMs: z.number().int().min(1).optional(),
+      })
+      .strict()
+      .refine((t) => t.endMs === undefined || t.endMs > t.startMs, 'endMs must be after startMs')
+      .optional(),
   })
   .strict();
 export type MediaJob = z.infer<typeof mediaJobSchema>;

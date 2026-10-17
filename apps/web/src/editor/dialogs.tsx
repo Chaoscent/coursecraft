@@ -218,10 +218,12 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
           options={[
             { id: 'viewed', label: t('editor.completionViewed') },
             ...Object.values(course.nodes)
-              .filter((n) => n.kind === 'quiz')
+              .filter((n) => n.kind === 'quiz' || n.kind === 'dialog')
               .map((n) => ({
                 id: `quiz:${n.id}`,
-                label: t('editor.completionQuiz', { title: n.title[lang] ?? n.id }),
+                label: t(n.kind === 'quiz' ? 'editor.completionQuiz' : 'editor.completionDialog', {
+                  title: n.title[lang] ?? n.id,
+                }),
               })),
           ]}
         />

@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { Question, QuizNode, SurveyNode } from '@lernwerk/course-model';
 import type { Draft } from 'immer';
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { Menu, MenuItem, MenuTrigger, Popover } from 'react-aria-components';
 import { useTranslation } from 'react-i18next';
 import { Button, ToolButton } from '../components/Button.js';
 import { Checkbox } from '../components/Field.js';
 import { uploadFile } from './actions.js';
+import { ListEditor, move, NumberInput, Row, TextInput } from './FormControls.js';
 import { useEditor, useEditorStore } from './context.js';
 import { newId } from './ids.js';
 import {
@@ -22,72 +23,6 @@ import { assetUrl } from './upload.js';
 import styles from './Editor.module.css';
 
 type DraftQuestion = Draft<Question>;
-
-function Row({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <>
-      <span className={styles.formLabel}>{label}</span>
-      <div className={styles.formControl}>{children}</div>
-    </>
-  );
-}
-
-function TextInput({
-  label,
-  value,
-  onChange,
-  multiline,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  multiline?: boolean;
-}) {
-  return multiline ? (
-    <textarea
-      className={styles.textarea}
-      aria-label={label}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-    />
-  ) : (
-    <input
-      className={styles.textInput}
-      aria-label={label}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-    />
-  );
-}
-
-function NumberInput({
-  label,
-  value,
-  onChange,
-  min,
-  max,
-  step = 1,
-}: {
-  label: string;
-  value: number | undefined;
-  onChange: (v: number | undefined) => void;
-  min?: number;
-  max?: number;
-  step?: number;
-}) {
-  return (
-    <input
-      className={styles.textInput}
-      aria-label={label}
-      type="number"
-      min={min}
-      max={max}
-      step={step}
-      value={value ?? ''}
-      onChange={(e) => onChange(e.target.value === '' ? undefined : Number(e.target.value))}
-    />
-  );
-}
 
 /** Applies a change to the quiz/survey node; keyed so typing forms one undo step. */
 function useNodeChange<T extends QuizNode | SurveyNode>(nodeId: string) {
@@ -126,71 +61,6 @@ function TypeMenu({ onPick, label }: { onPick: (type: QuestionType) => void; lab
       </Popover>
     </MenuTrigger>
   );
-}
-
-/** Rows editor for lists (choices, pairs, items) with add/remove/move. */
-function ListEditor<T>({
-  items,
-  render,
-  onAdd,
-  onRemove,
-  onMove,
-  addLabel,
-  min = 1,
-}: {
-  items: readonly T[];
-  render: (item: T, index: number) => ReactNode;
-  onAdd?: () => void;
-  onRemove: (index: number) => void;
-  onMove?: (from: number, to: number) => void;
-  addLabel: string;
-  min?: number;
-}) {
-  const { t } = useTranslation();
-  const readOnly = useEditor((s) => s.readOnly);
-  return (
-    <div className={styles.listEditor}>
-      {items.map((item, i) => (
-        <div className={styles.listRow} key={i}>
-          <div className={styles.listRowMain}>{render(item, i)}</div>
-          {onMove ? (
-            <>
-              <ToolButton
-                icon="chevron-up"
-                aria-label={t('editor.moveUp')}
-                isDisabled={readOnly || i === 0}
-                onPress={() => onMove(i, i - 1)}
-              />
-              <ToolButton
-                icon="chevron-down"
-                aria-label={t('editor.moveDown')}
-                isDisabled={readOnly || i === items.length - 1}
-                onPress={() => onMove(i, i + 1)}
-              />
-            </>
-          ) : null}
-          <ToolButton
-            icon="trash-2"
-            aria-label={t('editor.delete')}
-            isDisabled={readOnly || items.length <= min}
-            onPress={() => onRemove(i)}
-          />
-        </div>
-      ))}
-      {onAdd ? (
-        <div>
-          <Button icon="plus" isDisabled={readOnly} onPress={onAdd}>
-            {addLabel}
-          </Button>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function move<T>(list: T[], from: number, to: number) {
-  const [item] = list.splice(from, 1);
-  if (item !== undefined) list.splice(to, 0, item);
 }
 
 /** Keeps blank definitions in sync with the {{placeholders}} of all templates. */
