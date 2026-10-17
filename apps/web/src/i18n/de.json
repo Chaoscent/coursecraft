@@ -234,6 +234,7 @@
       "group.deleted": "Gruppe gelöscht",
       "group.members_added": "Mitglieder hinzugefügt",
       "group.members_removed": "Mitglieder entfernt",
+      "course.imported": "Kurs importiert",
       "course.created": "Kurs angelegt",
       "course.archived": "Kurs archiviert",
       "course.exported": "Kurs exportiert",
@@ -253,6 +254,7 @@
     "rate_limited": "Zu viele Versuche. Bitte warten Sie eine Minute.",
     "payload_too_large": "Die Datei ist zu groß.",
     "unsupported_media_type": "Dieses Format wird nicht unterstützt.",
+    "invalid_file": "Die Datei ist beschädigt oder kann nicht gelesen werden.",
     "internal": "Unerwarteter Fehler. Bitte erneut versuchen.",
     "network": "Server nicht erreichbar."
   },
@@ -483,7 +485,8 @@
         "background": "Hintergrund",
         "muted": "Gedämpft",
         "surface": "Fläche"
-      }
+      },
+      "hideAt": "Ausblenden bei"
     },
     "status": {
       "slide": "Folie {{index}} von {{total}}",
@@ -541,7 +544,44 @@
     },
     "completion": "Abschluss",
     "completionViewed": "Nach angesehenen Inhalten",
-    "completionQuiz": "Quiz bestanden: {{title}}"
+    "completionQuiz": "Quiz bestanden: {{title}}",
+    "narration": {
+      "title": "Sprechertext (Audio)",
+      "audio": "Audio",
+      "none": "Keine",
+      "preview": "Anhören",
+      "record": "Aufnehmen",
+      "stop": "Stopp ({{time}})",
+      "upload": "Datei …",
+      "remove": "Entfernen",
+      "normalize": "Lautstärke angleichen",
+      "captions": "Untertitel",
+      "uploadCaptions": "WebVTT …",
+      "processing": "Audio wird verarbeitet …",
+      "recordingName": "Aufnahme",
+      "notVtt": "Bitte eine WebVTT-Datei (.vtt) wählen.",
+      "captionsMissing": "Ohne Untertitel oder Transkript ist der Sprechertext für gehörlose Lernende nicht zugänglich.",
+      "failed": "Die Audiodatei konnte nicht verarbeitet werden.",
+      "micDenied": "Kein Zugriff auf das Mikrofon. Bitte im Browser erlauben."
+    },
+    "slideImage": {
+      "title": "Folienbild (Import)",
+      "use": "Folienbild statt Elementen anzeigen",
+      "explain": "Das Folienbild zeigt die Folie wie in der Präsentation. Texte darin sind für Screenreader nicht lesbar; der Folientitel dient als Alternativtext."
+    },
+    "timeline": {
+      "title": "Zeitleiste",
+      "play": "Abspielen",
+      "pause": "Anhalten",
+      "toStart": "Zum Anfang",
+      "zoomIn": "Zeitleiste vergrößern",
+      "zoomOut": "Zeitleiste verkleinern",
+      "narration": "Sprechertext",
+      "waveform": "Wellenform des Sprechertexts, {{time}}",
+      "start": "{{name}}: Einblenden",
+      "end": "{{name}}: Ausblenden",
+      "slideEnd": "Folienende"
+    }
   },
   "quiz": {
     "types": {
@@ -673,5 +713,24 @@
     "allowReview": "Antworten ansehen erlauben",
     "anonymous": "Anonym",
     "multipleAnswers": "Mehrere Antworten"
+  },
+  "import": {
+    "action": "PPTX importieren …",
+    "title": "Präsentation importieren",
+    "uploading": "Datei wird hochgeladen und gelesen …",
+    "rendering": "Folienbilder werden erzeugt …",
+    "skip": "Ohne Folienbilder fortfahren",
+    "open": "Kurs öffnen",
+    "done": "Import abgeschlossen.",
+    "warnings": "Hinweise zum Import",
+    "slide": "Folie {{n}}",
+    "warning": {
+      "unsupported_content": "Inhalte wie Tabellen, Diagramme oder Freiformen wurden nicht übernommen; die Folie zeigt das erzeugte Folienbild.",
+      "unsupported_image": "Ein Bild in einem nicht unterstützten Format wurde ausgelassen.",
+      "media_skipped": "Eingebettetes Video oder Audio wurde nicht übernommen.",
+      "render_failed": "Folienbilder konnten nicht erzeugt werden.",
+      "render_skipped": "Folienbilder wurden nicht erzeugt.",
+      "too_many_elements": "Die Folie hat mehr als 500 Elemente; der Rest wurde ausgelassen."
+    }
   }
 }

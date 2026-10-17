@@ -33,7 +33,18 @@ export default defineConfig({
             name: `app-${name}`,
             testMatch: /app\/.*\.spec\.ts/,
             dependencies: ['app-setup'],
-            use: { ...devices[device], baseURL: appUrl },
+            use: {
+              ...devices[device],
+              baseURL: appUrl,
+              // Synthetic microphone for the narration recording test.
+              ...(name === 'chromium'
+                ? {
+                    launchOptions: {
+                      args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'],
+                    },
+                  }
+                : {}),
+            },
           })),
         ]
       : []),

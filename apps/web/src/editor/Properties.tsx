@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { SlideElement, SlideNode } from '@lernwerk/course-model';
 import type { Draft } from 'immer';
-import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, ToggleTool, ToolButton } from '../components/Button.js';
 import { Checkbox } from '../components/Field.js';
@@ -11,138 +10,12 @@ import { useEditor, useEditorStore } from './context.js';
 import { newId } from './ids.js';
 import { slideOf } from './model.js';
 import { QuizSettings } from './QuizEditor.js';
+import { NarrationSection, SlideImageSection } from './Narration.js';
+import { ColorInput, NumberInput, Row, Section } from './PropertyControls.js';
 import styles from './Editor.module.css';
 
 type Element = SlideElement;
 type Action = Element['triggers'][number]['actions'][number];
-
-function Section({
-  title,
-  children,
-  open: initial = true,
-}: {
-  title: string;
-  children: ReactNode;
-  open?: boolean;
-}) {
-  const [open, setOpen] = useState(initial);
-  return (
-    <div className={styles.section}>
-      <button
-        type="button"
-        className={styles.sectionHeader}
-        aria-expanded={open}
-        onClick={() => setOpen(!open)}
-      >
-        <Icon name={open ? 'chevron-down' : 'chevron-right'} />
-        {title}
-      </button>
-      {open ? <div className={styles.form}>{children}</div> : null}
-    </div>
-  );
-}
-
-/** Numeric input that commits on blur/Enter; changes coalesce into one undo step. */
-function NumberInput({
-  label,
-  value,
-  onChange,
-  unit,
-  min,
-  max,
-  prefix,
-}: {
-  label: string;
-  value: number;
-  onChange: (v: number) => void;
-  unit?: string;
-  min?: number;
-  max?: number;
-  prefix?: string;
-}) {
-  const [text, setText] = useState(String(value));
-  const [focused, setFocused] = useState(false);
-  const shown = focused ? text : String(Math.round(value * 100) / 100);
-  const commit = () => {
-    const n = Number(text.replace(',', '.'));
-    if (Number.isFinite(n)) onChange(Math.min(max ?? Infinity, Math.max(min ?? -Infinity, n)));
-  };
-  return (
-    <span className={styles.numberField}>
-      {prefix ? (
-        <span className={styles.fieldPrefix} aria-hidden="true">
-          {prefix}
-        </span>
-      ) : null}
-      <input
-        aria-label={label}
-        inputMode="decimal"
-        value={shown}
-        onFocus={() => {
-          setText(String(value));
-          setFocused(true);
-        }}
-        onChange={(e) => setText(e.target.value)}
-        onBlur={() => {
-          commit();
-          setFocused(false);
-        }}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') commit();
-          if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-            e.preventDefault();
-            const step = (e.shiftKey ? 10 : 1) * (e.key === 'ArrowUp' ? 1 : -1);
-            onChange(Math.min(max ?? Infinity, Math.max(min ?? -Infinity, value + step)));
-          }
-        }}
-      />
-      {unit ? <span className={styles.fieldUnit}>{unit}</span> : null}
-    </span>
-  );
-}
-
-function Row({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <>
-      <span className={styles.formLabel}>{label}</span>
-      <div className={styles.formControl}>{children}</div>
-    </>
-  );
-}
-
-function ColorInput({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string | undefined;
-  onChange: (v: string | undefined) => void;
-}) {
-  const { t } = useTranslation();
-  const themes = ['theme:text', 'theme:accent', 'theme:background', 'theme:muted', 'theme:surface'];
-  const hex = value && value.startsWith('#') ? value.slice(0, 7) : '#ffffff';
-  return (
-    <span className={styles.colorField}>
-      <input type="color" aria-label={label} value={hex} onChange={(e) => onChange(e.target.value)} />
-      <select
-        aria-label={t('editor.props.themeColor')}
-        value={value && !value.startsWith('#') ? value : value ? 'custom' : 'none'}
-        onChange={(e) =>
-          onChange(e.target.value === 'none' ? undefined : e.target.value === 'custom' ? hex : e.target.value)
-        }
-      >
-        <option value="none">{t('editor.props.none')}</option>
-        <option value="custom">{value?.startsWith('#') ? value : t('editor.props.custom')}</option>
-        {themes.map((th) => (
-          <option key={th} value={th}>
-            {t(`editor.props.themes.${th.slice(6)}`)}
-          </option>
-        ))}
-      </select>
-    </span>
-  );
-}
 
 function useUpdateElement(id: string) {
   const store = useEditorStore();
@@ -552,6 +425,22 @@ function ElementProperties({ element }: { element: Element }) {
             onChange={(v) => update((el) => void (el.timing.startMs = Math.round(v * 1000)))}
           />
         </Row>
+        <Row label={t('editor.props.hideAt')}>
+          <NumberInput
+            label={t('editor.props.hideAt')}
+            unit="s"
+            min={0}
+            max={21600}
+            value={(element.timing.endMs ?? 0) / 1000}
+            onChange={(v) =>
+              update((el) => {
+                const ms = Math.round(v * 1000);
+                if (ms <= el.timing.startMs) delete el.timing.endMs;
+                else el.timing.endMs = ms;
+              })
+            }
+          />
+        </Row>
       </Section>
 
       <Triggers element={element} slide={slide} />
@@ -736,6 +625,8 @@ function SlideProperties({ slide }: { slide: SlideNode }) {
           />
         </Row>
       </Section>
+      <NarrationSection slide={slide} />
+      <SlideImageSection slide={slide} />
       <Section title={t('editor.props.notes')} open={false}>
         <Row label={t('editor.props.notes')}>
           <textarea

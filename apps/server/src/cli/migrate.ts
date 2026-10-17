@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { CONVERTER_QUEUES, PGBOSS_SCHEMA } from '@lernwerk/shared';
+import { PGBOSS_SCHEMA, QUEUES } from '@lernwerk/shared';
 import { PgBoss } from 'pg-boss';
 import { createDatabase } from '../db/connection.js';
 import { createMigrator } from '../db/migrations/index.js';
@@ -30,7 +30,7 @@ export async function migrate(connectionString: string): Promise<MigrateResult> 
     await boss.start();
     try {
       const existing = new Set((await boss.getQueues()).map((q) => q.name));
-      for (const name of CONVERTER_QUEUES) {
+      for (const name of Object.values(QUEUES)) {
         if (!existing.has(name)) await boss.createQueue(name, { partition: false });
       }
     } finally {

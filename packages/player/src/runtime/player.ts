@@ -352,17 +352,46 @@ export class Player {
     const frame = h('div', { class: 'lw-canvas-frame' }, [rendered.root]);
     let narration: HTMLAudioElement | null = null;
     const narrationSource = slide.narration ? localized(this.#ctx, slide.narration.sources) : undefined;
+    let captionBox: HTMLElement | null = null;
     if (narrationSource) {
       narration = h('audio', {
         class: 'lw-narration',
-        attrs: { controls: '', preload: 'auto', src: this.#opts.assetUrl(narrationSource.$asset) },
+        attrs: {
+          controls: '',
+          preload: 'auto',
+          src: this.#opts.assetUrl(narrationSource.$asset),
+          'aria-label': this.#strings.narration,
+        },
       });
+      const captions = slide.narration ? localized(this.#ctx, slide.narration.captions) : undefined;
+      if (captions) {
+        captionBox = h('div', { class: 'lw-captions', attrs: { 'aria-hidden': 'true' } });
+        const track = h('track', {
+          attrs: {
+            kind: 'captions',
+            src: this.#opts.assetUrl(captions.$asset),
+            srclang: this.#ctx.lang,
+            default: '',
+          },
+        });
+        narration.append(track);
+        const box = captionBox;
+        track.track.mode = 'hidden';
+        track.addEventListener('cuechange', () => {
+          const cues = Array.from(track.track.activeCues ?? []) as VTTCue[];
+          box.textContent = cues.map((c) => c.text.replace(/<[^>]*>/g, '')).join('\n');
+        });
+      }
     }
-    this.#stage.replaceChildren(frame, ...(narration ? [narration] : []));
+    this.#stage.replaceChildren(
+      frame,
+      ...(captionBox ? [captionBox] : []),
+      ...(narration ? [narration] : []),
+    );
 
     const fit = () => {
       const available = this.#stage.clientWidth - 16;
-      const availableHeight = this.#stage.clientHeight - (narration ? 56 : 16);
+      const availableHeight = this.#stage.clientHeight - (narration ? 56 : 16) - (captionBox ? 48 : 0);
       const scale = Math.max(0.1, Math.min(available / width, availableHeight / height));
       rendered.root.style.transform = `scale(${scale})`;
       frame.style.width = `${width * scale}px`;

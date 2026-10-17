@@ -16,10 +16,14 @@ import { Page, ToolbarSeparator, ToolbarSpacer } from '../components/Page.js';
 import { errorMessage } from '../lib/errors.js';
 import { formatDateTime } from '../lib/format.js';
 import { useApi } from '../lib/useApi.js';
+import { chooseFile } from '../editor/upload.js';
+import { ImportDialog, startImport } from './ImportDialog.js';
 import { ConfirmDialog } from './UsersPage.js';
 import styles from './AdminPages.module.css';
 
 const EMPTY: CourseSummary[] = [];
+const PPTX_TYPES =
+  '.pptx,.ppsx,.potx,application/vnd.openxmlformats-officedocument.presentationml.presentation';
 
 function NewCourseDialog({ onClose }: { onClose: () => void }) {
   const { t, i18n } = useTranslation();
@@ -71,7 +75,7 @@ function NewCourseDialog({ onClose }: { onClose: () => void }) {
 }
 
 export function CoursesPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { session } = useSession();
   const [q, setQ] = useState('');
@@ -80,6 +84,23 @@ export function CoursesPage() {
   const [selected, setSelected] = useState<Selection>(new Set());
   const [dialog, setDialog] = useState<null | 'new' | 'archive'>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [importing, setImporting] = useState<{
+    name: string;
+    id: string | null;
+    error: string | null;
+  } | null>(null);
+
+  const importPresentation = async () => {
+    const file = await chooseFile(PPTX_TYPES);
+    if (!file) return;
+    setImporting({ name: file.name, id: null, error: null });
+    try {
+      const id = await startImport(file, i18n.language === 'en' ? 'en' : 'de');
+      setImporting({ name: file.name, id, error: null });
+    } catch (e) {
+      setImporting({ name: file.name, id: null, error: errorMessage(e) });
+    }
+  };
 
   const fetcher = useCallback(
     () =>
@@ -110,6 +131,9 @@ export function CoursesPage() {
         <>
           <ToolButton icon="plus" onPress={() => setDialog('new')}>
             {t('courses.new')}
+          </ToolButton>
+          <ToolButton icon="file-up" onPress={() => void importPresentation()}>
+            {t('import.action')}
           </ToolButton>
           <ToolbarSeparator />
           <ToolButton
@@ -181,6 +205,17 @@ export function CoursesPage() {
           ]}
         />
       </div>
+      {importing ? (
+        <ImportDialog
+          fileName={importing.name}
+          conversionId={importing.id}
+          uploadError={importing.error}
+          onClose={() => {
+            setImporting(null);
+            reload();
+          }}
+        />
+      ) : null}
       {dialog === 'new' ? <NewCourseDialog onClose={() => setDialog(null)} /> : null}
       {dialog === 'archive' && current ? (
         <ConfirmDialog

@@ -61,6 +61,15 @@ const configSchema = z
     /** Directory with the built player (player.js, player.css, fonts/). */
     playerDir: z.string().optional(),
     uploadMaxMb: z.coerce.number().int().min(1).max(4096).default(500),
+    /** Shared with the converter: `<id>/in/` and `<id>/out/` per conversion. */
+    workDir: z.string().default('/work'),
+    /** Pending conversions older than this are given up (converter missing or stuck). */
+    conversionTimeoutMinutes: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(24 * 60)
+      .default(20),
   })
   .refine((c) => !c.contentUrl || c.contentUrl.origin !== c.publicUrl.origin, {
     message: 'Content origin must differ from the public origin (host or port)',
@@ -87,6 +96,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     loginRateLimit: env['LERNWERK_LOGIN_RATE_LIMIT'],
     playerDir: env['LERNWERK_PLAYER_DIR'] || undefined,
     uploadMaxMb: env['LERNWERK_UPLOAD_MAX_MB'],
+    workDir: env['LERNWERK_WORK_DIR'],
+    conversionTimeoutMinutes: env['LERNWERK_CONVERSION_TIMEOUT_MINUTES'],
   });
   if (!result.success) {
     // Paths only: values may contain secrets.

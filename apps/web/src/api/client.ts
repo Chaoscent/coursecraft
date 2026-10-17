@@ -93,6 +93,13 @@ export async function api<S extends z.ZodType>(
   return schema.parse(data);
 }
 
+/** Reads a same-origin file as bytes (e.g. audio for the waveform). */
+export async function fetchBytes(path: string): Promise<ArrayBuffer> {
+  const response = await fetch(path, { credentials: 'same-origin' });
+  if (!response.ok) throw new ApiError(response.status, 'internal', response.statusText);
+  return response.arrayBuffer();
+}
+
 /** Downloads a JSON response as a file (GDPR export). */
 export async function download(path: string, filename: string): Promise<void> {
   const response = await fetch(path, { credentials: 'same-origin' });

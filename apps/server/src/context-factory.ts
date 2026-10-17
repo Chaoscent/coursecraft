@@ -4,9 +4,12 @@ import type { AppConfig } from './config/env.js';
 import { SecretBox } from './crypto/secret-box.js';
 import { createDatabase } from './db/connection.js';
 import type { AppContext } from './http/context.js';
+import { RecordingQueue, type JobQueue } from './jobs/queue.js';
+import { WorkDir } from './jobs/work-dir.js';
+import { AssetStore } from './modules/assets/store.js';
 import { AuditService } from './modules/audit/service.js';
 
-export function createContext(config: AppConfig): AppContext {
+export function createContext(config: AppConfig, jobs: JobQueue = new RecordingQueue()): AppContext {
   const db = createDatabase(config.databaseUrl);
   return {
     config,
@@ -18,5 +21,9 @@ export function createContext(config: AppConfig): AppContext {
       config.ipPepper,
     ),
     audit: new AuditService(db),
+    assets: new AssetStore(config.dataDir),
+    jobs,
+    work: new WorkDir(config.workDir),
+    log: { info: () => undefined, warn: () => undefined, error: () => undefined },
   };
 }

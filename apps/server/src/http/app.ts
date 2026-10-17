@@ -16,7 +16,7 @@ import { registerAuth } from '../auth/plugin.js';
 import type { AppConfig } from '../config/env.js';
 import { accountRoutes } from '../modules/account/routes.js';
 import { auditRoutes } from '../modules/audit/routes.js';
-import { AssetStore } from '../modules/assets/store.js';
+import { conversionRoutes } from '../modules/conversions/routes.js';
 import { courseRoutes } from '../modules/courses/routes.js';
 import { authRoutes } from '../modules/auth/routes.js';
 import { groupRoutes } from '../modules/groups/routes.js';
@@ -149,7 +149,8 @@ export async function buildApp(deps: AppDeps): Promise<BuiltApp> {
     userRoutes(app, ctx);
     groupRoutes(app, ctx);
     auditRoutes(app, ctx);
-    courseRoutes(app, ctx, new AssetStore(config.dataDir), config.playerDir);
+    courseRoutes(app, ctx, ctx.assets, config.playerDir);
+    conversionRoutes(app, ctx);
     if (config.webDir) await registerWebApp(app, config.webDir, config);
   }
 

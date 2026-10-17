@@ -25,6 +25,10 @@ const ALLOWED = [
   // Placeholder text in the UI ("https://… or mailto:…").
   /^https:\/\/…$/,
   /^https?:\/\/www\.w3\.org\//,
+  // XML namespaces of presentation files (OOXML, Dublin Core); identifiers, never requested.
+  /^http:\/\/schemas\.openxmlformats\.org\//,
+  /^http:\/\/schemas\.microsoft\.com\/office\/powerpoint\/2010\/main$/,
+  /^http:\/\/purl\.org\/dc\/elements\/1\.1\/$/,
   /^https:\/\/lernwerk\.invalid\//,
   /^http:\/\/www\.imsglobal\.org\/xsd\//,
   /^http:\/\/www\.imsproject\.org\/xsd\//,

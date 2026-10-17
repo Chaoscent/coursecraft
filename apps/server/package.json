@@ -22,6 +22,7 @@
     "@lernwerk/shared": "workspace:*",
     "@napi-rs/image": "^1.15.0",
     "@node-rs/argon2": "^2.2.2",
+    "@xmldom/xmldom": "^0.9.12",
     "csv-parse": "^7.0.3",
     "dompurify": "^3.4.17",
     "fastify": "^5.12.7",

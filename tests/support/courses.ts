@@ -33,10 +33,21 @@ export async function getDoc(t: TestApp, actor: Actor, id: string): Promise<Cour
   return res.json<CourseDoc>();
 }
 
-export async function upload(
+export function upload(
   t: TestApp,
   actor: Actor,
   courseId: string,
+  name: string,
+  bytes: Buffer,
+): Promise<LightMyRequestResponse> {
+  return uploadTo(t, actor, `/api/courses/${courseId}/assets`, name, bytes);
+}
+
+/** Multipart upload of one file to any upload endpoint. */
+export async function uploadTo(
+  t: TestApp,
+  actor: Actor,
+  url: string,
   name: string,
   bytes: Buffer,
 ): Promise<LightMyRequestResponse> {
@@ -50,7 +61,7 @@ export async function upload(
   ]);
   return t.app.inject({
     method: 'POST',
-    url: `/api/courses/${courseId}/assets`,
+    url,
     headers: {
       origin: ORIGIN,
       'x-csrf-token': actor.csrf,

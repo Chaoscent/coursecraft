@@ -53,6 +53,7 @@ const STRINGS = {
     surveyThanks: 'Vielen Dank für Ihre Antworten.',
     timeUp: 'Die Zeit ist abgelaufen.',
     exit: 'Beenden',
+    narration: 'Sprechertext',
   },
   en: {
     outline: 'Contents',
@@ -106,6 +107,7 @@ const STRINGS = {
     surveyThanks: 'Thank you for your answers.',
     timeUp: 'Time is up.',
     exit: 'Exit',
+    narration: 'Narration',
   },
 } as const;
 

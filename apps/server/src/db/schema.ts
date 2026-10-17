@@ -161,6 +161,20 @@ export interface CourseVersionsTable {
   created_at: CreatedAt;
 }
 
+export interface ConversionsTable {
+  id: Generated<string>;
+  kind: 'pptx-import' | 'media';
+  status: ColumnType<'pending' | 'done' | 'failed', 'pending' | undefined, 'done' | 'failed'>;
+  created_by: string;
+  course_id: string | null;
+  input_name: string;
+  payload: JSONColumnType<Record<string, unknown>, string | undefined, string>;
+  result: JSONColumnType<Record<string, unknown>, string | undefined, string>;
+  error: string | null;
+  created_at: ColumnType<Date, Date | undefined, Date>;
+  finished_at: Date | null;
+}
+
 export interface Database {
   settings: SettingsTable;
   kysely_migration: KyselyMigrationTable;
@@ -179,4 +193,5 @@ export interface Database {
   course_assets: CourseAssetsTable;
   course_locks: CourseLocksTable;
   course_versions: CourseVersionsTable;
+  conversions: ConversionsTable;
 }

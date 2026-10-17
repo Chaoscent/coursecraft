@@ -873,3 +873,205 @@
   gap: var(--space-2);
   padding: var(--space-4);
 }
+
+/* Narration, slide image */
+.ellipsis {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.buttonRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+}
+.audioPreview {
+  width: 100%;
+  height: 28px;
+}
+.status {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+.note {
+  margin: 0 var(--space-3) var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+.slideImagePreview {
+  display: block;
+  width: 100%;
+  border: var(--hairline) solid var(--color-border);
+}
+.offTimeline {
+  opacity: 0.25;
+}
+
+/* Timeline */
+.splitterH {
+  height: var(--splitter-size);
+  background: var(--color-app);
+  border-top: var(--hairline) solid var(--color-border);
+  border-bottom: var(--hairline) solid var(--color-border);
+  outline: none;
+}
+.splitterH:hover,
+.splitterH[data-separator-state='drag'],
+.splitterH:focus-visible {
+  background: var(--color-accent-subtle);
+}
+.timeline {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--color-surface);
+}
+.timelineToolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: var(--panel-header-height);
+  padding: 0 var(--space-1);
+  border-bottom: var(--hairline) solid var(--color-border);
+  background: var(--color-panel);
+}
+.timecode {
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+}
+.toolbarSpacer {
+  flex: 1;
+}
+.timelineBody {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.timelineGrid {
+  position: relative;
+  display: grid;
+  grid-auto-rows: var(--row-height);
+}
+.timelineCorner,
+.trackLabel {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--color-panel);
+  border-right: var(--hairline) solid var(--color-border);
+}
+.timelineCorner {
+  top: 0;
+  z-index: 3;
+  border-bottom: var(--hairline) solid var(--color-border);
+}
+.ruler {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--color-panel);
+  border-bottom: var(--hairline) solid var(--color-border);
+  cursor: text;
+}
+.tick {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  padding-left: var(--space-0);
+  border-left: var(--hairline) solid var(--color-border-strong);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.trackRow {
+  display: contents;
+}
+.trackLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+  padding: 0 var(--space-2);
+  border-top: 0;
+  border-left: 0;
+  border-bottom: var(--hairline) solid var(--color-border);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--text-sm);
+  text-align: left;
+}
+.trackRow[data-selected] > .trackLabel {
+  background: var(--color-accent-subtle);
+  font-weight: var(--weight-semibold);
+}
+.track {
+  position: relative;
+  border-bottom: var(--hairline) solid var(--color-border);
+}
+.trackRow[data-selected] > .track {
+  background: var(--color-accent-subtle);
+}
+.bar {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  background: var(--color-accent-subtle);
+  border: var(--hairline) solid var(--color-accent);
+  cursor: grab;
+  touch-action: none;
+}
+.barEntrance {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  max-width: 100%;
+  background: var(--color-accent);
+  opacity: 0.35;
+  pointer-events: none;
+}
+.barHandle {
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  z-index: 1;
+  width: 6px;
+  background: var(--color-accent);
+  cursor: ew-resize;
+}
+.barHandle:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
+.barStart {
+  left: -1px;
+}
+.barEnd {
+  right: -1px;
+}
+.waveform {
+  display: block;
+  height: 100%;
+  color: var(--color-accent);
+}
+.playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 2;
+  width: 0;
+  border-left: 1px solid var(--color-danger);
+  pointer-events: none;
+}
+.form > .hint,
+.form > .note,
+.form > .status {
+  grid-column: 1 / -1;
+  margin: 0;
+}

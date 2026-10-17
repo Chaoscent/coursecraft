@@ -75,6 +75,20 @@ actions: show/hide/toggle element, show/hide layer, play/pause media, seek
 the timeline, navigate (next, previous, node, finish), or open an
 http(s)/mailto link in a new tab.
 
+### Slide timeline and narration
+
+A slide's clock starts at 0 when it is shown. With `narration` (one audio
+asset per language, optional WebVTT `captions` per language) the clock is
+the audio position: it stands still while the audio is paused, and after the
+audio ends it continues up to `durationMs`. Without narration the clock is
+wall time. An element is visible from `timing.startMs` until
+`timing.endMs` (or the end of the slide). With `advance: "afterTimeline"`
+the player moves on when the clock reaches `durationMs`.
+
+`fallbackImage` is the rendered image of an imported slide; with
+`useFallbackImage: true` the player shows it instead of the elements, with
+the slide title as its text alternative.
+
 Images and shapes carry `altText` per language or `decorative: true`.
 Videos have per-language captions (WebVTT assets). Hotspots have an
 accessible `label` and are keyboard-focusable in the player.

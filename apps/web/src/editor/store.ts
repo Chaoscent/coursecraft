@@ -36,6 +36,8 @@ export interface EditorState {
   save: SaveState;
   showGrid: boolean;
   zoom: 'fit' | number;
+  /** Position on the slide timeline; the canvas dims elements not visible at this time. */
+  playheadMs: number;
   clipboard: SlideElement[];
 
   /** Applies a change; changes with the same key within a second form one undo step. */
@@ -54,6 +56,7 @@ export interface EditorState {
   setReadOnly: (readOnly: boolean) => void;
   toggleGrid: () => void;
   setZoom: (zoom: 'fit' | number) => void;
+  setPlayhead: (ms: number) => void;
 }
 
 const HISTORY_LIMIT = 200;
@@ -83,6 +86,7 @@ export function createEditorStore(initial: InitialEditorData) {
     save: { kind: 'saved', at: new Date() },
     showGrid: true,
     zoom: 'fit',
+    playheadMs: 0,
     clipboard: [],
 
     change: (recipe, key) => {
@@ -137,7 +141,7 @@ export function createEditorStore(initial: InitialEditorData) {
       });
     },
 
-    selectNode: (id) => set({ nodeId: id, selection: [], editingTextId: null }),
+    selectNode: (id) => set({ nodeId: id, selection: [], editingTextId: null, playheadMs: 0 }),
     select: (ids) =>
       set({
         selection: ids,
@@ -196,6 +200,7 @@ export function createEditorStore(initial: InitialEditorData) {
     setReadOnly: (readOnly) => set({ readOnly, editingTextId: null }),
     toggleGrid: () => set((s) => ({ showGrid: !s.showGrid })),
     setZoom: (zoom) => set({ zoom }),
+    setPlayhead: (ms) => set({ playheadMs: Math.max(0, Math.round(ms)) }),
   }));
 }
 

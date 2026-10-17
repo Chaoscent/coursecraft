@@ -33,6 +33,7 @@ import {
   ungroup,
 } from './actions.js';
 import { Canvas } from './Canvas.js';
+import { Timeline } from './Timeline.js';
 import { EditorContext, useEditor, useEditorStore } from './context.js';
 import { ExportDialog, PreviewDialog, SettingsDialog, VersionsDialog } from './dialogs.js';
 import { Properties } from './Properties.js';
@@ -86,7 +87,18 @@ function Center() {
   const node = useEditor((s) => (s.nodeId ? s.course.nodes[s.nodeId] : undefined));
   if (node?.kind === 'quiz') return <QuizEditor key={node.id} quiz={node} />;
   if (node?.kind === 'survey') return <SurveyEditor key={node.id} survey={node} />;
-  return <Canvas />;
+  if (node?.kind !== 'slide') return <Canvas />;
+  return (
+    <PanelGroup orientation="vertical" disableCursor>
+      <Panel minSize={200}>
+        <Canvas />
+      </Panel>
+      <PanelSeparator className={styles.splitterH} />
+      <Panel defaultSize={170} minSize={72} maxSize={480}>
+        <Timeline slide={node} />
+      </Panel>
+    </PanelGroup>
+  );
 }
 
 function StatusBar() {

@@ -79,52 +79,76 @@ export function blankSlide(lang: string, title: string): CourseNode {
   });
 }
 
+export interface NewCourse {
+  title: string;
+  lang: string;
+  canvas?: { width: number; height: number };
+  chapters: { id: string; title: string; nodeIds: string[] }[];
+  nodes: CourseNode[];
+}
+
+/** Inserts a complete course inside an open transaction; returns its id. */
+export async function insertCourse(
+  tx: Kysely<Database>,
+  owner: { id: string; displayName: string },
+  input: NewCourse,
+): Promise<string> {
+  const now = new Date().toISOString();
+  const settings = courseSettingsSchema.parse(input.canvas ? { canvas: input.canvas } : {});
+  const course = await tx
+    .insertInto('courses')
+    .values({
+      title: input.title,
+      owner_id: owner.id,
+      format_version: CURRENT_FORMAT_VERSION,
+      meta: JSON.stringify({
+        title: { [input.lang]: input.title },
+        authors: [owner.displayName],
+        createdAt: now,
+        updatedAt: now,
+      }),
+      languages: JSON.stringify({ default: input.lang, available: [input.lang] }),
+      settings: JSON.stringify(settings),
+      structure: JSON.stringify({
+        chapters: input.chapters.map((c) => ({
+          id: c.id,
+          title: { [input.lang]: c.title },
+          nodeIds: c.nodeIds,
+        })),
+      }),
+    })
+    .returning('id')
+    .executeTakeFirstOrThrow();
+  if (input.nodes.length)
+    await tx
+      .insertInto('course_nodes')
+      .values(
+        input.nodes.map((node) => ({
+          course_id: course.id,
+          node_id: node.id,
+          kind: node.kind,
+          doc: JSON.stringify(node),
+          updated_by: owner.id,
+        })),
+      )
+      .execute();
+  return course.id;
+}
+
 export async function createCourse(
   db: Kysely<Database>,
   owner: { id: string; displayName: string },
   title: string,
   lang: string,
 ): Promise<string> {
-  const now = new Date().toISOString();
   const slide = blankSlide(lang, title);
   const short = lang.slice(0, 2);
-  return db.transaction().execute(async (tx) => {
-    const course = await tx
-      .insertInto('courses')
-      .values({
-        title,
-        owner_id: owner.id,
-        format_version: CURRENT_FORMAT_VERSION,
-        meta: JSON.stringify({
-          title: { [lang]: title },
-          authors: [owner.displayName],
-          createdAt: now,
-          updatedAt: now,
-        }),
-        languages: JSON.stringify({ default: lang, available: [lang] }),
-        settings: JSON.stringify(courseSettingsSchema.parse({})),
-        structure: JSON.stringify({
-          chapters: [
-            {
-              id: newId('ch'),
-              title: { [lang]: DEFAULT_CHAPTER[short] ?? 'Chapter 1' },
-              nodeIds: [slide.id],
-            },
-          ],
-        }),
-      })
-      .returning('id')
-      .executeTakeFirstOrThrow();
-    await tx
-      .insertInto('course_nodes')
-      .values({
-        course_id: course.id,
-        node_id: slide.id,
-        kind: slide.kind,
-        doc: JSON.stringify(slide),
-        updated_by: owner.id,
-      })
-      .execute();
-    return course.id;
-  });
+  return db.transaction().execute((tx) =>
+    insertCourse(tx, owner, {
+      title,
+      lang,
+      chapters: [{ id: newId('ch'), title: DEFAULT_CHAPTER[short] ?? 'Chapter 1', nodeIds: [slide.id] }],
+      nodes: [slide],
+    }),
+  );
 }

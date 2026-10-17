@@ -12,6 +12,7 @@ const STATUS: Record<ErrorCode, number> = {
   rate_limited: 429,
   payload_too_large: 413,
   unsupported_media_type: 415,
+  invalid_file: 422,
   internal: 500,
 };
 

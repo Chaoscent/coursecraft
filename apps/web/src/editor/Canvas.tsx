@@ -60,6 +60,7 @@ export function Canvas() {
   const showGrid = useEditor((s) => s.showGrid);
   const zoom = useEditor((s) => s.zoom);
   const editingTextId = useEditor((s) => s.editingTextId);
+  const playheadMs = useEditor((s) => s.playheadMs);
   const readOnly = useEditor((s) => s.readOnly);
   const ctx = useRenderContext();
   const slide = slideOf(course, nodeId);
@@ -94,6 +95,18 @@ export function Canvas() {
     renderedRef.current = rendered;
     host.replaceChildren(rendered.root);
   }, [slide, ctx, width, height]);
+
+  // Elements not visible at the timeline playhead are dimmed.
+  useEffect(() => {
+    const rendered = renderedRef.current;
+    if (!rendered || !slide) return;
+    for (const el of slide.elements) {
+      const node = rendered.elements.get(el.id);
+      const visible =
+        el.timing.startMs <= playheadMs && (el.timing.endMs === undefined || el.timing.endMs > playheadMs);
+      node?.classList.toggle(styles.offTimeline ?? 'off-timeline', !visible);
+    }
+  }, [playheadMs, slide]);
 
   // Hide the rendered element while its text is edited in place.
   useEffect(() => {

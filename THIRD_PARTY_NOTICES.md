@@ -42,6 +42,20 @@ Copyright © 2017 IBM Corp. with Reserved Font Name "Plex". The fonts are
 distributed unmodified and are not sold separately. The web build copies
 them, with hashed file names, into the application bundle.
 
+## Files bundled inside pdf.js (converter image only)
+
+`pdfjs-dist` (Apache-2.0) contains data files that the converter uses to
+render slide images. They stay in the package directory, unmodified, with
+their license files next to them:
+
+- `standard_fonts/`: Foxit fonts (BSD-3-Clause, PDFium Authors) and
+  Liberation Sans (SIL OFL 1.1). Used only for rendering, never shipped in
+  courses.
+- `wasm/`: OpenJPEG decoder (BSD-2-Clause), JBIG2 decoder from PDFium
+  (BSD-3-Clause), qcms colour management (MIT).
+- `iccs/`: colour profile (CC0-1.0).
+- `cmaps/`: Adobe CMap resources (BSD-3-Clause).
+
 ## npm packages
 
 See `docs/dependencies.md`. All npm dependencies are checked against an

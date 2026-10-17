@@ -26,14 +26,13 @@ import {
 } from '@lernwerk/shared';
 import type { FastifyInstance, FastifyReply } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
-import { basename } from 'node:path';
 import { z } from 'zod';
 import { requireAuth } from '../../auth/plugin.js';
 import type { AppContext } from '../../http/context.js';
 import { AppError, badRequest, forbidden, notFound } from '../../http/errors.js';
 import { assertCourseEditor, editableCourseIds } from '../../policy/courses.js';
 import { likePattern } from '../users/repo.js';
-import { sanitizeUpload } from '../assets/sanitize.js';
+import { attachAssets, displayName, storeAsset } from '../assets/service.js';
 import type { AssetStore } from '../assets/store.js';
 import { EXTENSIONS } from '../assets/store.js';
 import { buildExport } from '../exports/builder.js';
@@ -323,23 +322,9 @@ export function courseRoutes(
       } catch {
         throw new AppError('payload_too_large', 'File is too large');
       }
-      const clean = await sanitizeUpload(bytes);
-      const sha256 = store.put(clean.bytes);
-      const name =
-        basename(file.filename || 'file')
-          .replace(/[^\p{L}\p{N}._ -]/gu, '_')
-          .slice(0, 200) || 'file';
-      await ctx.db
-        .insertInto('assets')
-        .values({ sha256, mime: clean.mime, size: clean.bytes.length, created_by: auth.userId })
-        .onConflict((oc) => oc.column('sha256').doNothing())
-        .execute();
-      await ctx.db
-        .insertInto('course_assets')
-        .values({ course_id: request.params.id, sha256, name })
-        .onConflict((oc) => oc.columns(['course_id', 'sha256']).doNothing())
-        .execute();
-      return { sha256, mime: clean.mime, size: clean.bytes.length, name };
+      const asset = await storeAsset(ctx.db, store, bytes, displayName(file.filename), auth.userId);
+      await attachAssets(ctx.db, request.params.id, [asset]);
+      return asset;
     },
   );
 

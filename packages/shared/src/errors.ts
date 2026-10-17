@@ -10,6 +10,7 @@ export const ERROR_CODES = [
   'rate_limited',
   'payload_too_large',
   'unsupported_media_type',
+  'invalid_file',
   'internal',
 ] as const;
 

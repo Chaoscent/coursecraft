@@ -19,6 +19,14 @@ issue once the repository is published.
 - [ ] Some LMS require the ADL/IMS XSD files next to `imsmanifest.xml`; check
       their license and add them if needed.
 
+## PPTX import
+
+- [ ] Check import and rendering quality against a corpus of real-world
+      presentations (openly licensed files, kept in a test corpus).
+- [ ] Convert tables to editable elements (today: rendered slide image).
+- [ ] Per-run font sizes in imported text (the format has one size per text
+      element; mixed sizes take the first run's size).
+
 ## Testing
 
 - [ ] Run the WebKit E2E project over HTTPS (Caddy with `tls internal` in the

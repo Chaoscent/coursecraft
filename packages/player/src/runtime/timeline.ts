@@ -31,6 +31,7 @@ export class SlideTimeline {
   #start = performance.now();
   #timer: number | null = null;
   #lastMs = -1;
+  #endedAt: number | null = null;
 
   constructor(
     slide: SlideNode,
@@ -65,10 +66,22 @@ export class SlideTimeline {
     this.#narration?.pause();
   }
 
+  /**
+   * With narration the clock is the audio position: nothing advances while
+   * the audio is paused or blocked by autoplay rules. After the audio ends,
+   * wall time continues up to the slide duration.
+   */
   now(): number {
-    return this.#narration && !Number.isNaN(this.#narration.currentTime) && this.#narration.currentTime > 0
-      ? this.#narration.currentTime * 1000
-      : performance.now() - this.#start;
+    const audio = this.#narration;
+    if (!audio) return performance.now() - this.#start;
+    if (audio.ended) {
+      this.#endedAt ??= performance.now();
+      return (
+        (Number.isFinite(audio.duration) ? audio.duration * 1000 : 0) + performance.now() - this.#endedAt
+      );
+    }
+    this.#endedAt = null;
+    return audio.currentTime * 1000;
   }
 
   seek(ms: number): void {

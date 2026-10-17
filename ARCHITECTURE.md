@@ -270,17 +270,30 @@ MIME type, and `Content-Disposition` for anything not displayed inline.
 
 ### 5.7 Jobs
 
-| Queue                                                                 | Runs in   | Notes                                                              |
-| --------------------------------------------------------------------- | --------- | ------------------------------------------------------------------ |
-| `convert.pptx-render`                                                 | converter | soffice → PDF → pdf.js/Skia → PNG per slide                        |
-| `convert.media`                                                       | converter | transcode to MP4 + WebM, trim/cut, burn-in annotations, thumbnails |
-| `pptx.parse`                                                          | app       | OOXML → course nodes (pure JS, size-limited)                       |
-| `export.build`, `package.import`                                      | app       | ZIP read/write with limits                                         |
-| `mail.send`, `reminders.cron`, `retention.cron`, `certificate.render` | app       |                                                                    |
+| Queue                                                                 | Runs in   | Notes                                                                                       |
+| --------------------------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------- |
+| `convert.pptx-render`                                                 | converter | soffice → PDF (hidden slides included) → pdf.js/Skia → PNG per slide                        |
+| `convert.media`                                                       | converter | ffprobe, then AAC/M4A for audio (optional EBU R128 loudness), MP4 + WebM + poster for video |
+| `convert.done`                                                        | app       | Converter → app: result message; the app validates and ingests outputs                      |
+| `export.build`, `package.import`                                      | app       | ZIP read/write with limits                                                                  |
+| `mail.send`, `reminders.cron`, `retention.cron`, `certificate.render` | app       |                                                                                             |
 
-Converter: concurrency 1 by default; per-job timeout; each child process gets
-`ulimit` memory limits, a private temp dir, and a throwaway LibreOffice profile
-with macros disabled. Container limits via compose (`mem_limit`, `cpus`,
+Converter: concurrency 1 by default; per-job timeout; each child process runs
+under `prlimit` (CPU seconds, file size, open files, no core dumps) with a
+minimal environment, a private temp dir, and a throwaway LibreOffice profile.
+ffmpeg reads local files only (`-protocol_whitelist file`). Macro-enabled
+presentations are refused by the app before they reach the converter.
+
+Conversion flow: the app parses what it can itself (PPTX: OOXML → nodes),
+writes the input to `<work>/<id>/in/` (group-readable), creates
+`<id>/out/` (group-writable), stores a row in `conversions` and queues the
+job. The converter answers on `convert.done`; the app reads only expected
+file names, opens them without following symlinks, caps their size, and
+passes every file through the upload sanitiser (magic bytes, re-encoding)
+before it becomes an asset. Conversions without an answer are given up after
+`LERNWERK_CONVERSION_TIMEOUT_MINUTES` (default 20); a PPTX import then
+creates the course without slide images. Without a work volume or queue the
+import completes immediately without slide images. Container limits via compose (`mem_limit`, `cpus`,
 `pids_limit`).
 
 ## 6. Course format (`packages/course-model`)
@@ -455,11 +468,17 @@ TOTP secrets, OIDC client secrets, and SMTP passwords. The API returns only
   ADL LRS conformance suite against the built-in LRS.
 - Package import: yauzl with limits (entries, total size, ratio, normalized
   paths, no symlinks) → manifest parse → extraction into `data/packages/<id>`.
-- PPTX import: the app parses OOXML into nodes (text, pictures, preset shapes,
-  notes, basic entrance animations). The converter renders every slide as an
-  image, so the author can switch any slide to "image fallback".
-  Rendering quality is checked early against a corpus of real PPTX files
-  (spike right after the converter image exists).
+- PPTX import (`modules/pptx`): the app parses OOXML into nodes: text with
+  runs, bullets and alignment, placeholders with position and text styles
+  inherited from layout and master, theme colours, preset shapes, lines,
+  pictures (cropped, re-encoded), groups, backgrounds, speaker notes,
+  sections as chapters, entrance animations as timed steps, links. Tables,
+  charts, SmartArt and freeforms are not converted; such slides switch to
+  the rendered slide image automatically and the import lists them. The
+  converter renders every slide as an image (1.5× canvas width), so the
+  author can switch any slide to the image. ZIP limits: 20 000 entries,
+  2 GB uncompressed, 200 MB per entry, ratio 200; XML parts above 20 MB and
+  documents with a DTD are refused.
 - XLIFF 1.2 and 2.1 export and import over the string maps.
 
 ## 11. LMS runtime and LRS

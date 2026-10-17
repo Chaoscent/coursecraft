@@ -3,6 +3,59 @@
 Short summary per phase: what was built, how it was verified, and what is
 deliberately left open. Newest first.
 
+## Phase 4 — PPTX import, narration, timeline
+
+**Built**
+
+- Conversion pipeline between app and converter: `conversions` table,
+  exchange directories in the work volume with explicit group permissions,
+  `convert.pptx-render`, `convert.media` and `convert.done` queues, output
+  validation in the app (expected names only, no symlinks, size caps,
+  upload sanitiser), timeout sweep, immediate fallback without converter.
+- PPTX import: OOXML parser in the app (placeholders with inheritance from
+  layout and master, theme colours with transforms, text runs, bullets,
+  alignment, links, preset shapes, lines, cropped pictures, groups,
+  backgrounds, notes, sections → chapters, entrance animations → timed
+  steps, hidden slides skipped). Macro-enabled files, DTDs and unsafe ZIPs
+  are refused. The converter renders every slide (LibreOffice → PDF →
+  pdf.js + Skia → PNG); slides with content that could not be converted
+  show the rendered image by default.
+- Media conversion in the converter: ffprobe, AAC/M4A with optional EBU R128
+  loudness normalisation for narration; MP4 + WebM + poster for video (UI
+  in Phase 6). ffmpeg reads local files only; every tool runs under prlimit.
+- Editor: "Import PPTX" with progress, warnings and "continue without slide
+  images"; narration per slide and language (file upload, browser recording
+  with MediaRecorder, loudness option, WebVTT captions, accessibility hint);
+  slide-image switch with preview; timeline panel under the canvas (element
+  bars with draggable start/end, keyboard sliders with 100 ms / 1 s steps,
+  narration waveform decoded in the browser, ruler, playhead, play/pause,
+  zoom); the canvas dims elements that are not visible at the playhead;
+  "hide at" in element properties.
+- Player: the slide clock follows the narration (paused audio pauses the
+  slide; wall time continues after the audio ends); visible captions for
+  narration from WebVTT.
+
+**Verified**
+
+- 130 unit tests (parser: placeholders, inheritance, colours, bullets,
+  links, shapes, lines, crop, groups, tables, animations, hidden slides,
+  sections, 4:3 canvas, macro/DTD refusal; ZIP limits; media arguments;
+  narration clock).
+- DB/integration tests for import, rendering ingestion (valid pages, broken
+  file and symlink rejected), skip, failure, missing work volume, private
+  conversions, media conversion, timeouts.
+- E2E against the real stack in Chromium and Firefox: PPTX import with real
+  LibreOffice rendering (slides, animations, slide image used for the table
+  slide), narration from a WAV file through ffmpeg with waveform, keyboard
+  timing and export check; browser recording with a synthetic microphone
+  (Chromium).
+
+**Open / later**
+
+- Rendering quality against a corpus of real-world presentations (needs
+  files whose licence allows keeping them in the repository).
+- Video conversion UI and screen recording (Phase 6).
+
 ## Phase 3 — Quizzes, surveys, SCORM 2004, xAPI and cmi5
 
 **Built**

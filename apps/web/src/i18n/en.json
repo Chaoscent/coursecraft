@@ -234,6 +234,7 @@
       "group.deleted": "Group deleted",
       "group.members_added": "Members added",
       "group.members_removed": "Members removed",
+      "course.imported": "Course imported",
       "course.created": "Course created",
       "course.archived": "Course archived",
       "course.exported": "Course exported",
@@ -253,6 +254,7 @@
     "rate_limited": "Too many attempts. Please wait a minute.",
     "payload_too_large": "The file is too large.",
     "unsupported_media_type": "This format is not supported.",
+    "invalid_file": "The file is damaged or cannot be read.",
     "internal": "Unexpected error. Please try again.",
     "network": "Server not reachable."
   },
@@ -483,7 +485,8 @@
         "background": "Background",
         "muted": "Muted",
         "surface": "Surface"
-      }
+      },
+      "hideAt": "Hide at"
     },
     "status": {
       "slide": "Slide {{index}} of {{total}}",
@@ -541,7 +544,44 @@
     },
     "completion": "Completion",
     "completionViewed": "By viewed content",
-    "completionQuiz": "Quiz passed: {{title}}"
+    "completionQuiz": "Quiz passed: {{title}}",
+    "narration": {
+      "title": "Narration (audio)",
+      "audio": "Audio",
+      "none": "None",
+      "preview": "Listen",
+      "record": "Record",
+      "stop": "Stop ({{time}})",
+      "upload": "File …",
+      "remove": "Remove",
+      "normalize": "Normalise loudness",
+      "captions": "Captions",
+      "uploadCaptions": "WebVTT …",
+      "processing": "Processing audio …",
+      "recordingName": "Recording",
+      "notVtt": "Please choose a WebVTT file (.vtt).",
+      "captionsMissing": "Without captions or a transcript the narration is not accessible to deaf learners.",
+      "failed": "The audio could not be processed.",
+      "micDenied": "No access to the microphone. Please allow it in the browser."
+    },
+    "slideImage": {
+      "title": "Slide image (import)",
+      "use": "Show slide image instead of elements",
+      "explain": "The slide image shows the slide as in the presentation. Its text cannot be read by screen readers; the slide title serves as alternative text."
+    },
+    "timeline": {
+      "title": "Timeline",
+      "play": "Play",
+      "pause": "Pause",
+      "toStart": "Go to start",
+      "zoomIn": "Zoom timeline in",
+      "zoomOut": "Zoom timeline out",
+      "narration": "Narration",
+      "waveform": "Narration waveform, {{time}}",
+      "start": "{{name}}: show",
+      "end": "{{name}}: hide",
+      "slideEnd": "end of slide"
+    }
   },
   "quiz": {
     "types": {
@@ -673,5 +713,24 @@
     "allowReview": "Allow answer review",
     "anonymous": "Anonymous",
     "multipleAnswers": "Multiple answers"
+  },
+  "import": {
+    "action": "Import PPTX …",
+    "title": "Import presentation",
+    "uploading": "Uploading and reading the file …",
+    "rendering": "Rendering slide images …",
+    "skip": "Continue without slide images",
+    "open": "Open course",
+    "done": "Import finished.",
+    "warnings": "Import notes",
+    "slide": "Slide {{n}}",
+    "warning": {
+      "unsupported_content": "Content such as tables, charts or freeforms was not converted; the slide shows the rendered slide image.",
+      "unsupported_image": "A picture in an unsupported format was left out.",
+      "media_skipped": "Embedded video or audio was not imported.",
+      "render_failed": "Slide images could not be rendered.",
+      "render_skipped": "Slide images were not rendered.",
+      "too_many_elements": "The slide has more than 500 elements; the rest was left out."
+    }
   }
 }

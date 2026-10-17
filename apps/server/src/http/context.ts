@@ -5,6 +5,9 @@ import type { SessionService } from '../auth/sessions.js';
 import type { AppConfig } from '../config/env.js';
 import type { SecretBox } from '../crypto/secret-box.js';
 import type { Database } from '../db/schema.js';
+import type { JobQueue } from '../jobs/queue.js';
+import type { WorkDir } from '../jobs/work-dir.js';
+import type { AssetStore } from '../modules/assets/store.js';
 import type { AuditService } from '../modules/audit/service.js';
 
 /** Shared services handed to every route module. */
@@ -14,6 +17,17 @@ export interface AppContext {
   box: SecretBox;
   sessions: SessionService;
   audit: AuditService;
+  assets: AssetStore;
+  jobs: JobQueue;
+  work: WorkDir;
+  /** Replaced by the HTTP server's logger once it exists. */
+  log: Logger;
+}
+
+export interface Logger {
+  info(obj: object, msg?: string): void;
+  warn(obj: object, msg?: string): void;
+  error(obj: object, msg?: string): void;
 }
 
 export interface AuthState {
