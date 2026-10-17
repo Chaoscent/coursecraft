@@ -134,6 +134,15 @@ All graded questions share: `prompt`, optional `media`, `points`,
 | `wordBank`       | `template`, `words`, `blanks[].wordId`                                                 |
 | `essay`          | `maxLength`, `gradingNotes`; graded manually                                           |
 
+## Translation (XLIFF)
+
+Every map from language to value (text, list of strings, rich text) is a
+translatable unit. The editor exports the default language as source and one
+target language as XLIFF 2.1 or 1.2 and imports translated files back; a
+new target language is added to `languages.available`. Units are named by
+their path in the course (`/nodes/<id>/elements/[<element id>]/content`), so
+files stay valid while unrelated parts of the course change.
+
 ## Versioning
 
 `formatVersion` increases with every incompatible change. Loading a course

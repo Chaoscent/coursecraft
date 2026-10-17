@@ -42,6 +42,7 @@ import { AiDialog } from './AiDialog.js';
 import { DialogEditor } from './DialogEditor.js';
 import { InteractionEditor } from './InteractionEditor.js';
 import { QuizEditor, SurveyEditor } from './QuizEditor.js';
+import { TranslationDialog } from './TranslationDialog.js';
 import { VideoDialog } from './VideoDialog.js';
 import { Ribbon } from './Ribbon.js';
 import { SlideList } from './SlideList.js';
@@ -50,7 +51,16 @@ import { startSync } from './sync.js';
 import styles from './Editor.module.css';
 
 type DialogKind =
-  'export' | 'versions' | 'settings' | 'preview' | 'shortcuts' | 'video' | 'screen' | 'ai' | null;
+  | 'export'
+  | 'versions'
+  | 'settings'
+  | 'preview'
+  | 'shortcuts'
+  | 'video'
+  | 'screen'
+  | 'ai'
+  | 'translation'
+  | null;
 
 interface MenuEntry {
   id: string;
@@ -251,6 +261,7 @@ function EditorShell({ onReload }: { onReload: () => void }) {
             { id: 'settings', label: t('editor.settings'), run: () => open('settings') },
             { id: 'versions', label: t('editor.versions'), shortcut: 'Ctrl+S', run: () => open('versions') },
             { id: 'export', label: t('editor.exportMenu'), run: () => open('export') },
+            { id: 'translation', label: t('translation.menu'), run: () => open('translation') },
             'separator',
             { id: 'close', label: t('editor.close'), run: () => void navigate('/author') },
           ]}
@@ -394,6 +405,7 @@ function EditorShell({ onReload }: { onReload: () => void }) {
       </PanelGroup>
       <StatusBar />
       {dialog === 'export' ? <ExportDialog onClose={() => setDialog(null)} /> : null}
+      {dialog === 'translation' ? <TranslationDialog onClose={() => setDialog(null)} /> : null}
       {dialog === 'versions' ? (
         <VersionsDialog
           onClose={() => setDialog(null)}

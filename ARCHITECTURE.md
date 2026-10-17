@@ -488,7 +488,13 @@ TOTP secrets, OIDC client secrets, and SMTP passwords. The API returns only
   author can switch any slide to the image. ZIP limits: 20 000 entries,
   2 GB uncompressed, 200 MB per entry, ratio 200; XML parts above 20 MB and
   documents with a DTD are refused.
-- XLIFF 1.2 and 2.1 export and import over the string maps.
+- XLIFF 1.2 and 2.1 export and import over the string maps, in the editor
+  (browser DOM APIs, no server round trip): one unit per translatable map,
+  named by its path (array items by id); rich text one segment per paragraph
+  or heading, marks as paired codes, hard breaks as placeholders, link
+  targets and colours in original data. Import skips units that no longer
+  match, validates the result against the course schema and applies it as
+  one undo step.
 
 ## 11. LMS runtime and LRS
 

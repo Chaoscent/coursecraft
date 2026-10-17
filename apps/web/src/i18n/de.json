@@ -1045,5 +1045,23 @@
     "insertQuiz": "Als Quiz einfügen",
     "quizTitle": "Quiz (KI-Entwurf)",
     "correct": "richtig"
+  },
+  "translation": {
+    "menu": "Übersetzung (XLIFF) …",
+    "title": "Übersetzung",
+    "intro": "Exportieren Sie alle Texte der Ausgangssprache ({{source}}) als XLIFF-Datei für Übersetzungsbüros oder -werkzeuge und importieren Sie die übersetzte Datei wieder. Formatierungen und Links bleiben erhalten.",
+    "target": "Zielsprache",
+    "format": "Format",
+    "export": "XLIFF exportieren",
+    "import": "Übersetzte Datei importieren …",
+    "imported": "Sprache „{{lang}}“: {{updated}} Texte übernommen, {{skipped}} nicht mehr vorhanden.",
+    "tooLarge": "Die Datei ist zu groß (höchstens 20 MB).",
+    "errors": {
+      "not-xliff": "Das ist keine lesbare XLIFF-Datei.",
+      "no-target-language": "Die Datei nennt keine Zielsprache.",
+      "source-language-mismatch": "Die Ausgangssprache der Datei passt nicht zum Kurs.",
+      "same-language": "Ausgangs- und Zielsprache sind gleich.",
+      "invalid-result": "Die Übersetzung würde den Kurs ungültig machen und wurde nicht übernommen."
+    }
   }
 }

@@ -1045,5 +1045,23 @@
     "insertQuiz": "Insert as quiz",
     "quizTitle": "Quiz (AI draft)",
     "correct": "correct"
+  },
+  "translation": {
+    "menu": "Translation (XLIFF) …",
+    "title": "Translation",
+    "intro": "Export all texts of the source language ({{source}}) as an XLIFF file for translation agencies or tools, and import the translated file again. Formatting and links are kept.",
+    "target": "Target language",
+    "format": "Format",
+    "export": "Export XLIFF",
+    "import": "Import translated file …",
+    "imported": "Language “{{lang}}”: {{updated}} texts applied, {{skipped}} no longer present.",
+    "tooLarge": "The file is too large (20 MB at most).",
+    "errors": {
+      "not-xliff": "This is not a readable XLIFF file.",
+      "no-target-language": "The file names no target language.",
+      "source-language-mismatch": "The file's source language does not match the course.",
+      "same-language": "Source and target language are the same.",
+      "invalid-result": "The translation would make the course invalid and was not applied."
+    }
   }
 }
