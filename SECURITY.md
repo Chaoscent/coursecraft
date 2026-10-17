@@ -225,6 +225,18 @@ change:
 - Tests run behind an egress guard (fetch and socket connects to anything
   but loopback fail), and the AI tests talk to fake providers on loopback.
 
+## 5c. E-mail and password reset
+
+- SMTP host, port and credentials are set by administrators only; the
+  password is sealed and never returned. Test mail is rate-limited.
+- Reset: identical answers for known and unknown addresses (response sent
+  before the lookup finishes), rate limit per address, token in the URL
+  fragment, hash-only storage, 60 minutes, single use, all sessions revoked,
+  previous tokens of the account invalidated on a new request.
+- Mails are plain text; user-controlled values (names, course titles) cannot
+  inject markup or extra headers (nodemailer encodes headers; newlines in
+  values are folded).
+
 ## 8. Known limitations
 
 - Third-party packages run arbitrary JavaScript on the content origin. They

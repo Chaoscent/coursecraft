@@ -42,7 +42,8 @@
     "manage": "Lernverwaltung",
     "library": "Bibliothek",
     "grading": "Bewertung",
-    "ai": "KI"
+    "ai": "KI",
+    "mail": "E-Mail"
   },
   "roles": {
     "admin": "Administration",
@@ -80,7 +81,8 @@
     "submit": "Anmelden",
     "verify": "Bestätigen",
     "code": "Code",
-    "codeHint": "Sechsstelliger Code aus der Authenticator-App"
+    "codeHint": "Sechsstelliger Code aus der Authenticator-App",
+    "forgot": "Passwort vergessen?"
   },
   "fields": {
     "email": "E-Mail",
@@ -810,7 +812,8 @@
       "user": "Person",
       "group": "Gruppe"
     },
-    "remove": "Entfernen"
+    "remove": "Entfernen",
+    "notify": "Lernende per E-Mail benachrichtigen"
   },
   "report": {
     "title": "Bericht: {{title}}",
@@ -1063,5 +1066,38 @@
       "same-language": "Ausgangs- und Zielsprache sind gleich.",
       "invalid-result": "Die Übersetzung würde den Kurs ungültig machen und wurde nicht übernommen."
     }
+  },
+  "mail": {
+    "page": "E-Mail",
+    "title": "E-Mail-Versand (SMTP)",
+    "intro": "Für Passwort-Zurücksetzen, Zuweisungen und Fristerinnerungen. Es wird nur der hier eingetragene Server kontaktiert.",
+    "enabled": "E-Mail-Versand aktivieren",
+    "host": "Server",
+    "port": "Port",
+    "security": "Verschlüsselung",
+    "securityKinds": {
+      "tls": "TLS (SMTPS)",
+      "starttls": "STARTTLS",
+      "none": "Keine"
+    },
+    "username": "Benutzername",
+    "password": "Passwort",
+    "passwordStored": "Gespeichert. Leer lassen, um es zu behalten.",
+    "removePassword": "Passwort entfernen",
+    "from": "Absender",
+    "fromHint": "z. B. Coursecraft <noreply@example.org>",
+    "test": "Testnachricht an mich senden",
+    "saved": "Gespeichert.",
+    "testSent": "Testnachricht gesendet.",
+    "noTls": "Ohne Verschlüsselung gehen Zugangsdaten und Nachrichten im Klartext über das Netz. Nur in einem vertrauenswürdigen Netz verwenden."
+  },
+  "reset": {
+    "requestTitle": "Passwort vergessen",
+    "setTitle": "Neues Passwort festlegen",
+    "hint": "Wenn ein Konto zu dieser Adresse existiert und E-Mail eingerichtet ist, senden wir einen Link.",
+    "send": "Link senden",
+    "save": "Passwort speichern",
+    "backToLogin": "Zur Anmeldung",
+    "sent": "Wenn ein Konto zu dieser Adresse existiert, ist ein Link unterwegs. Er gilt 60 Minuten."
   }
 }

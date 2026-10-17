@@ -2,6 +2,7 @@
 import type { Assignment } from '@coursecraft/shared';
 import type { AppContext, AuthState } from '../../http/context.js';
 import { badRequest, notFound } from '../../http/errors.js';
+import { notifyAssigned } from '../mail/service.js';
 
 export async function assertItem(ctx: AppContext, id: string): Promise<{ id: string; title: string }> {
   const item = await ctx.db
@@ -46,7 +47,7 @@ export async function createAssignments(
   ctx: AppContext,
   auth: AuthState,
   itemId: string,
-  input: { userIds: string[]; groupIds: string[]; dueAt: string | null },
+  input: { userIds: string[]; groupIds: string[]; dueAt: string | null; notify?: boolean },
 ): Promise<number> {
   await assertItem(ctx, itemId);
   const users = input.userIds.length
@@ -64,6 +65,7 @@ export async function createAssignments(
     throw badRequest('Unknown user or group');
   const dueAt = input.dueAt ? new Date(input.dueAt) : null;
   let count = 0;
+  const touched: string[] = [];
   await ctx.db.transaction().execute(async (tx) => {
     for (const [column, ids] of [
       ['user_id', users.map((u) => u.id)],
@@ -76,13 +78,17 @@ export async function createAssignments(
           .where('library_item_id', '=', itemId)
           .where(column, '=', id)
           .executeTakeFirst();
-        if (existing)
+        if (existing) {
           await tx.updateTable('assignments').set({ due_at: dueAt }).where('id', '=', existing.id).execute();
-        else
-          await tx
+          touched.push(existing.id);
+        } else {
+          const created = await tx
             .insertInto('assignments')
             .values({ library_item_id: itemId, [column]: id, due_at: dueAt, created_by: auth.userId })
-            .execute();
+            .returning('id')
+            .executeTakeFirstOrThrow();
+          touched.push(created.id);
+        }
         count += 1;
       }
     }
@@ -92,8 +98,10 @@ export async function createAssignments(
     action: 'assignment.created',
     targetType: 'library_item',
     targetId: itemId,
-    meta: { users: users.length, groups: groups.length },
+    meta: { users: users.length, groups: groups.length, notify: input.notify ?? false },
   });
+  // Learners get one notice per assignment, also when it is saved again.
+  if (input.notify) await notifyAssigned(ctx, touched);
   return count;
 }
 

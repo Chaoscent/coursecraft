@@ -2,7 +2,7 @@
 import { loginResponseSchema } from '@coursecraft/shared';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Navigate, useNavigate } from 'react-router';
+import { Link, Navigate, useNavigate } from 'react-router';
 import { api } from '../api/client.js';
 import { useSession } from '../api/session.js';
 import { Button } from '../components/Button.js';
@@ -59,9 +59,12 @@ export function LoginPage() {
       <AuthFrame
         title={t('login.title')}
         footer={
-          <Button type="submit" variant="primary" isDisabled={busy}>
-            {challenge ? t('login.verify') : t('login.submit')}
-          </Button>
+          <>
+            {challenge ? null : <Link to="/reset-password">{t('login.forgot')}</Link>}
+            <Button type="submit" variant="primary" isDisabled={busy}>
+              {challenge ? t('login.verify') : t('login.submit')}
+            </Button>
+          </>
         }
       >
         {error ? <Notice tone="danger">{error}</Notice> : null}

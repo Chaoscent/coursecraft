@@ -70,6 +70,8 @@ export const createAssignmentsSchema = z
     userIds: z.array(uuidSchema).max(1000).default([]),
     groupIds: z.array(uuidSchema).max(200).default([]),
     dueAt: z.iso.datetime({ offset: true }).nullable().default(null),
+    /** Send an e-mail to every newly assigned learner (when mail is set up). */
+    notify: z.boolean().default(false),
   })
   .strict()
   .refine((v) => v.userIds.length + v.groupIds.length > 0, { message: 'Nobody selected' });

@@ -13,6 +13,8 @@ import { CoursesPage } from '../pages/CoursesPage.js';
 import { GroupsPage } from '../pages/GroupsPage.js';
 import { HomePage } from '../pages/HomePage.js';
 import { LoginPage } from '../pages/LoginPage.js';
+import { MailPage } from '../pages/MailPage.js';
+import { ResetPasswordPage } from '../pages/ResetPasswordPage.js';
 import { SetupPage } from '../pages/SetupPage.js';
 import { UsersPage } from '../pages/UsersPage.js';
 import { GradingPage } from '../pages/GradingPage.js';
@@ -46,6 +48,7 @@ function Allowed({ permission, children }: { permission: Permission; children: R
 const router = createBrowserRouter([
   { path: '/setup', element: <SetupPage /> },
   { path: '/login', element: <LoginPage /> },
+  { path: '/reset-password', element: <ResetPasswordPage /> },
   {
     path: '/author/courses/:id',
     element: (
@@ -113,6 +116,14 @@ const router = createBrowserRouter([
         element: (
           <Allowed permission="groups.manage">
             <GroupsPage />
+          </Allowed>
+        ),
+      },
+      {
+        path: 'admin/mail',
+        element: (
+          <Allowed permission="settings.manage">
+            <MailPage />
           </Allowed>
         ),
       },

@@ -337,6 +337,20 @@ export interface AiUsageTable {
   requests: Generated<number>;
 }
 
+export interface PasswordResetsTable {
+  token_hash: string;
+  user_id: string;
+  expires_at: Timestamp;
+  created_at: CreatedAt;
+}
+
+export interface AssignmentNoticesTable {
+  assignment_id: string;
+  user_id: string;
+  kind: 'assigned' | 'reminder';
+  sent_at: CreatedAt;
+}
+
 export interface Database {
   settings: SettingsTable;
   kysely_migration: KyselyMigrationTable;
@@ -369,4 +383,6 @@ export interface Database {
   ai_user_keys: AiUserKeysTable;
   ai_previews: AiPreviewsTable;
   ai_usage: AiUsageTable;
+  password_resets: PasswordResetsTable;
+  assignment_notices: AssignmentNoticesTable;
 }

@@ -547,6 +547,23 @@ TOTP secrets, OIDC client secrets, and SMTP passwords. The API returns only
 - The only HTTP egress path besides SMTP; the egress guard allowlists exactly
   the configured base URL.
 
+## 12a. E-mail (Phase 8)
+
+- SMTP is configured by administrators in the app (`settings` row `smtp`,
+  password sealed); nothing is sent while it is disabled. Mail is the only
+  outbound connection besides the optional AI adapter.
+- Mails are queued as `mail.send` jobs with a user id and parameters; the
+  worker renders plain text (no HTML) in the user's language at send time and
+  skips inactive users. Newlines in parameters are folded.
+- Password reset: `POST /api/auth/password-reset` answers identically for any
+  address and sends only for active accounts; the link carries a 256-bit token
+  in the URL fragment (never in logs or Referer), stored as SHA-256, valid 60
+  minutes, single use, ends all sessions. The job table holds the token only
+  sealed.
+- Assignment notices (opt-in per assignment) and due-date reminders (within 72
+  hours, not completed) are claimed per assignment and learner in
+  `assignment_notices`, so they go out once, also across app instances.
+
 ## 13. Privacy
 
 - Per-user export: ZIP with JSON and files (profile, sessions, registrations,

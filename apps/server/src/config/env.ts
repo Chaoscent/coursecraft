@@ -80,6 +80,18 @@ const configSchema = z
     aiTimeoutSeconds: z.coerce.number().int().min(5).max(600).default(90),
     /** AI requests per user and minute. */
     aiRateLimit: z.coerce.number().int().min(1).max(1000).default(10),
+    /** Time zone for dates in e-mails (IANA name). */
+    timeZone: z
+      .string()
+      .default('Europe/Berlin')
+      .refine((tz) => {
+        try {
+          new Intl.DateTimeFormat('en', { timeZone: tz });
+          return true;
+        } catch {
+          return false;
+        }
+      }, 'Unknown time zone'),
   })
   .refine((c) => !c.contentUrl || c.contentUrl.origin !== c.publicUrl.origin, {
     message: 'Content origin must differ from the public origin (host or port)',
@@ -112,6 +124,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     aiEnabled: env['COURSECRAFT_AI_ENABLED'],
     aiTimeoutSeconds: env['COURSECRAFT_AI_TIMEOUT_SECONDS'],
     aiRateLimit: env['COURSECRAFT_AI_RATE_LIMIT'],
+    timeZone: env['COURSECRAFT_TIME_ZONE'],
   });
   if (!result.success) {
     // Paths only: values may contain secrets.

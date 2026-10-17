@@ -42,7 +42,8 @@
     "manage": "Learning management",
     "library": "Library",
     "grading": "Grading",
-    "ai": "AI"
+    "ai": "AI",
+    "mail": "E-mail"
   },
   "roles": {
     "admin": "Administrator",
@@ -80,7 +81,8 @@
     "submit": "Sign in",
     "verify": "Verify",
     "code": "Code",
-    "codeHint": "Six-digit code from your authenticator app"
+    "codeHint": "Six-digit code from your authenticator app",
+    "forgot": "Forgot password?"
   },
   "fields": {
     "email": "E-mail",
@@ -810,7 +812,8 @@
       "user": "Person",
       "group": "Group"
     },
-    "remove": "Remove"
+    "remove": "Remove",
+    "notify": "Notify learners by e-mail"
   },
   "report": {
     "title": "Report: {{title}}",
@@ -1063,5 +1066,38 @@
       "same-language": "Source and target language are the same.",
       "invalid-result": "The translation would make the course invalid and was not applied."
     }
+  },
+  "mail": {
+    "page": "E-mail",
+    "title": "E-mail delivery (SMTP)",
+    "intro": "For password resets, assignments and due-date reminders. Only the server entered here is contacted.",
+    "enabled": "Enable e-mail delivery",
+    "host": "Server",
+    "port": "Port",
+    "security": "Encryption",
+    "securityKinds": {
+      "tls": "TLS (SMTPS)",
+      "starttls": "STARTTLS",
+      "none": "None"
+    },
+    "username": "Username",
+    "password": "Password",
+    "passwordStored": "Stored. Leave empty to keep it.",
+    "removePassword": "Remove password",
+    "from": "Sender",
+    "fromHint": "e.g. Coursecraft <noreply@example.org>",
+    "test": "Send a test message to me",
+    "saved": "Saved.",
+    "testSent": "Test message sent.",
+    "noTls": "Without encryption, credentials and messages cross the network in clear text. Use only in a trusted network."
+  },
+  "reset": {
+    "requestTitle": "Forgot password",
+    "setTitle": "Set a new password",
+    "hint": "If an account exists for this address and e-mail is set up, we send a link.",
+    "send": "Send link",
+    "save": "Save password",
+    "backToLogin": "Back to sign-in",
+    "sent": "If an account exists for this address, a link is on its way. It is valid for 60 minutes."
   }
 }

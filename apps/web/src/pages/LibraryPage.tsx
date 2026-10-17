@@ -35,6 +35,7 @@ function AssignDialog({ item, onClose }: { item: LibraryItem; onClose: () => voi
   const [users, setUsers] = useState<Set<string>>(new Set());
   const [groups, setGroups] = useState<Set<string>>(new Set());
   const [due, setDue] = useState('');
+  const [notify, setNotify] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const directory = useApi(
     useCallback(
@@ -65,6 +66,7 @@ function AssignDialog({ item, onClose }: { item: LibraryItem; onClose: () => voi
           userIds: [...users],
           groupIds: [...groups],
           dueAt: due ? new Date(`${due}T23:59:00`).toISOString() : null,
+          notify,
         },
       });
       setUsers(new Set());
@@ -120,6 +122,11 @@ function AssignDialog({ item, onClose }: { item: LibraryItem; onClose: () => voi
           </div>
         </FormRow>
         <TextField label={t('library.dueDate')} type="date" value={due} onChange={setDue} />
+        <FormRow label="">
+          <Checkbox isSelected={notify} onChange={setNotify}>
+            {t('library.notify')}
+          </Checkbox>
+        </FormRow>
       </FormGrid>
       <h3 className={styles.sectionTitle}>{t('library.current')}</h3>
       <DataTable

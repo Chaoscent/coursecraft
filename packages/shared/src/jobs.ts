@@ -10,6 +10,8 @@ export const QUEUES = {
   media: 'convert.media',
   /** Converter → app: a conversion finished (or failed). */
   convertDone: 'convert.done',
+  /** App → app: one e-mail to one user, rendered at send time. */
+  mail: 'mail.send',
 } as const;
 
 export type QueueName = (typeof QUEUES)[keyof typeof QUEUES];
@@ -70,3 +72,14 @@ export const convertDoneJobSchema = z
   })
   .strict();
 export type ConvertDoneJob = z.infer<typeof convertDoneJobSchema>;
+
+export const MAIL_KINDS = ['passwordReset', 'assigned', 'reminder'] as const;
+export const mailJobSchema = z
+  .object({
+    kind: z.enum(MAIL_KINDS),
+    userId: jobIdSchema,
+    /** Template parameters; secrets (reset tokens) only sealed by the app. */
+    params: z.record(z.string().max(50), z.string().max(4000)),
+  })
+  .strict();
+export type MailJob = z.infer<typeof mailJobSchema>;
