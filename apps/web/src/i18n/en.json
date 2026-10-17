@@ -38,7 +38,10 @@
     "groups": "Groups",
     "audit": "Audit log",
     "author": "Authoring",
-    "courses": "Courses"
+    "courses": "Courses",
+    "manage": "Learning management",
+    "library": "Library",
+    "grading": "Grading"
   },
   "roles": {
     "admin": "Administrator",
@@ -110,7 +113,15 @@
     "course": "Course",
     "due": "Due",
     "progress": "Progress",
-    "empty": "No courses are assigned to you yet."
+    "empty": "No courses are assigned to you yet.",
+    "count_one": "{{count}} course",
+    "count_other": "{{count}} courses",
+    "status": "Status",
+    "score": "Score",
+    "action": "Action",
+    "start": "Start",
+    "continue": "Continue",
+    "review": "Review"
   },
   "account": {
     "title": "Account",
@@ -276,7 +287,9 @@
     "owner": "Owner",
     "nodes": "Slides",
     "editing": "Being edited",
-    "updated": "Changed"
+    "updated": "Changed",
+    "publish": "Publish to library",
+    "published": "“{{title}}” is in the library as version {{version}}."
   },
   "editor": {
     "loading": "Loading course …",
@@ -732,5 +745,102 @@
       "render_skipped": "Slide images were not rendered.",
       "too_many_elements": "The slide has more than 500 elements; the rest was left out."
     }
+  },
+  "learning": {
+    "status": {
+      "not_started": "Not started",
+      "in_progress": "In progress",
+      "completed": "Completed",
+      "passed": "Passed",
+      "failed": "Failed"
+    }
+  },
+  "player": {
+    "loading": "Loading course …",
+    "close": "Close",
+    "saveFailed": "Progress could not be saved"
+  },
+  "library": {
+    "title": "Library",
+    "count_one": "{{count}} item",
+    "count_other": "{{count}} items",
+    "import": "Import package …",
+    "assignAction": "Assign …",
+    "report": "Report",
+    "archive": "Archive",
+    "restore": "Restore",
+    "status": "Status",
+    "active": "Active",
+    "archived": "Archived",
+    "itemTitle": "Title",
+    "kind": "Type",
+    "assignments": "Assignments",
+    "learners": "Learners",
+    "completed": "Completed",
+    "updated": "Updated",
+    "empty": "Nothing in the library yet. Publish a course or import a package.",
+    "imported": "“{{title}}” was imported.",
+    "importedMulti": "“{{title}}” was imported. The package has several units; only the first one is launched.",
+    "noContentOrigin": "Third-party packages (SCORM, xAPI, cmi5) need a separate content origin (LERNWERK_CONTENT_URL). Own courses work without it.",
+    "kinds": {
+      "lernwerk": "Lernwerk",
+      "scorm12": "SCORM 1.2",
+      "scorm2004": "SCORM 2004",
+      "xapi": "xAPI",
+      "cmi5": "cmi5"
+    },
+    "assignTitle": "Assign “{{title}}”",
+    "assign": "Assign",
+    "groups": "Groups",
+    "users": "People",
+    "findUser": "Find person",
+    "dueDate": "Due date",
+    "current": "Current assignments",
+    "noAssignments": "No assignments yet.",
+    "target": "Assigned to",
+    "type": "Kind",
+    "targetType": {
+      "user": "Person",
+      "group": "Group"
+    },
+    "remove": "Remove"
+  },
+  "report": {
+    "title": "Report: {{title}}",
+    "loading": "Loading report …",
+    "learners_one": "{{count}} learner",
+    "learners_other": "{{count}} learners",
+    "csv": "Export CSV",
+    "learnersTable": "Learners",
+    "empty": "Not assigned to anyone.",
+    "name": "Name",
+    "email": "E-mail",
+    "status": "Status",
+    "score": "Score",
+    "attempts": "Attempts",
+    "time": "Time spent",
+    "due": "Due",
+    "completed": "Completed on",
+    "questions": "Questions",
+    "noQuestions": "No answers yet.",
+    "question": "Question",
+    "type": "Type",
+    "answers": "Answers",
+    "correctRate": "Correct",
+    "pending": "Awaiting grading"
+  },
+  "grading": {
+    "title": "Grading",
+    "count_one": "{{count}} open answer",
+    "count_other": "{{count}} open answers",
+    "empty": "No answers are waiting to be graded.",
+    "learner": "Learner",
+    "course": "Course",
+    "question": "Question",
+    "answer": "Answer",
+    "answered": "Answered",
+    "score": "Points",
+    "scoreFor": "Points for {{name}}",
+    "save": "Save"
   }
 }

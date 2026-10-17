@@ -3,6 +3,49 @@
 Short summary per phase: what was built, how it was verified, and what is
 deliberately left open. Newest first.
 
+## Phase 5 — LMS core
+
+**Built**
+
+- Library: publish own courses (cmi5 package from a saved version), import
+  SCORM 1.2, SCORM 2004, xAPI (Tin Can) and cmi5 packages with manifest
+  parsing and safe extraction; archive/restore. Third-party packages need
+  the content origin and are refused without it.
+- Content origin: second listener (port 3001, `LERNWERK_CONTENT_URL`) that
+  serves only `/launch/<token>/…`; without it own courses play on the app
+  origin. Launch tokens with heartbeat, absolute lifetime, revocation on
+  close and cascade deletion with the session.
+- Built-in LRS (xAPI 1.0.3 statements, state, activity and agent profiles,
+  about) per launch; cmi5 launch protocol (LaunchData, one-time fetch URL,
+  launch modes); Tin Can launch parameters.
+- SCORM runtime: wrapper page with scorm-again on the content origin,
+  postMessage bridge to the host page, resume with stored CMI data, review
+  mode, mastery score.
+- Assignments to users and groups (subgroups included) with due dates;
+  minimal user directory for trainers.
+- Learner portal ("My courses") and full-window player page; trainer and
+  admin pages for library, assignments, reports (learners, questions, CSV)
+  and grading of free-text answers.
+
+**Verified**
+
+- Unit tests for the projection (durations, SCORM 1.2/2004, statements).
+- 9 DB/integration tests: imports of all package types, refusal of unsafe
+  packages and of imports without content origin, publishing, group
+  assignment visibility, SCORM commits and mastery, reports and CSV,
+  cmi5 protocol (LaunchData, fetch once, state merge, agent checks),
+  statement checks (actor, registration, conflicts), grading, unsafe paths,
+  revoked tokens, cookies ignored, launches ended by logout.
+- E2E in Chromium and Firefox against the compose stack with a content
+  origin on a second port: a learner completes an own course (cmi5 through
+  the built-in LRS) and a SCORM 1.2 package (wrapper, resume), the report
+  shows both; library, assignment dialog, report page and CSV download.
+
+**Open / later**
+
+- XLSX export, LRS credentials for external clients, statement query
+  filters, multi-SCO sequencing, Moodle/ADL conformance runs (docs/todo.md).
+
 ## Phase 4 — PPTX import, narration, timeline
 
 **Built**

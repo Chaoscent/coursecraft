@@ -6,3 +6,4 @@ export * from './groups.js';
 export * from './audit.js';
 export * from './courses.js';
 export * from './conversions.js';
+export * from './library.js';

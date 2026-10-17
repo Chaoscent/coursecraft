@@ -80,8 +80,8 @@ export async function createTestApp(env: Record<string, string> = {}): Promise<T
 
   // Each helper request comes from its own address so per-IP rate limits do
   // not interfere; rate-limit tests call app.inject with a fixed address.
-  const request: TestApp['request'] = (actor, method, url, body, headers = {}) =>
-    app.inject({
+  const request: TestApp['request'] = async (actor, method, url, body, headers = {}) => {
+    const res = await app.inject({
       method,
       url,
       remoteAddress: `10.${(++clients >> 16) & 255}.${(clients >> 8) & 255}.${clients & 255}`,
@@ -94,6 +94,11 @@ export async function createTestApp(env: Record<string, string> = {}): Promise<T
       ...(actor ? { cookies: { [SESSION_COOKIE]: actor.cookie } } : {}),
       ...(body !== undefined ? { payload: JSON.stringify(body) } : {}),
     });
+    // Follow session rotation (e.g. after group changes), like a browser.
+    const rotated = sessionCookie(res);
+    if (actor && rotated) actor.cookie = rotated;
+    return res;
+  };
 
   const createUser: TestApp['createUser'] = async (roles, options = {}) => {
     counter += 1;

@@ -204,6 +204,7 @@ describe('session fixation and rotation', () => {
     const user = await t.createUser(['learner']);
     const a = await t.login(user.email);
     const b = await t.login(user.email);
+    const before = a.cookie; // the helper follows the rotation
     const res = await t.request(a, 'POST', '/api/account/password', {
       currentPassword: PASSWORD,
       newPassword: 'another long password',
@@ -212,7 +213,7 @@ describe('session fixation and rotation', () => {
     const rotated = sessionCookie(res);
     expect(rotated).toBeDefined();
     expect((await me(b.cookie)).json().session).toBeNull();
-    expect((await me(a.cookie)).json().session).toBeNull();
+    expect((await me(before)).json().session).toBeNull();
     expect((await me(rotated ?? '')).json().session).not.toBeNull();
   });
 

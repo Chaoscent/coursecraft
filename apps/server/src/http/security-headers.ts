@@ -27,7 +27,8 @@ function directives(config: AppConfig, styleNonce?: string): Record<string, stri
     'object-src': ["'none'"],
     'base-uri': ["'none'"],
     'form-action': ["'self'"],
-    'frame-src': config.contentUrl ? [config.contentUrl.origin] : ["'none'"],
+    // Course playback: the content origin, or the app itself when none is configured.
+    'frame-src': config.contentUrl ? [config.contentUrl.origin] : ["'self'"],
     'frame-ancestors': ["'none'"],
   };
 }

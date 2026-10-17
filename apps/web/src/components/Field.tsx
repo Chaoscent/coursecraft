@@ -28,7 +28,7 @@ interface TextProps {
   label: string;
   value: string;
   onChange: (value: string) => void;
-  type?: 'text' | 'email' | 'password' | 'search';
+  type?: 'text' | 'email' | 'password' | 'search' | 'date';
   autoComplete?: string;
   isRequired?: boolean;
   isDisabled?: boolean;

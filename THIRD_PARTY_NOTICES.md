@@ -56,6 +56,13 @@ their license files next to them:
 - `iccs/`: colour profile (CC0-1.0).
 - `cmaps/`: Adobe CMap resources (BSD-3-Clause).
 
+## Shipped JavaScript from npm in the player bundle
+
+`scorm-again` (MIT, © Jonathan Putney) is copied unmodified into the player
+directory as `scorm-again.min.js` with its licence as
+`scorm-again.LICENSE.txt`. It provides the SCORM runtime API for imported
+packages on the content origin.
+
 ## npm packages
 
 See `docs/dependencies.md`. All npm dependencies are checked against an

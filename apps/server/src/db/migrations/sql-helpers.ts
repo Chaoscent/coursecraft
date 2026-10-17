@@ -35,6 +35,10 @@ export const lower = (column: TrustedIdentifier): RawBuilder<string> =>
 export const oneOf = (column: TrustedIdentifier, values: readonly string[]): RawBuilder<boolean> =>
   sql<boolean>`${sql.ref(column)} in (${sql.join(values.map((v) => sql.lit(v)))})`;
 
+/** CHECK expression: exactly one of two columns is set. */
+export const exactlyOne = (a: TrustedIdentifier, b: TrustedIdentifier): RawBuilder<boolean> =>
+  sql<boolean>`num_nonnulls(${sql.ref(a)}, ${sql.ref(b)}) = 1`;
+
 /** CHECK expression `column = value` for a numeric constant (singleton tables). */
 export const equals = (column: TrustedIdentifier, value: number): RawBuilder<boolean> =>
   sql<boolean>`${sql.ref(column)} = ${sql.lit(value)}`;

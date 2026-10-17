@@ -54,5 +54,7 @@ declare module 'fastify' {
     allowDuringPasswordChange?: boolean;
     /** Route accepts multipart/form-data (file uploads). */
     allowMultipart?: boolean;
+    /** Authenticated by a launch token in the path; cookies are ignored. */
+    tokenAuth?: boolean;
   }
 }

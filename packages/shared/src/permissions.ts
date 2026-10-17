@@ -13,6 +13,7 @@ export const PERMISSIONS = [
   'settings.manage',
   'audit.read',
   'courses.author',
+  'library.view',
   'library.manage',
   'assignments.manage',
   'reports.read',
@@ -27,8 +28,15 @@ export type RoutePermission = Permission | 'public';
 
 export const ROLE_PERMISSIONS: Readonly<Record<Role, readonly Permission[]>> = {
   admin: PERMISSIONS,
-  author: ['session.self', 'courses.author', 'learning.participate'],
-  trainer: ['session.self', 'assignments.manage', 'reports.read', 'grading.perform', 'learning.participate'],
+  author: ['session.self', 'courses.author', 'library.view', 'learning.participate'],
+  trainer: [
+    'session.self',
+    'library.view',
+    'assignments.manage',
+    'reports.read',
+    'grading.perform',
+    'learning.participate',
+  ],
   learner: ['session.self', 'learning.participate'],
 };
 

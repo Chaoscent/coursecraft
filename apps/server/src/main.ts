@@ -4,6 +4,7 @@ import { loadConfig } from './config/env.js';
 import { createContext } from './context-factory.js';
 import { checkReadiness } from './db/readiness.js';
 import { buildApp } from './http/app.js';
+import { buildContentApp } from './http/content-app.js';
 import { bossQueue, createBoss } from './jobs/queue.js';
 import { expireStale, handleConvertDone } from './modules/conversions/service.js';
 import { issueSetupToken } from './modules/setup/service.js';
@@ -15,6 +16,7 @@ const config = loadConfig();
 const boss = createBoss(config.databaseUrl);
 const ctx = createContext(config, bossQueue(boss));
 const { app } = await buildApp({ config, ctx, checkReadiness: () => checkReadiness(ctx.db) });
+const contentApp = config.contentUrl ? await buildContentApp(config, ctx) : null;
 ctx.log = app.log;
 boss.on('error', (error: Error) => app.log.error({ err: error }, 'job queue error'));
 await boss.start();
@@ -51,6 +53,7 @@ const shutdown = async (signal: string) => {
   clearInterval(cleanup);
   clearInterval(sweep);
   await app.close();
+  await contentApp?.close();
   await boss.stop({ graceful: true, timeout: 20_000 });
   await ctx.db.destroy();
   process.exit(0);
@@ -59,3 +62,4 @@ process.once('SIGTERM', () => void shutdown('SIGTERM'));
 process.once('SIGINT', () => void shutdown('SIGINT'));
 
 await app.listen({ host: config.host, port: config.port });
+if (contentApp) await contentApp.listen({ host: config.host, port: config.contentPort });

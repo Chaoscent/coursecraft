@@ -19,6 +19,17 @@ issue once the repository is published.
 - [ ] Some LMS require the ADL/IMS XSD files next to `imsmanifest.xml`; check
       their license and add them if needed.
 
+## LMS
+
+- [ ] XLSX report export (exceljs) next to CSV.
+- [ ] LRS credentials for external clients (Basic auth per client) and full
+      statement query filters (agent, verb, activity, since/until, paging).
+- [ ] xAPI concurrency headers (If-Match / If-None-Match) for documents.
+- [ ] Multi-SCO SCORM packages and multi-AU cmi5 courses (today: first unit).
+- [ ] Reminder e-mails for due dates (Phase 8, mail module).
+- [ ] Trainers limited to their own groups (today: one organisation, all
+      learners visible to `reports.read`).
+
 ## PPTX import
 
 - [ ] Check import and rendering quality against a corpus of real-world

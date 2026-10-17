@@ -23,6 +23,6 @@ lernwerk.lan {
 
 lernwerk.lan:8443 {
 	tls internal
-	# The content listener is added in Phase 2; until then this site is unused.
-	reverse_proxy 127.0.0.1:3443
+	# Content listener of the app container (LERNWERK_CONTENT_HTTP_PORT).
+	reverse_proxy 127.0.0.1:3001
 }

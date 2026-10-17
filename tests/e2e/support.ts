@@ -4,14 +4,18 @@ import { expect, type Page } from '@playwright/test';
 export const ADMIN = { email: 'admin@example.org', password: 'admin password for e2e', name: 'E2E Admin' };
 
 /** Fails the test on console errors, page errors and requests to other origins. */
-export function watchPage(page: Page, origin: string): string[] {
+export function watchPage(page: Page, origin: string, ...allowed: string[]): string[] {
   const problems: string[] = [];
   page.on('console', (m) => {
-    if (m.type() === 'error' && !m.text().includes('401')) problems.push(`console: ${m.text()}`);
+    // A missing xAPI state document is a 404 by specification (first launch, nothing to resume).
+    const expected404 = m.text().includes('404') && m.location().url.includes('/xapi/activities/state');
+    if (m.type() === 'error' && !m.text().includes('401') && !expected404)
+      problems.push(`console: ${m.text()}`);
   });
   page.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`));
   page.on('request', (r) => {
-    if (!r.url().startsWith(origin) && !r.url().startsWith('data:') && !r.url().startsWith('blob:'))
+    const url = r.url();
+    if (![origin, ...allowed, 'data:', 'blob:'].some((prefix) => url.startsWith(prefix)))
       problems.push(`external: ${r.url()}`);
   });
   return problems;

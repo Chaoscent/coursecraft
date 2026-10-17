@@ -175,6 +175,125 @@ export interface ConversionsTable {
   finished_at: Date | null;
 }
 
+type DefaultedTimestamp = ColumnType<Date, Date | string | undefined, Date | string>;
+type Json<T extends object = Record<string, unknown>> = JSONColumnType<T, string | undefined, string>;
+
+export type PackageKind = 'lernwerk' | 'scorm12' | 'scorm2004' | 'xapi' | 'cmi5';
+
+export interface PackagesTable {
+  id: Generated<string>;
+  kind: PackageKind;
+  title: string;
+  launch_path: string;
+  manifest: Json;
+  size: ColumnType<string, number, number>;
+  source_course_id: string | null;
+  source_version: number | null;
+  created_by: string | null;
+  created_at: CreatedAt;
+}
+
+export interface LibraryItemsTable {
+  id: Generated<string>;
+  package_id: string;
+  title: string;
+  description: ColumnType<string, string | undefined, string>;
+  status: ColumnType<'active' | 'archived', 'active' | 'archived' | undefined, 'active' | 'archived'>;
+  source_course_id: string | null;
+  created_by: string | null;
+  created_at: CreatedAt;
+  updated_at: DefaultedTimestamp;
+}
+
+export interface AssignmentsTable {
+  id: Generated<string>;
+  library_item_id: string;
+  user_id: string | null;
+  group_id: string | null;
+  due_at: Date | null;
+  created_by: string | null;
+  created_at: CreatedAt;
+}
+
+export type Completion = 'unknown' | 'incomplete' | 'completed';
+export type Success = 'unknown' | 'passed' | 'failed';
+
+export interface RegistrationsTable {
+  id: Generated<string>;
+  user_id: string;
+  library_item_id: string;
+  package_id: string;
+  attempt: number;
+  completion: ColumnType<Completion, Completion | undefined, Completion>;
+  success: ColumnType<Success, Success | undefined, Success>;
+  score_scaled: number | null;
+  time_spent_ms: ColumnType<string, number | undefined, number>;
+  started_at: DefaultedTimestamp;
+  last_activity_at: DefaultedTimestamp;
+  completed_at: Date | null;
+}
+
+export interface LaunchTokensTable {
+  id: Generated<string>;
+  token_hash: string;
+  registration_id: string;
+  user_id: string;
+  session_id: string;
+  package_id: string;
+  mode: ColumnType<string, string | undefined, string>;
+  fetch_used: ColumnType<boolean, boolean | undefined, boolean>;
+  created_at: CreatedAt;
+  expires_at: DefaultedTimestamp;
+  absolute_expires_at: DefaultedTimestamp;
+  revoked_at: Date | null;
+}
+
+export interface ScormRuntimeTable {
+  registration_id: string;
+  cmi: Json;
+  updated_at: DefaultedTimestamp;
+}
+
+export interface LrsStatementsTable {
+  id: string;
+  stored: DefaultedTimestamp;
+  statement: Json;
+  actor_key: string;
+  verb_id: string;
+  activity_id: string | null;
+  registration: string | null;
+  voided: ColumnType<boolean, boolean | undefined, boolean>;
+}
+
+export interface LrsDocumentsTable {
+  id: Generated<string>;
+  kind: 'state' | 'activity_profile' | 'agent_profile';
+  activity_id: ColumnType<string, string | undefined, string>;
+  agent_key: ColumnType<string, string | undefined, string>;
+  registration: ColumnType<string, string | undefined, string>;
+  doc_id: string;
+  content: Buffer;
+  content_type: string;
+  etag: string;
+  updated_at: DefaultedTimestamp;
+}
+
+export interface QuizResponsesTable {
+  registration_id: string;
+  question_id: string;
+  description: ColumnType<string, string | undefined, string>;
+  interaction_type: ColumnType<string, string | undefined, string>;
+  response: ColumnType<string, string | undefined, string>;
+  success: boolean | null;
+  score_raw: number | null;
+  score_max: number | null;
+  needs_manual_grading: ColumnType<boolean, boolean | undefined, boolean>;
+  manual_score: number | null;
+  graded_by: string | null;
+  graded_at: Date | null;
+  answered_at: DefaultedTimestamp;
+}
+
 export interface Database {
   settings: SettingsTable;
   kysely_migration: KyselyMigrationTable;
@@ -194,4 +313,13 @@ export interface Database {
   course_locks: CourseLocksTable;
   course_versions: CourseVersionsTable;
   conversions: ConversionsTable;
+  packages: PackagesTable;
+  library_items: LibraryItemsTable;
+  assignments: AssignmentsTable;
+  registrations: RegistrationsTable;
+  launch_tokens: LaunchTokensTable;
+  scorm_runtime: ScormRuntimeTable;
+  lrs_statements: LrsStatementsTable;
+  lrs_documents: LrsDocumentsTable;
+  quiz_responses: QuizResponsesTable;
 }

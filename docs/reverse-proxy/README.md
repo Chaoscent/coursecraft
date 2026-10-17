@@ -36,4 +36,15 @@ install the local root certificate, and open https://localhost:8443.
      is set; import via Settings → Certificates → Authorities.
 5. Restart the browsers.
 
-Examples for Traefik and nginx follow with the content listener in Phase 2.
+## Content origin
+
+The app container listens on two ports: 3000 for the app origin and 3001 for
+the content origin (course playback). Compose publishes them as
+`LERNWERK_HTTP_PORT` and `LERNWERK_CONTENT_HTTP_PORT`. The proxy forwards the
+content host or port to the second one and must not add cookies or
+authentication. Without `LERNWERK_CONTENT_URL` the second listener is not
+started, own courses play on the app origin, and importing third-party
+packages is disabled.
+
+With a subdomain instead of a port (`https://content.example.org`), add a
+second site block with `reverse_proxy 127.0.0.1:3001`.

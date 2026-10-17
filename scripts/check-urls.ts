@@ -19,6 +19,7 @@ const ALLOWED = [
   // Documentation links inside library error messages; shown as text, never requested.
   /^https:\/\/react\.dev\/errors\//,
   /^https:\/\/reactrouter\.com\//,
+  /^https:\/\/github\.com\/ungap\/url-search-params\.?$/,
   /^https:\/\/react\.i18next\.com\//,
   /^https:\/\/prosemirror\.net\/docs\//,
   /^https:\/\/bit\.ly\/3cXEKWf$/,

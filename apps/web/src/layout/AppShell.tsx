@@ -105,6 +105,13 @@ export function AppShell() {
       ],
     },
     {
+      group: t('nav.manage'),
+      entries: [
+        { to: '/library', icon: 'gallery-vertical-end', label: t('nav.library'), permission: 'library.view' },
+        { to: '/grading', icon: 'square-check', label: t('nav.grading'), permission: 'grading.perform' },
+      ],
+    },
+    {
       group: t('nav.admin'),
       entries: [
         { to: '/admin/users', icon: 'users', label: t('nav.users'), permission: 'users.manage' },

@@ -1,4 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
+import { createWriteStream } from 'node:fs';
+import { mkdir } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
+import { pipeline } from 'node:stream/promises';
 import yauzl from 'yauzl';
 import { AppError } from '../http/errors.js';
 
@@ -111,6 +115,33 @@ export class ZipArchive {
         stream.on('end', () => resolve(Buffer.concat(chunks)));
       });
     });
+  }
+
+  /**
+   * Writes every entry below `dir`, streaming (large media never sit in
+   * memory). Paths were validated when the archive was opened.
+   */
+  async extractTo(dir: string): Promise<number> {
+    let total = 0;
+    for (const [path, entry] of this.#entries) {
+      const target = join(dir, path);
+      await mkdir(dirname(target), { recursive: true });
+      total += await new Promise<number>((resolve, reject) => {
+        this.#zip.openReadStream(entry, (error, stream) => {
+          if (error) return reject(invalid('Corrupt ZIP entry'));
+          let size = 0;
+          const out = createWriteStream(target, { flags: 'wx', mode: 0o640 });
+          stream.on('data', (chunk: Buffer) => {
+            size += chunk.length;
+            if (size > this.#limits.maxEntryBytes) stream.destroy(invalid('File in archive too large'));
+          });
+          pipeline(stream, out)
+            .then(() => resolve(size))
+            .catch(() => reject(invalid('Corrupt ZIP entry')));
+        });
+      });
+    }
+    return total;
   }
 
   close(): void {

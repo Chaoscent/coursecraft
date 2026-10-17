@@ -14,6 +14,10 @@ import { HomePage } from '../pages/HomePage.js';
 import { LoginPage } from '../pages/LoginPage.js';
 import { SetupPage } from '../pages/SetupPage.js';
 import { UsersPage } from '../pages/UsersPage.js';
+import { GradingPage } from '../pages/GradingPage.js';
+import { LibraryPage } from '../pages/LibraryPage.js';
+import { PlayerPage } from '../pages/PlayerPage.js';
+import { ReportPage } from '../pages/ReportPage.js';
 
 /** Full-window pages (editor) outside the application shell. */
 function RequireStandalone({ permission, children }: { permission: Permission; children: ReactNode }) {
@@ -50,6 +54,14 @@ const router = createBrowserRouter([
     ),
   },
   {
+    path: '/learn/:id',
+    element: (
+      <RequireStandalone permission="learning.participate">
+        <PlayerPage />
+      </RequireStandalone>
+    ),
+  },
+  {
     path: '/',
     element: <RequireSession />,
     children: [
@@ -60,6 +72,30 @@ const router = createBrowserRouter([
         element: (
           <Allowed permission="courses.author">
             <CoursesPage />
+          </Allowed>
+        ),
+      },
+      {
+        path: 'library',
+        element: (
+          <Allowed permission="library.view">
+            <LibraryPage />
+          </Allowed>
+        ),
+      },
+      {
+        path: 'library/:id/report',
+        element: (
+          <Allowed permission="reports.read">
+            <ReportPage />
+          </Allowed>
+        ),
+      },
+      {
+        path: 'grading',
+        element: (
+          <Allowed permission="grading.perform">
+            <GradingPage />
           </Allowed>
         ),
       },

@@ -46,21 +46,21 @@ export const QUIZ = {
   ],
 };
 
-/** Logs in through the API, creates a course (two slides, optionally a quiz) and downloads an export. */
-export async function exportCourse(
+/** Logs in through the API and creates a course (two slides, optionally a quiz). */
+export async function createCourse(
   request: APIRequestContext,
   baseURL: string,
   email: string,
   password: string,
-  format: Format,
+  title: string,
   withQuiz = false,
-) {
+): Promise<{ id: string; headers: Record<string, string> }> {
   const headers = { origin: baseURL };
   const login = await request.post('/api/auth/login', { headers, data: { email, password } });
   const csrf = ((await login.json()) as { session: { csrfToken: string } }).session.csrfToken;
   const h = { ...headers, 'x-csrf-token': csrf };
   const created = (await (
-    await request.post('/api/courses', { headers: h, data: { title: `Export ${format}`, language: 'de' } })
+    await request.post('/api/courses', { headers: h, data: { title, language: 'de' } })
   ).json()) as { id: string };
   await request.post(`/api/courses/${created.id}/lock`, { headers: h });
   const doc = (await (await request.get(`/api/courses/${created.id}`)).json()) as {
@@ -94,7 +94,20 @@ export async function exportCourse(
     },
   });
   if (!saved.ok()) throw new Error(`save failed: ${saved.status()} ${await saved.text()}`);
-  const zip = await request.get(`/api/courses/${created.id}/export?format=${format}`);
+  return { id: created.id, headers: h };
+}
+
+/** Creates a course and downloads an export. */
+export async function exportCourse(
+  request: APIRequestContext,
+  baseURL: string,
+  email: string,
+  password: string,
+  format: Format,
+  withQuiz = false,
+) {
+  const { id } = await createCourse(request, baseURL, email, password, `Export ${format}`, withQuiz);
+  const zip = await request.get(`/api/courses/${id}/export?format=${format}`);
   if (!zip.ok()) throw new Error(`export failed: ${zip.status()} ${await zip.text()}`);
   return unzip(await zip.body());
 }

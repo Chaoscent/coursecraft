@@ -62,6 +62,8 @@ export function registerAuth(app: FastifyInstance, ctx: AppContext): void {
     const permission = request.routeOptions.config.permission;
     // Unknown routes (404 handler) carry no permission and need no session.
     if (!permission) return;
+    // Launch routes authenticate by the token in the path and never look at cookies.
+    if (request.routeOptions.config.tokenAuth) return;
 
     const token = request.cookies[SESSION_COOKIE];
     if (token) {

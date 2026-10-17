@@ -487,8 +487,26 @@ TOTP secrets, OIDC client secrets, and SMTP passwords. The API returns only
   projected into `registrations` and `quiz_responses`.
 - Imported SCORM: scorm-again in the wrapper (§7.4); CMI data stored per
   registration and projected the same way.
-- LRS: xAPI 1.0.3 (statements, state, activity/agent profiles, `about`).
-  Credentials per external client; launch-token auth for own launches.
+- LRS: xAPI 1.0.3 (statements, state, activity/agent profiles, `about`)
+  under `/launch/<token>/xapi/`, authenticated by the launch token.
+  Credentials for external clients are planned (docs/todo.md).
+- Library (`modules/library`): own courses are published as cmi5 packages
+  built from a saved version (publishing again points the item to the new
+  package; running attempts keep theirs). Imported packages are detected by
+  `cmi5.xml`, `tincan.xml` or `imsmanifest.xml` (SCORM 1.2/2004; the first
+  SCO/AU is launched) and extracted to `data/packages/<id>/`.
+- Assignments go to users or groups (members of subgroups included) with an
+  optional due date. Learners see assigned active items, start or resume an
+  attempt (`registrations`), or start a new one.
+- Projection (`modules/learning/projection.ts`): statements and SCORM data
+  set completion, success (never backwards), scaled score, time spent and
+  question responses. With a SCORM 1.2 mastery score the LMS decides
+  pass/fail from the score. Free-text answers without a result go to the
+  grading queue; a grade recomputes the score and, with a mastery score,
+  the pass state.
+- Reports per library item: every assigned learner with latest status,
+  score, attempts, time, due date and overdue flag; question statistics;
+  CSV export (UTF-8 with BOM, formula-safe cells).
 
 ## 12. AI adapter (Phase 7)
 

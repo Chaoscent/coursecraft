@@ -84,6 +84,7 @@ export function CoursesPage() {
   const [selected, setSelected] = useState<Selection>(new Set());
   const [dialog, setDialog] = useState<null | 'new' | 'archive'>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [published, setPublished] = useState<string | null>(null);
   const [importing, setImporting] = useState<{
     name: string;
     id: string | null;
@@ -144,6 +145,24 @@ export function CoursesPage() {
             {t('courses.open')}
           </ToolButton>
           <ToolButton
+            icon="monitor-up"
+            isDisabled={!current || status === 'archived'}
+            onPress={() =>
+              current &&
+              void api(z.object({ id: z.uuid(), version: z.number() }), '/api/library/publish', {
+                method: 'POST',
+                body: { courseId: current.id },
+              })
+                .then((r) => {
+                  setActionError(null);
+                  setPublished(t('courses.published', { title: current.title, version: r.version }));
+                })
+                .catch((e: unknown) => setActionError(errorMessage(e)))
+            }
+          >
+            {t('courses.publish')}
+          </ToolButton>
+          <ToolButton
             icon="archive"
             isDisabled={!canManage || status === 'archived'}
             onPress={() => setDialog('archive')}
@@ -169,7 +188,13 @@ export function CoursesPage() {
       }
     >
       <div className={styles.stack}>
-        {error || actionError ? <Notice tone="danger">{actionError ?? error}</Notice> : <span />}
+        {error || actionError ? (
+          <Notice tone="danger">{actionError ?? error}</Notice>
+        ) : published ? (
+          <Notice tone="success">{published}</Notice>
+        ) : (
+          <span />
+        )}
         <DataTable
           label={t('courses.title_plural')}
           rows={data}

@@ -169,6 +169,34 @@ change:
 - Headers: CSP and the rest asserted on all response types.
 - Offline: whole core flow without network.
 
+## 5a. Course playback (content origin)
+
+- Playback URLs carry a launch token (`/launch/<token>/…`, 256 bit, stored
+  as SHA-256). It is bound to user, registration and package, expires 15
+  minutes after the last heartbeat of the host page (12 hours at most), is
+  revoked when the host page closes, and is deleted with the session
+  (logout, deactivation: foreign key with cascade).
+- The content listener has no cookie support and only `/launch/…` routes.
+  On the app origin the same routes are flagged `tokenAuth`, so the session
+  hook never reads cookies for them.
+- The LRS behind a launch accepts statements and documents only for the
+  launched actor and registration; statement queries are limited to that
+  registration. Review/Browse launches store statements without changing
+  results.
+- SCORM data reaches the server only through the host page with the
+  learner's session and CSRF token. postMessage on both sides checks origin,
+  source window, message shape and launch id.
+- Responses: own courses `script-src 'self'`; third-party packages
+  `'unsafe-inline' 'unsafe-eval'` (they need it), always `connect-src 'self'`,
+  `frame-ancestors` app origin (plus the content origin itself for SCOs in
+  the wrapper frame), `nosniff`, `Referrer-Policy: no-referrer`, no cookies.
+  The host page frames playback with
+  `sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-downloads"`
+  (no top navigation).
+- Package import: ZIP limits, normalised paths, no symlinks, launch paths
+  must be relative and exist; external launch URLs are refused. Files are
+  served only after an `O_NOFOLLOW` check inside the package directory.
+
 ## 8. Known limitations
 
 - Third-party packages run arbitrary JavaScript on the content origin. They
@@ -178,6 +206,12 @@ change:
 - A content origin on a subdomain or another port is same-site with the app.
   The `__Host-` cookie is still never sent there, but a separate registrable
   domain isolates more (no same-site relationship).
+- Without a content origin, own courses run on the app origin in a frame
+  with `allow-same-origin`. They are authored in Lernwerk and keep the
+  strict CSP, but they are not isolated from the app the way third-party
+  packages are; production setups should configure a content origin.
+- Report CSV files prefix cells starting with `= + - @` so spreadsheets do
+  not evaluate them (CSV injection).
 - The converter role can read all job payloads in the `pgboss` schema.
   Payloads therefore contain only ids, file names, and parameters.
 - Plain-HTTP deployments are not supported (`__Host-` cookies require HTTPS,

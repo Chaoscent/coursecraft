@@ -1,23 +1,84 @@
 // SPDX-License-Identifier: Apache-2.0
+import { myItemsResponseSchema, type LearningStatus, type MyItem } from '@lernwerk/shared';
+import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router';
+import { api } from '../api/client.js';
+import { Badge } from '../components/Badge.js';
+import { Button } from '../components/Button.js';
 import { DataTable } from '../components/DataTable.js';
+import { Notice } from '../components/Notice.js';
 import { Page } from '../components/Page.js';
+import { formatDateTime } from '../lib/format.js';
+import { useApi } from '../lib/useApi.js';
+import styles from './AdminPages.module.css';
 
-/** Learner portal; assignments arrive with the LMS (Phase 5). */
+const EMPTY: MyItem[] = [];
+
+export const STATUS_TONE: Record<LearningStatus, 'neutral' | 'success' | 'warning' | 'danger'> = {
+  not_started: 'neutral',
+  in_progress: 'warning',
+  completed: 'success',
+  passed: 'success',
+  failed: 'danger',
+};
+
+/** Learner portal: assigned courses with status, due date and start/continue. */
 export function HomePage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const fetcher = useCallback(() => api(myItemsResponseSchema, '/api/learn/items').then((r) => r.items), []);
+  const { data = EMPTY, error } = useApi(fetcher);
+
   return (
-    <Page title={t('home.title')}>
-      <DataTable
-        label={t('home.title')}
-        columns={[
-          { id: 'title', label: t('home.course'), render: () => null, isRowHeader: true },
-          { id: 'due', label: t('home.due'), render: () => null },
-          { id: 'progress', label: t('home.progress'), render: () => null },
-        ]}
-        rows={[]}
-        empty={t('home.empty')}
-      />
+    <Page title={t('home.title')} meta={t('home.count', { count: data.length })}>
+      <div className={styles.stack}>
+        {error ? <Notice tone="danger">{error}</Notice> : <span />}
+        <DataTable
+          label={t('home.title')}
+          rows={data}
+          onRowAction={(id) => void navigate(`/learn/${id}`)}
+          empty={t('home.empty')}
+          columns={[
+            { id: 'title', label: t('home.course'), isRowHeader: true, render: (i) => i.title },
+            {
+              id: 'status',
+              label: t('home.status'),
+              render: (i) => <Badge tone={STATUS_TONE[i.status]}>{t(`learning.status.${i.status}`)}</Badge>,
+            },
+            {
+              id: 'score',
+              label: t('home.score'),
+              numeric: true,
+              render: (i) => (i.scoreScaled === null ? '–' : `${Math.round(i.scoreScaled * 100)} %`),
+            },
+            {
+              id: 'due',
+              label: t('home.due'),
+              numeric: true,
+              render: (i) =>
+                i.dueAt ? (
+                  <span className={i.overdue ? styles.overdue : ''}>{formatDateTime(i.dueAt)}</span>
+                ) : (
+                  '–'
+                ),
+            },
+            {
+              id: 'action',
+              label: t('home.action'),
+              render: (i) => (
+                <Button onPress={() => void navigate(`/learn/${i.id}`)}>
+                  {i.status === 'not_started'
+                    ? t('home.start')
+                    : i.status === 'in_progress'
+                      ? t('home.continue')
+                      : t('home.review')}
+                </Button>
+              ),
+            },
+          ]}
+        />
+      </div>
     </Page>
   );
 }

@@ -34,6 +34,8 @@ const configSchema = z
     contentUrl: httpsOrLocalhost.optional(),
     host: z.string().default('0.0.0.0'),
     port: z.coerce.number().int().min(1).max(65535).default(3000),
+    /** Listener for the content origin (only when LERNWERK_CONTENT_URL is set). */
+    contentPort: z.coerce.number().int().min(1).max(65535).default(3001),
     logLevel: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
     databaseUrl: z.string().min(1),
     dataDir: z.string().default('/data'),
@@ -84,6 +86,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     contentUrl: env['LERNWERK_CONTENT_URL'] || undefined,
     host: env['LERNWERK_HOST'],
     port: env['LERNWERK_PORT'],
+    contentPort: env['LERNWERK_CONTENT_PORT'],
     logLevel: env['LERNWERK_LOG_LEVEL'],
     databaseUrl: readSecret(env, 'LERNWERK_DATABASE_URL'),
     dataDir: env['LERNWERK_DATA_DIR'],

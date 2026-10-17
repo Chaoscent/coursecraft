@@ -38,7 +38,10 @@
     "groups": "Gruppen",
     "audit": "Audit-Log",
     "author": "Autorenwerkzeug",
-    "courses": "Kurse"
+    "courses": "Kurse",
+    "manage": "Lernverwaltung",
+    "library": "Bibliothek",
+    "grading": "Bewertung"
   },
   "roles": {
     "admin": "Administration",
@@ -110,7 +113,15 @@
     "course": "Kurs",
     "due": "Frist",
     "progress": "Fortschritt",
-    "empty": "Ihnen sind noch keine Kurse zugewiesen."
+    "empty": "Ihnen sind noch keine Kurse zugewiesen.",
+    "count_one": "{{count}} Kurs",
+    "count_other": "{{count}} Kurse",
+    "status": "Status",
+    "score": "Ergebnis",
+    "action": "Aktion",
+    "start": "Starten",
+    "continue": "Fortsetzen",
+    "review": "Ansehen"
   },
   "account": {
     "title": "Konto",
@@ -276,7 +287,9 @@
     "owner": "Verantwortlich",
     "nodes": "Folien",
     "editing": "In Bearbeitung",
-    "updated": "Geändert"
+    "updated": "Geändert",
+    "publish": "In Bibliothek veröffentlichen",
+    "published": "„{{title}}“ ist als Version {{version}} in der Bibliothek."
   },
   "editor": {
     "loading": "Kurs wird geladen …",
@@ -732,5 +745,102 @@
       "render_skipped": "Folienbilder wurden nicht erzeugt.",
       "too_many_elements": "Die Folie hat mehr als 500 Elemente; der Rest wurde ausgelassen."
     }
+  },
+  "learning": {
+    "status": {
+      "not_started": "Nicht begonnen",
+      "in_progress": "In Bearbeitung",
+      "completed": "Abgeschlossen",
+      "passed": "Bestanden",
+      "failed": "Nicht bestanden"
+    }
+  },
+  "player": {
+    "loading": "Kurs wird geladen …",
+    "close": "Schließen",
+    "saveFailed": "Fortschritt konnte nicht gespeichert werden"
+  },
+  "library": {
+    "title": "Bibliothek",
+    "count_one": "{{count}} Eintrag",
+    "count_other": "{{count}} Einträge",
+    "import": "Paket importieren …",
+    "assignAction": "Zuweisen …",
+    "report": "Bericht",
+    "archive": "Archivieren",
+    "restore": "Wiederherstellen",
+    "status": "Status",
+    "active": "Aktiv",
+    "archived": "Archiviert",
+    "itemTitle": "Titel",
+    "kind": "Typ",
+    "assignments": "Zuweisungen",
+    "learners": "Lernende",
+    "completed": "Abgeschlossen",
+    "updated": "Geändert",
+    "empty": "Noch nichts in der Bibliothek. Veröffentlichen Sie einen Kurs oder importieren Sie ein Paket.",
+    "imported": "„{{title}}“ wurde importiert.",
+    "importedMulti": "„{{title}}“ wurde importiert. Das Paket enthält mehrere Lerneinheiten; gestartet wird nur die erste.",
+    "noContentOrigin": "Fremdpakete (SCORM, xAPI, cmi5) brauchen einen eigenen Content-Origin (LERNWERK_CONTENT_URL). Eigene Kurse funktionieren ohne.",
+    "kinds": {
+      "lernwerk": "Lernwerk",
+      "scorm12": "SCORM 1.2",
+      "scorm2004": "SCORM 2004",
+      "xapi": "xAPI",
+      "cmi5": "cmi5"
+    },
+    "assignTitle": "„{{title}}“ zuweisen",
+    "assign": "Zuweisen",
+    "groups": "Gruppen",
+    "users": "Personen",
+    "findUser": "Person suchen",
+    "dueDate": "Frist",
+    "current": "Bestehende Zuweisungen",
+    "noAssignments": "Noch keine Zuweisungen.",
+    "target": "Zugewiesen an",
+    "type": "Art",
+    "targetType": {
+      "user": "Person",
+      "group": "Gruppe"
+    },
+    "remove": "Entfernen"
+  },
+  "report": {
+    "title": "Bericht: {{title}}",
+    "loading": "Bericht wird geladen …",
+    "learners_one": "{{count}} Lernende:r",
+    "learners_other": "{{count}} Lernende",
+    "csv": "CSV exportieren",
+    "learnersTable": "Lernende",
+    "empty": "Niemandem zugewiesen.",
+    "name": "Name",
+    "email": "E-Mail",
+    "status": "Status",
+    "score": "Ergebnis",
+    "attempts": "Versuche",
+    "time": "Lernzeit",
+    "due": "Frist",
+    "completed": "Abgeschlossen am",
+    "questions": "Fragen",
+    "noQuestions": "Noch keine Antworten.",
+    "question": "Frage",
+    "type": "Typ",
+    "answers": "Antworten",
+    "correctRate": "Richtig",
+    "pending": "Offen zur Bewertung"
+  },
+  "grading": {
+    "title": "Bewertung",
+    "count_one": "{{count}} offene Antwort",
+    "count_other": "{{count}} offene Antworten",
+    "empty": "Keine Antworten warten auf eine Bewertung.",
+    "learner": "Lernende:r",
+    "course": "Kurs",
+    "question": "Frage",
+    "answer": "Antwort",
+    "answered": "Beantwortet",
+    "score": "Punkte",
+    "scoreFor": "Punkte für {{name}}",
+    "save": "Speichern"
   }
 }

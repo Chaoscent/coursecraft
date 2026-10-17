@@ -18,6 +18,10 @@ import { accountRoutes } from '../modules/account/routes.js';
 import { auditRoutes } from '../modules/audit/routes.js';
 import { conversionRoutes } from '../modules/conversions/routes.js';
 import { courseRoutes } from '../modules/courses/routes.js';
+import { learningRoutes } from '../modules/learning/routes.js';
+import { libraryRoutes } from '../modules/library/routes.js';
+import { launchRoutes } from '../modules/lrs/routes.js';
+import { reportRoutes } from '../modules/reports/routes.js';
 import { authRoutes } from '../modules/auth/routes.js';
 import { groupRoutes } from '../modules/groups/routes.js';
 import { setupRoutes } from '../modules/setup/routes.js';
@@ -57,20 +61,8 @@ function errorBody(code: ErrorCode, message: string, requestId: string): ErrorBo
   return { error: { code, message, requestId } };
 }
 
-export async function buildApp(deps: AppDeps): Promise<BuiltApp> {
-  const { config } = deps;
-  const app = Fastify({
-    logger: deps.logger ?? { level: config.logLevel, redact: REDACT },
-    trustProxy: config.trustProxy,
-    genReqId: () => randomUUID(),
-    bodyLimit: 1024 * 1024,
-  }).withTypeProvider<ZodTypeProvider>();
-
-  app.setValidatorCompiler(validatorCompiler);
-  app.setSerializerCompiler(serializerCompiler);
-  const routes = enforceRouteDeclarations(app);
-  await registerSecurityHeaders(app, config);
-
+/** Uniform JSON errors; internal details only in the log. */
+export function installErrorHandling(app: FastifyInstance): void {
   app.setErrorHandler((error, request, reply) => {
     if (error instanceof AppError) {
       return reply.status(error.status).send(errorBody(error.code, error.message, request.id));
@@ -101,6 +93,23 @@ export async function buildApp(deps: AppDeps): Promise<BuiltApp> {
   app.setNotFoundHandler((request, reply) =>
     reply.status(404).send(errorBody('not_found', 'Not found', request.id)),
   );
+}
+
+export async function buildApp(deps: AppDeps): Promise<BuiltApp> {
+  const { config } = deps;
+  const app = Fastify({
+    logger: deps.logger ?? { level: config.logLevel, redact: REDACT },
+    trustProxy: config.trustProxy,
+    genReqId: () => randomUUID(),
+    bodyLimit: 1024 * 1024,
+  }).withTypeProvider<ZodTypeProvider>();
+
+  app.setValidatorCompiler(validatorCompiler);
+  app.setSerializerCompiler(serializerCompiler);
+  const routes = enforceRouteDeclarations(app);
+  await registerSecurityHeaders(app, config);
+
+  installErrorHandling(app);
 
   app.get(
     '/healthz',
@@ -151,6 +160,11 @@ export async function buildApp(deps: AppDeps): Promise<BuiltApp> {
     auditRoutes(app, ctx);
     courseRoutes(app, ctx, ctx.assets, config.playerDir);
     conversionRoutes(app, ctx);
+    libraryRoutes(app, ctx);
+    learningRoutes(app, ctx);
+    reportRoutes(app, ctx);
+    // Without a content origin, own courses play on the app origin.
+    if (!config.contentUrl) await launchRoutes(app, ctx, { sameOrigin: true });
     if (config.webDir) await registerWebApp(app, config.webDir, config);
   }
 
