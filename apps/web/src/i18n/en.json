@@ -76,7 +76,8 @@
     "forward": "Bring forward (with Shift: to front)",
     "version": "Save version",
     "preview": "Preview",
-    "noSnap": "Hold while dragging: no snapping"
+    "noSnap": "Hold while dragging: no snapping",
+    "newSlide": "New slide"
   },
   "login": {
     "title": "Sign in",
@@ -364,7 +365,8 @@
       "view": "View",
       "output": "Output",
       "insert": "Insert",
-      "ai": "AI"
+      "ai": "AI",
+      "learning": "Learning content"
     },
     "menu": {
       "edit": "Edit",
@@ -621,7 +623,13 @@
       "end": "{{name}}: hide",
       "slideEnd": "end of slide"
     },
-    "completionDialog": "Dialog passed: {{title}}"
+    "completionDialog": "Dialog passed: {{title}}",
+    "learning": {
+      "quiz": "Quiz",
+      "survey": "Survey",
+      "interaction": "Interaction",
+      "dialog": "Dialog"
+    }
   },
   "quiz": {
     "types": {

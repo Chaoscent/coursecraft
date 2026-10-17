@@ -420,6 +420,12 @@ TOTP secrets, OIDC client secrets, and SMTP passwords. The API returns only
 - Areas: **Author** (courses, editor, quiz editor, dialog editor, recorder),
   **Manage** (users, groups, library, assignments, paths, reports, settings,
   audit log), **Learn** (portal, player host, certificates).
+- Workflow follows the conventions of presentation software: ribbon tabs
+  (Start, Insert, View), slide list on the left, properties on the right,
+  timeline below. Learning content (quiz, survey, interaction, dialog,
+  screen recording) is inserted from a labelled ribbon group; Ctrl+M adds a
+  slide, F5 previews. The design is our own (`docs/design.md`); no layout,
+  asset or text of another authoring product is used.
 - Non-slide nodes (quizzes, surveys, interactions, dialogs) have form
   editors in place of the canvas. Videos are inserted through one dialog:
   screen recording in the browser or a file, both with a trim range; all

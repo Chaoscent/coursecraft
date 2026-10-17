@@ -76,7 +76,8 @@
     "forward": "Eine Ebene nach vorn (mit Umschalt: ganz nach vorn)",
     "version": "Version speichern",
     "preview": "Vorschau",
-    "noSnap": "Beim Ziehen gedrückt: nicht einrasten"
+    "noSnap": "Beim Ziehen gedrückt: nicht einrasten",
+    "newSlide": "Neue Folie"
   },
   "login": {
     "title": "Anmelden",
@@ -364,7 +365,8 @@
       "view": "Ansicht",
       "output": "Ausgabe",
       "insert": "Einfügen",
-      "ai": "KI"
+      "ai": "KI",
+      "learning": "Lerninhalte"
     },
     "menu": {
       "edit": "Bearbeiten",
@@ -621,7 +623,13 @@
       "end": "{{name}}: Ausblenden",
       "slideEnd": "Folienende"
     },
-    "completionDialog": "Dialog bestanden: {{title}}"
+    "completionDialog": "Dialog bestanden: {{title}}",
+    "learning": {
+      "quiz": "Quiz",
+      "survey": "Umfrage",
+      "interaction": "Interaktion",
+      "dialog": "Dialog"
+    }
   },
   "quiz": {
     "types": {

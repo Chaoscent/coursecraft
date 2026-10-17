@@ -18,6 +18,7 @@ const EDITOR_SHORTCUTS = [
   { keys: ['Ctrl', 'Y'], action: 'shortcuts.redo' },
   { keys: ['Ctrl', 'C'], action: 'shortcuts.copy' },
   { keys: ['Ctrl', 'V'], action: 'shortcuts.paste' },
+  { keys: ['Ctrl', 'M'], action: 'shortcuts.newSlide' },
   { keys: ['Ctrl', 'D'], action: 'shortcuts.duplicate' },
   { keys: ['Entf'], action: 'shortcuts.delete' },
   { keys: ['↑', '↓', '←', '→'], action: 'shortcuts.nudge' },

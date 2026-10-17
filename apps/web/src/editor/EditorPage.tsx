@@ -187,6 +187,7 @@ function StatusBar() {
 }
 
 function useEditorKeys(store: EditorStore, open: (d: DialogKind) => void) {
+  const { t } = useTranslation();
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
@@ -201,6 +202,7 @@ function useEditorKeys(store: EditorStore, open: (d: DialogKind) => void) {
       if (mod && key === 'x') return (s.copy(), s.removeSelection());
       if (mod && key === 'v') return (handled(), s.paste());
       if (mod && key === 'd') return (handled(), s.duplicate());
+      if (mod && key === 'm') return (handled(), addSlide(store, t('editor.untitledSlide')));
       if (mod && key === 'a') {
         handled();
         const node = s.nodeId ? s.course.nodes[s.nodeId] : undefined;
@@ -232,7 +234,7 @@ function useEditorKeys(store: EditorStore, open: (d: DialogKind) => void) {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [store, open]);
+  }, [store, open, t]);
 }
 
 function EditorShell({ onReload }: { onReload: () => void }) {

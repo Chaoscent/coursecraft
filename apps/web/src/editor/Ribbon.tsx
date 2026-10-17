@@ -22,6 +22,7 @@ import {
   ungroup,
 } from './actions.js';
 import { useEditor, useEditorStore } from './context.js';
+import { useInsertNodes } from './useInsertNodes.js';
 import { useActiveTextEditor } from './TextEditor.js';
 import styles from './Editor.module.css';
 
@@ -191,6 +192,7 @@ export function Ribbon({
   const { t } = useTranslation();
   const store = useEditorStore();
   const readOnly = useEditor((s) => s.readOnly);
+  const insert = useInsertNodes();
   const selection = useEditor((s) => s.selection);
   const canUndo = useEditor((s) => s.past.length > 0);
   const canRedo = useEditor((s) => s.future.length > 0);
@@ -375,6 +377,20 @@ export function Ribbon({
         {view}
       </TabPanel>
       <TabPanel id="insert" className={styles.ribbonBody}>
+        <Group label={t('editor.groups.learning')}>
+          <ToolButton icon="list-checks" large isDisabled={insert.disabled} onPress={insert.quiz}>
+            {t('editor.learning.quiz')}
+          </ToolButton>
+          <ToolButton icon="clipboard-list" large isDisabled={insert.disabled} onPress={insert.survey}>
+            {t('editor.learning.survey')}
+          </ToolButton>
+          <ToolButton icon="layout-grid" large isDisabled={insert.disabled} onPress={insert.interaction}>
+            {t('editor.learning.interaction')}
+          </ToolButton>
+          <ToolButton icon="message-circle" large isDisabled={insert.disabled} onPress={insert.dialog}>
+            {t('editor.learning.dialog')}
+          </ToolButton>
+        </Group>
         <Group label={t('editor.groups.insert')}>
           <ToolButton
             icon="type"

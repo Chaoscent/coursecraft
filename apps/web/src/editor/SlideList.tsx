@@ -5,20 +5,10 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ToolButton } from '../components/Button.js';
 import { Icon } from '../components/Icon.js';
-import {
-  addChapter,
-  addSlide,
-  deleteSlide,
-  duplicateSlide,
-  insertNode,
-  moveSlide,
-  uploadFile,
-} from './actions.js';
-import { newDialog } from './dialogModel.js';
-import { newInteraction } from './interactionModel.js';
-import { newQuestion, newQuiz, newSurvey } from './quizModel.js';
+import { addChapter, addSlide, deleteSlide, duplicateSlide, moveSlide } from './actions.js';
 import { useRenderContext } from './Canvas.js';
 import { useEditor, useEditorStore } from './context.js';
+import { useInsertNodes } from './useInsertNodes.js';
 import styles from './Editor.module.css';
 
 const THUMB_WIDTH = 148;
@@ -54,6 +44,7 @@ export function SlideList() {
   const nodeId = useEditor((s) => s.nodeId);
   const lang = useEditor((s) => s.lang);
   const readOnly = useEditor((s) => s.readOnly);
+  const insert = useInsertNodes();
   const [renaming, setRenaming] = useState<string | null>(null);
   const numbers = new Map(course.structure.chapters.flatMap((c) => c.nodeIds).map((id, i) => [id, i + 1]));
 
@@ -70,70 +61,26 @@ export function SlideList() {
         <ToolButton
           icon="list-checks"
           aria-label={t('quiz.newQuiz')}
-          isDisabled={readOnly}
-          onPress={() =>
-            insertNode(
-              store,
-              newQuiz(
-                lang,
-                t('quiz.newQuizTitle'),
-                newQuestion('singleChoice', lang, {
-                  prompt: t('quiz.newPrompt'),
-                  option: t('quiz.option'),
-                  blankText: t('quiz.newBlankText'),
-                }),
-              ),
-            )
-          }
+          isDisabled={insert.disabled}
+          onPress={insert.quiz}
         />
         <ToolButton
           icon="clipboard-list"
           aria-label={t('quiz.newSurvey')}
-          isDisabled={readOnly}
-          onPress={() => insertNode(store, newSurvey(lang, t('quiz.newSurveyTitle'), t('quiz.newPrompt')))}
+          isDisabled={insert.disabled}
+          onPress={insert.survey}
         />
         <ToolButton
           icon="layout-grid"
           aria-label={t('interaction.new')}
-          isDisabled={readOnly}
-          onPress={() =>
-            insertNode(
-              store,
-              newInteraction(lang, {
-                title: t('interaction.newTitle'),
-                entry: t('interaction.entry'),
-                body: t('interaction.newBody'),
-              }),
-            )
-          }
+          isDisabled={insert.disabled}
+          onPress={insert.interaction}
         />
         <ToolButton
           icon="message-circle"
           aria-label={t('dialog.new')}
-          isDisabled={readOnly}
-          onPress={() =>
-            void uploadFile(store, 'image/png,image/jpeg,image/webp,image/svg+xml').then(
-              (sha) =>
-                sha &&
-                insertNode(
-                  store,
-                  newDialog(
-                    lang,
-                    {
-                      title: t('dialog.newTitle'),
-                      character: t('dialog.character'),
-                      altText: '',
-                      speech: t('dialog.newSpeech'),
-                      good: t('dialog.goodResponse'),
-                      bad: t('dialog.badResponse'),
-                      passed: t('dialog.passedTitle'),
-                      failed: t('dialog.failedTitle'),
-                    },
-                    sha,
-                  ),
-                ),
-            )
-          }
+          isDisabled={insert.disabled}
+          onPress={insert.dialog}
         />
         <ToolButton
           icon="copy"
