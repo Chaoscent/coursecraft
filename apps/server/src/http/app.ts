@@ -10,11 +10,14 @@ import {
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import fastifyCookie from '@fastify/cookie';
+import fastifyMultipart from '@fastify/multipart';
 import fastifyRateLimit from '@fastify/rate-limit';
 import { registerAuth } from '../auth/plugin.js';
 import type { AppConfig } from '../config/env.js';
 import { accountRoutes } from '../modules/account/routes.js';
 import { auditRoutes } from '../modules/audit/routes.js';
+import { AssetStore } from '../modules/assets/store.js';
+import { courseRoutes } from '../modules/courses/routes.js';
 import { authRoutes } from '../modules/auth/routes.js';
 import { groupRoutes } from '../modules/groups/routes.js';
 import { setupRoutes } from '../modules/setup/routes.js';
@@ -136,6 +139,9 @@ export async function buildApp(deps: AppDeps): Promise<BuiltApp> {
     app.addContentTypeParser('text/csv', { parseAs: 'string' }, (_request, body, done) => done(null, body));
     await app.register(fastifyCookie);
     await app.register(fastifyRateLimit, { global: false });
+    await app.register(fastifyMultipart, {
+      limits: { fileSize: config.uploadMaxMb * 1024 * 1024, files: 1, fields: 5, parts: 6 },
+    });
     registerAuth(app, ctx);
     authRoutes(app, ctx);
     setupRoutes(app, ctx);
@@ -143,6 +149,7 @@ export async function buildApp(deps: AppDeps): Promise<BuiltApp> {
     userRoutes(app, ctx);
     groupRoutes(app, ctx);
     auditRoutes(app, ctx);
+    courseRoutes(app, ctx, new AssetStore(config.dataDir), config.playerDir);
     if (config.webDir) await registerWebApp(app, config.webDir, config);
   }
 

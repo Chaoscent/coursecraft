@@ -38,7 +38,11 @@ export interface RequestOptions {
   body?: unknown;
   /** Raw text body (e.g. CSV) with its content type. */
   text?: { content: string; type: string };
+  /** Multipart upload (files). */
+  form?: FormData;
   query?: Query;
+  /** Lets the request outlive the page (unlock on close). */
+  keepalive?: boolean;
 }
 
 function withQuery(path: string, query?: Query): string {
@@ -57,8 +61,10 @@ export async function api<S extends z.ZodType>(
 ): Promise<z.output<S>> {
   const method = options.method ?? 'GET';
   const headers: Record<string, string> = { Accept: 'application/json' };
-  let body: string | undefined;
-  if (options.text) {
+  let body: string | FormData | undefined;
+  if (options.form) {
+    body = options.form;
+  } else if (options.text) {
     headers['Content-Type'] = options.text.type;
     body = options.text.content;
   } else if (options.body !== undefined) {

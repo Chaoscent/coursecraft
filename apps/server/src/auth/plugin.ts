@@ -77,6 +77,10 @@ export function registerAuth(app: FastifyInstance, ctx: AppContext): void {
     if (UNSAFE.has(request.method)) {
       if (!sameOrigin(request, expectedOrigin))
         throw new AppError('forbidden', 'Cross-origin request rejected');
+      const type = request.headers['content-type'] ?? '';
+      if (type.startsWith('multipart/') && !request.routeOptions.config.allowMultipart) {
+        throw new AppError('unsupported_media_type', 'Unsupported content type');
+      }
       if (request.auth) {
         const sent = request.headers['x-csrf-token'];
         if (typeof sent !== 'string' || !safeEqual(sent, request.auth.csrfToken)) {

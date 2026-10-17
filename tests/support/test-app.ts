@@ -6,6 +6,9 @@
 import type { Role } from '@lernwerk/shared';
 import type { FastifyInstance, LightMyRequestResponse } from 'fastify';
 import { randomBytes } from 'node:crypto';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { inject } from 'vitest';
 import { hashPassword } from '../../apps/server/src/auth/passwords.js';
 import { SESSION_COOKIE } from '../../apps/server/src/auth/sessions.js';
@@ -60,6 +63,8 @@ export async function createTestApp(env: Record<string, string> = {}): Promise<T
     LERNWERK_MASTER_KEY: randomBytes(32).toString('base64'),
     LERNWERK_IP_PEPPER: randomBytes(32).toString('base64'),
     LERNWERK_LOG_LEVEL: 'fatal',
+    LERNWERK_DATA_DIR: mkdtempSync(join(tmpdir(), 'lw-data-')),
+    LERNWERK_PLAYER_DIR: new URL('../../packages/player/dist/', import.meta.url).pathname,
     ...env,
   });
   const ctx = createContext(config);

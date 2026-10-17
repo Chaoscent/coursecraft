@@ -92,6 +92,8 @@ export function createConfig({ tsconfigRootDir }) {
         '**/coverage/**',
         'packages/course-model/schema/**',
         'docs/design/**/*.js',
+        'test-results/**',
+        'playwright-report/**',
       ],
     },
     js.configs.recommended,
@@ -147,11 +149,11 @@ export function createConfig({ tsconfigRootDir }) {
     },
     {
       files: ['**/*.js', '**/*.mjs'],
-      ignores: ['apps/web/**', 'packages/player/**'],
+      ignores: ['apps/web/**', 'packages/player/**', 'tests/e2e/harness/**'],
       languageOptions: { globals: globals.node },
     },
     {
-      files: ['apps/web/**', 'packages/player/**'],
+      files: ['apps/web/**', 'packages/player/**', 'tests/e2e/harness/**'],
       languageOptions: { globals: globals.browser },
     },
     {

@@ -11,7 +11,7 @@ interface Props {
   onClose: () => void;
   children: ReactNode;
   footer?: ReactNode;
-  width?: 'sm' | 'md' | 'lg';
+  width?: 'sm' | 'md' | 'lg' | 'xl';
   /** Submit handler; the body is wrapped in a form so Enter submits. */
   onSubmit?: () => void;
 }

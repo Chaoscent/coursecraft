@@ -162,7 +162,7 @@ const hotspotElementSchema = z
   })
   .strict();
 
-export type Element =
+export type SlideElement =
   | z.infer<typeof textElementSchema>
   | z.infer<typeof imageElementSchema>
   | z.infer<typeof shapeElementSchema>
@@ -173,7 +173,7 @@ export type Element =
 
 export interface GroupElement extends z.infer<z.ZodObject<typeof elementBase>> {
   type: 'group';
-  children: Element[];
+  children: SlideElement[];
 }
 
 const groupElementSchema: z.ZodType<GroupElement> = z
@@ -186,7 +186,7 @@ const groupElementSchema: z.ZodType<GroupElement> = z
   })
   .strict();
 
-export const elementSchema: z.ZodType<Element> = z.union([
+export const elementSchema: z.ZodType<SlideElement> = z.union([
   textElementSchema,
   imageElementSchema,
   shapeElementSchema,

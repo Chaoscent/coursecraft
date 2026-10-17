@@ -34,7 +34,7 @@ const assetEntrySchema = z
   })
   .strict();
 
-const settingsSchema = z
+export const courseSettingsSchema = z
   .object({
     canvas: z
       .object({ width: z.number().int().min(320).max(3840), height: z.number().int().min(240).max(2160) })
@@ -68,34 +68,37 @@ const settingsSchema = z
   })
   .strict();
 
+export const courseMetaSchema = z
+  .object({
+    title: localizedTextSchema,
+    description: localizedTextSchema.optional(),
+    authors: z.array(z.string().max(200)).max(50).default([]),
+    createdAt: z.iso.datetime(),
+    updatedAt: z.iso.datetime(),
+  })
+  .strict();
+
+export const courseLanguagesSchema = z
+  .object({ default: langSchema, available: z.array(langSchema).min(1).max(50) })
+  .strict()
+  .refine((l) => l.available.includes(l.default), { message: 'Default language must be available' });
+
+export const chapterSchema = z
+  .object({ id: idSchema, title: localizedTextSchema, nodeIds: z.array(idSchema) })
+  .strict();
+
+export const courseStructureSchema = z.object({ chapters: z.array(chapterSchema).min(1).max(200) }).strict();
+
 export const courseSchema = z
   .object({
     format: z.literal(COURSE_FORMAT),
     formatVersion: z.literal(CURRENT_FORMAT_VERSION),
     id: z.uuid(),
-    meta: z
-      .object({
-        title: localizedTextSchema,
-        description: localizedTextSchema.optional(),
-        authors: z.array(z.string().max(200)).max(50).default([]),
-        createdAt: z.iso.datetime(),
-        updatedAt: z.iso.datetime(),
-      })
-      .strict(),
-    languages: z
-      .object({ default: langSchema, available: z.array(langSchema).min(1).max(50) })
-      .strict()
-      .refine((l) => l.available.includes(l.default), { message: 'Default language must be available' }),
-    settings: settingsSchema,
+    meta: courseMetaSchema,
+    languages: courseLanguagesSchema,
+    settings: courseSettingsSchema,
     assets: z.record(sha256Schema, assetEntrySchema),
-    structure: z
-      .object({
-        chapters: z
-          .array(z.object({ id: idSchema, title: localizedTextSchema, nodeIds: z.array(idSchema) }).strict())
-          .min(1)
-          .max(200),
-      })
-      .strict(),
+    structure: courseStructureSchema,
     nodes: z.record(idSchema, nodeSchema),
   })
   .strict()

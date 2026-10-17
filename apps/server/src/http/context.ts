@@ -38,5 +38,7 @@ declare module 'fastify' {
   interface FastifyContextConfig {
     /** Route stays usable while the user must change the password. */
     allowDuringPasswordChange?: boolean;
+    /** Route accepts multipart/form-data (file uploads). */
+    allowMultipart?: boolean;
   }
 }

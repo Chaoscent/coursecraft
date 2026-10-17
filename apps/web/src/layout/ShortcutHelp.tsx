@@ -13,13 +13,41 @@ const SHORTCUTS = [
   { keys: ['Enter'], action: 'shortcuts.open' },
 ] as const;
 
-export function ShortcutHelp({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+const EDITOR_SHORTCUTS = [
+  { keys: ['Ctrl', 'Z'], action: 'shortcuts.undo' },
+  { keys: ['Ctrl', 'Y'], action: 'shortcuts.redo' },
+  { keys: ['Ctrl', 'C'], action: 'shortcuts.copy' },
+  { keys: ['Ctrl', 'V'], action: 'shortcuts.paste' },
+  { keys: ['Ctrl', 'D'], action: 'shortcuts.duplicate' },
+  { keys: ['Entf'], action: 'shortcuts.delete' },
+  { keys: ['↑', '↓', '←', '→'], action: 'shortcuts.nudge' },
+  { keys: ['Shift', '↑'], action: 'shortcuts.nudgeFar' },
+  { keys: ['Enter'], action: 'shortcuts.editText' },
+  { keys: ['Esc'], action: 'shortcuts.deselect' },
+  { keys: ['Ctrl', 'A'], action: 'shortcuts.selectAll' },
+  { keys: ['Ctrl', 'G'], action: 'shortcuts.group' },
+  { keys: ['Ctrl', ']'], action: 'shortcuts.forward' },
+  { keys: ['Ctrl', 'S'], action: 'shortcuts.version' },
+  { keys: ['F5'], action: 'shortcuts.preview' },
+  { keys: ['Alt'], action: 'shortcuts.noSnap' },
+] as const;
+
+export function ShortcutHelp({
+  isOpen,
+  onClose,
+  editor,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  editor?: boolean;
+}) {
   const { t } = useTranslation();
+  const list = editor ? [...EDITOR_SHORTCUTS, ...SHORTCUTS] : SHORTCUTS;
   return (
     <Dialog title={t('menu.shortcuts')} isOpen={isOpen} onClose={onClose}>
       <table className={styles.shortcutTable}>
         <tbody>
-          {SHORTCUTS.map((s) => (
+          {list.map((s) => (
             <tr key={s.action}>
               <td>
                 {s.keys.map((k) => (

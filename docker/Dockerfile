@@ -20,10 +20,12 @@ COPY packages/player/package.json packages/player/
 COPY packages/eslint-config/package.json packages/eslint-config/
 RUN pnpm install --frozen-lockfile
 COPY . .
-RUN pnpm --filter @lernwerk/server --filter @lernwerk/converter --filter @lernwerk/web run build \
+RUN pnpm --filter @lernwerk/server --filter @lernwerk/converter --filter @lernwerk/web --filter @lernwerk/player run build \
  && pnpm --filter @lernwerk/server deploy --prod /out/app \
  && pnpm --filter @lernwerk/converter deploy --prod /out/converter \
- && mkdir -p /out/app/public && cp -r apps/web/dist/. /out/app/public/
+ && mkdir -p /out/app/public /out/app/player \
+ && cp -r apps/web/dist/. /out/app/public/ \
+ && cp -r packages/player/dist/. /out/app/player/
 
 # --- app: API, web UI, content host -------------------------------------------
 # Runtime images keep only node itself; npm and corepack are removed (not needed,
@@ -40,7 +42,7 @@ RUN apt-get update \
  && chown 10001:10000 /data && chown 10001:10000 /work && chmod 2770 /work
 COPY --from=build /out/app /app
 COPY docker/lernwerk.sh /usr/local/bin/lernwerk
-ENV NODE_ENV=production LERNWERK_DATA_DIR=/data LERNWERK_WEB_DIR=/app/public
+ENV NODE_ENV=production LERNWERK_DATA_DIR=/data LERNWERK_WEB_DIR=/app/public LERNWERK_PLAYER_DIR=/app/player
 USER 10001:10000
 WORKDIR /app
 EXPOSE 3000

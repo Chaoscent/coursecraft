@@ -61,6 +61,11 @@ Every node appears in exactly one chapter. Ids match `[A-Za-z0-9_-]{1,64}`.
 | `interaction` | `timeline`, `accordion`, `glossary`, `tabs`, `labeledGraphic`, `steps`, `cycle`                                                                                                                             |
 | `dialog`      | Characters (one image per mood), scenes with speech and responses (points, next scene), outcomes by score                                                                                                   |
 
+### Groups
+
+A `group` element has a frame on the slide; the frames of its `children` are
+relative to the group's top-left corner. Moving the group moves all children.
+
 ### Element behavior
 
 Each element has `timing` (`startMs`, optional `endMs`), optional `entrance`

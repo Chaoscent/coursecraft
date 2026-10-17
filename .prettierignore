@@ -3,3 +3,5 @@ packages/course-model/schema/
 apps/web/src/assets/
 **/dist/
 LICENSE
+test-results/
+playwright-report/

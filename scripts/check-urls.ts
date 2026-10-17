@@ -20,6 +20,10 @@ const ALLOWED = [
   /^https:\/\/react\.dev\/errors\//,
   /^https:\/\/reactrouter\.com\//,
   /^https:\/\/react\.i18next\.com\//,
+  /^https:\/\/prosemirror\.net\/docs\//,
+  /^https:\/\/bit\.ly\/3cXEKWf$/,
+  // Placeholder text in the UI ("https://… or mailto:…").
+  /^https:\/\/…$/,
   /^https?:\/\/www\.w3\.org\//,
   /^https:\/\/lernwerk\.invalid\//,
   /^http:\/\/www\.imsglobal\.org\/xsd\//,

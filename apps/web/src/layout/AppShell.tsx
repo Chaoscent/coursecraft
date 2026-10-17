@@ -99,6 +99,12 @@ export function AppShell() {
       ],
     },
     {
+      group: t('nav.author'),
+      entries: [
+        { to: '/author', icon: 'presentation', label: t('nav.courses'), permission: 'courses.author' },
+      ],
+    },
+    {
       group: t('nav.admin'),
       entries: [
         { to: '/admin/users', icon: 'users', label: t('nav.users'), permission: 'users.manage' },

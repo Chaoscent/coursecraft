@@ -410,7 +410,13 @@ TOTP secrets, OIDC client secrets, and SMTP passwords. The API returns only
 - Editor canvas: the player's renderer plus an editing overlay (selection,
   handles, guides, grid). Commands produce Immer patches; undo and redo apply
   inverse patches.
-- Concurrency: optimistic per node (`rev`). A conflicting save returns 409,
+- Saving: the editor keeps the whole course in memory (Immer patches for
+  undo/redo) and, 800 ms after a change, sends everything that differs from
+  the last acknowledged state to `POST /api/courses/:id/save` (one
+  transaction: node upserts and deletions, structure, meta, settings; the
+  server checks that structure and nodes still match). On page hide, pending
+  changes go out with `keepalive`.
+- Concurrency: optimistic per course revision (`rev`). A conflicting save returns 409,
   and the editor names who changed what and offers "keep mine", "take
   theirs", or "copy mine to a new slide".
 - Soft lock: acquired when opening a course in the editor; heartbeat every
@@ -424,7 +430,9 @@ TOTP secrets, OIDC client secrets, and SMTP passwords. The API returns only
 
 ## 9. Player (`packages/player`)
 
-- Vanilla TypeScript, target ≤ 80 KB gzip without course data.
+- Vanilla TypeScript, target ≤ 80 KB gzip without course data (Phase 2: about 9 KB).
+  The player does not bundle a schema library; exports contain courses that
+  the server validated and migrated.
 - Tracking adapters: `none` (HTML5), `scorm12`, `scorm2004`, `xapi`, `cmi5`.
 - Works from `file://`: classic IIFE bundle and course data in `data/course.js`
   assigning a global (no ES modules, no `fetch`).
@@ -438,7 +446,8 @@ TOTP secrets, OIDC client secrets, and SMTP passwords. The API returns only
 
 ## 10. Exports and imports
 
-- Export job: load course version → migrate format → resolve assets → player
+- Export (Phase 2: synchronous request; moves to the job queue when exports
+  get large media): load course → migrate format → resolve assets → player
   bundle → `course.js` → manifest per target (`imsmanifest.xml` for SCORM 1.2
   and 2004 3rd/4th, `tincan.xml`, `cmi5.xml`) → ZIP.
 - Conformance: scorm-again harness in Playwright on every PR. Nightly: exports

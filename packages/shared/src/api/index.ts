@@ -4,3 +4,4 @@ export * from './auth.js';
 export * from './users.js';
 export * from './groups.js';
 export * from './audit.js';
+export * from './courses.js';

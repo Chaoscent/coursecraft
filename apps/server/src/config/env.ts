@@ -58,6 +58,9 @@ const configSchema = z
       .default(12),
     /** Sign-in, setup and 2FA attempts per client address and minute. */
     loginRateLimit: z.coerce.number().int().min(1).max(10_000).default(10),
+    /** Directory with the built player (player.js, player.css, fonts/). */
+    playerDir: z.string().optional(),
+    uploadMaxMb: z.coerce.number().int().min(1).max(4096).default(500),
   })
   .refine((c) => !c.contentUrl || c.contentUrl.origin !== c.publicUrl.origin, {
     message: 'Content origin must differ from the public origin (host or port)',
@@ -82,6 +85,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     sessionIdleMinutes: env['LERNWERK_SESSION_IDLE_MINUTES'],
     sessionAbsoluteHours: env['LERNWERK_SESSION_ABSOLUTE_HOURS'],
     loginRateLimit: env['LERNWERK_LOGIN_RATE_LIMIT'],
+    playerDir: env['LERNWERK_PLAYER_DIR'] || undefined,
+    uploadMaxMb: env['LERNWERK_UPLOAD_MAX_MB'],
   });
   if (!result.success) {
     // Paths only: values may contain secrets.

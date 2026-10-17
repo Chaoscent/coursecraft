@@ -25,6 +25,9 @@
 .lg {
   width: 760px;
 }
+.xl {
+  width: min(1400px, calc(100vw - 32px));
+}
 .dialog {
   outline: none;
 }

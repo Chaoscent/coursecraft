@@ -3,6 +3,57 @@
 Short summary per phase: what was built, how it was verified, and what is
 deliberately left open. Newest first.
 
+## Phase 2 — Slide editor, player, HTML5 and SCORM 1.2 export
+
+**Built**
+
+- Courses API: create, list, archive, co-authors, soft edit lock with
+  heartbeat (60 s timeout, owner/admin can break it), optimistic revisions,
+  atomic batch save, versions (save, list, restore with automatic backup),
+  per-course asset upload and delivery (byte ranges for media).
+- Uploads identified by content: raster images re-encoded (strips EXIF and
+  anything appended), SVG sanitized (DOMPurify) and served sandboxed, WebVTT
+  checked, video/audio by magic bytes; everything else rejected (415).
+- Player (`packages/player`, vanilla TypeScript, ~9 KB gzip): slide rendering
+  (text, image, shapes, video/audio with captions, hotspots, groups, layers),
+  entrance/exit animations, timeline and narration, click/media/timeline
+  triggers, outline, progress, free or linear navigation, completion by
+  viewed percentage, keyboard navigation, linear text view for narrow
+  screens (reflow). Tracking adapters: none and SCORM 1.2 (API discovery,
+  status, bookmark, suspend data, session time).
+- Exports: HTML5 and SCORM 1.2 ZIPs with the player, the validated course as
+  a classic script (works from file://), all media and a meta CSP.
+- Editor in the approved design: menu bar, ribbon (Start, Insert, contextual
+  Text tab, View), slide list with thumbnails and chapters, canvas with
+  selection, 8-handle resizing, smart guides, grid snapping, marquee
+  selection, keyboard nudging, in-place rich-text editing (TipTap, stored as
+  course-format JSON), properties panel (geometry, text, shape, image,
+  media, hotspot, accessibility, animation, triggers, slide settings, object
+  list), undo/redo, copy/paste/duplicate, align, order, group/ungroup,
+  course settings, versions, preview (desktop/tablet/phone) and export
+  dialogs, save status in the status bar, read-only mode when locked.
+
+**Verified**
+
+- 95 unit tests (geometry, rich-text conversion, schemas, …), 72 DB and
+  security tests (course IDOR between authors, co-authors, edit lock,
+  revisions, batch save rollback, script and `javascript:` rejection,
+  foreign asset references, upload sniffing, SVG sanitizing, ranges,
+  multipart only where allowed, export contents and manifest escaping).
+- E2E (Chromium, Firefox): SCORM 1.2 package against a real SCORM runtime
+  (scorm-again) reports incomplete → completed, bookmark and suspend data
+  and resumes; HTML5 package runs from file:// without any request; the
+  editor creates a course, edits text, inserts and moves a shape, undo/redo,
+  adds a slide, survives a reload, previews and exports; a second session
+  sees the course read-only.
+
+**Open / later**
+
+- Timeline editing UI and audio recording (Phase 4), quizzes (Phase 3),
+  interactions (Phase 6). Overlay layers are rendered and triggerable but
+  not yet editable in the UI.
+- Drag-and-drop reordering in the slide list (buttons and keyboard work).
+
 ## Phase 1 — Auth, sessions, users, setup, audit log
 
 **Built**

@@ -30,6 +30,7 @@
     "@playwright/test": "^1.64.1",
     "@types/node": "^24.19.2",
     "@types/pg": "^8.23.1",
+    "@types/yauzl": "^3.4.0",
     "eslint": "^10.12.0",
     "eslint-plugin-i18next": "^6.1.5",
     "eslint-plugin-react-hooks": "^7.1.1",
@@ -39,11 +40,13 @@
     "otplib": "^13.5.0",
     "pg": "^8.23.1",
     "prettier": "^3.9.10",
+    "scorm-again": "^3.4.6",
     "testcontainers": "^12.2.1",
     "tsx": "^4.23.15",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.71.2",
     "vitest": "^5.0.5",
+    "yauzl": "^3.4.0",
     "zod": "^4.6.7"
   }
 }

@@ -10,6 +10,15 @@ issue once the repository is published.
       release supports 7.x, upgrade both, run `pnpm lint && pnpm typecheck`,
       and remove the note in `docs/dependencies.md`. (Added 2026-10-16.)
 
+## Exports
+
+- [ ] Run exports as background jobs (pg-boss) once courses carry large
+      video files; today the export request builds the ZIP synchronously.
+- [ ] Nightly conformance run in a disposable Moodle container (SCORM 1.2/2004)
+      and the ADL LRS test suite (Phase 5).
+- [ ] Some LMS require the ADL/IMS XSD files next to `imsmanifest.xml`; check
+      their license and add them if needed.
+
 ## Testing
 
 - [ ] Run the WebKit E2E project over HTTPS (Caddy with `tls internal` in the
