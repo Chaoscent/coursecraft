@@ -4,7 +4,7 @@
  * reject anonymous callers, and every route must reject roles that lack its
  * permission. New routes are covered automatically.
  */
-import { ROLES, rolesGrant, type Permission, type Role } from '@lernwerk/shared';
+import { ROLES, rolesGrant, type Permission, type Role } from '@coursecraft/shared';
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createTestApp, type Actor, type TestApp } from '../support/test-app.js';
@@ -13,7 +13,7 @@ let t: TestApp;
 const actors = new Map<Role, Actor>();
 
 beforeAll(async () => {
-  t = await createTestApp({ LERNWERK_WEB_DIR: '' });
+  t = await createTestApp({ COURSECRAFT_WEB_DIR: '' });
   for (const role of ROLES) actors.set(role, await t.actor([role]));
 });
 afterAll(async () => t.close());

@@ -222,7 +222,7 @@ describe('uploads', () => {
       method: 'POST',
       url: '/api/courses',
       headers: {
-        origin: 'https://lernwerk.test',
+        origin: 'https://coursecraft.test',
         'x-csrf-token': alice.csrf,
         'content-type': 'multipart/form-data; boundary=x',
       },

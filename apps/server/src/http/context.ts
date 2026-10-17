@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { Permission, Role } from '@lernwerk/shared';
+import type { Permission, Role } from '@coursecraft/shared';
 import type { Kysely } from 'kysely';
 import type { SessionService } from '../auth/sessions.js';
 import type { AppConfig } from '../config/env.js';

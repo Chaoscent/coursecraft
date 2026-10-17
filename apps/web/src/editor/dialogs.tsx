@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { Draft } from 'immer';
-import type { Course } from '@lernwerk/course-model';
-import { noTracking, Player } from '@lernwerk/player';
-import { listVersionsResponseSchema, revResponseSchema, type EXPORT_FORMATS } from '@lernwerk/shared';
+import type { Course } from '@coursecraft/course-model';
+import { noTracking, Player } from '@coursecraft/player';
+import { listVersionsResponseSchema, revResponseSchema, type EXPORT_FORMATS } from '@coursecraft/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';

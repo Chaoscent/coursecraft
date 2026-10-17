@@ -1,4 +1,4 @@
-# CLAUDE.md — working conventions for Lernwerk
+# CLAUDE.md — working conventions for Coursecraft
 
 Read ARCHITECTURE.md and SECURITY.md before changing code. This file lists
 the rules that apply to every change.

@@ -88,7 +88,7 @@ test('cmi5 package follows the launch protocol and sends cmi5 statements', async
     fetch: 'http://lrs.test/fetch',
     actor,
     registration,
-    activityId: 'urn:lernwerk:au:test',
+    activityId: 'urn:coursecraft:au:test',
   });
   await page.goto(`http://pkg.test/index.html?${params}`);
   await takeQuiz(page);
@@ -151,11 +151,11 @@ test('xAPI package sends statements and resumes from the state API', async ({ pa
     endpoint: 'http://lrs.test/xapi/',
     auth: 'Basic dG9rZW4=',
     actor: JSON.stringify({ mbox: 'mailto:a@example.org', name: 'A' }),
-    activity_id: 'urn:lernwerk:test',
+    activity_id: 'urn:coursecraft:test',
   });
   await page.goto(`http://pkg.test/index.html?${params}`);
   await page.getByRole('button', { name: 'Weiter' }).click();
-  await expect.poll(() => lrs.state.has('urn:lernwerk:resume')).toBe(true);
+  await expect.poll(() => lrs.state.has('urn:coursecraft:resume')).toBe(true);
   await page.reload();
   await expect(page.getByText('2 von 3')).toBeVisible();
   const verbs = lrs.statements.map((s) => (s['verb'] as { id: string }).id.split('/').pop());

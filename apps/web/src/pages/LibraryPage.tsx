@@ -7,7 +7,7 @@ import {
   listGroupsResponseSchema,
   okSchema,
   type LibraryItem,
-} from '@lernwerk/shared';
+} from '@coursecraft/shared';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';

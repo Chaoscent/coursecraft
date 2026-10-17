@@ -8,7 +8,7 @@ import {
   loadCourse,
   nodeSchema,
   type CourseNode,
-} from '@lernwerk/course-model';
+} from '@coursecraft/course-model';
 import type { Kysely } from 'kysely';
 import type { z } from 'zod';
 import type { Database } from '../../db/schema.js';

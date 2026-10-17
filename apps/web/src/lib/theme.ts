@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 /** Theme preference is a per-device convenience; storage may be unavailable. */
 export type Theme = 'system' | 'light' | 'dark';
-const KEY = 'lernwerk.theme';
+const KEY = 'coursecraft.theme';
 
 export function loadTheme(): Theme {
   try {

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { Question, QuizNode, RichText, SurveyNode } from '@lernwerk/course-model';
-import type { AiQuestion } from '@lernwerk/shared';
+import type { Question, QuizNode, RichText, SurveyNode } from '@coursecraft/course-model';
+import type { AiQuestion } from '@coursecraft/shared';
 import { newId } from './ids.js';
 import { paragraphDoc } from './model.js';
 

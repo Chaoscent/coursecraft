@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { Course } from '@lernwerk/course-model';
+import type { Course } from '@coursecraft/course-model';
 
 export interface RenderContext {
   /** Language used for localized text, with fallback to the course default. */

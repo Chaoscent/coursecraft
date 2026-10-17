@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { PGBOSS_SCHEMA, type QueueName } from '@lernwerk/shared';
+import { PGBOSS_SCHEMA, type QueueName } from '@coursecraft/shared';
 import { PgBoss } from 'pg-boss';
 
 export interface SendOptions {

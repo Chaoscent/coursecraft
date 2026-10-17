@@ -1,8 +1,8 @@
-# Lernwerk — Architecture
+# Coursecraft — Architecture
 
 Status: Phase 0. Decisions from the Phase 0 review are incorporated.
 
-Lernwerk is a self-hosted e-learning authoring suite and LMS for one
+Coursecraft is a self-hosted e-learning authoring suite and LMS for one
 organization per instance. It runs fully offline and ships as two
 images (`app`, `converter`) plus PostgreSQL. It exports self-contained
 SCORM 1.2 / SCORM 2004 / xAPI / cmi5 / HTML5 packages.
@@ -15,7 +15,7 @@ SCORM 1.2 / SCORM 2004 / xAPI / cmi5 / HTML5 packages.
 | Local only             | No outbound traffic except the optional, admin-enabled AI adapter and the admin-configured SMTP server. Enforced by an egress guard in tests and by the offline test suite.                                                                         |
 | Security by structure  | SQL only through the Kysely query builder; rich text stored as validated JSON, never HTML; DOM built without `innerHTML`; every route declares a permission or the server refuses to start; untrusted files are processed in an isolated converter. |
 | Small footprint        | Target: 2 GB RAM for the whole stack. Converter jobs run one at a time.                                                                                                                                                                             |
-| Few lines of own code  | Mature libraries for everything not Lernwerk-specific; every dependency justified in `docs/dependencies.md`.                                                                                                                                        |
+| Few lines of own code  | Mature libraries for everything not Coursecraft-specific; every dependency justified in `docs/dependencies.md`.                                                                                                                                     |
 
 ## 2. Repository layout
 
@@ -23,9 +23,9 @@ pnpm workspaces, TypeScript strict everywhere. Node 24 LTS, pnpm pinned via
 `packageManager`.
 
 ```
-lernwerk/
+coursecraft/
 ├── apps/
-│   ├── server/            Fastify API, jobs, LMS runtime, LRS, exports, CLI (`lernwerk`)
+│   ├── server/            Fastify API, jobs, LMS runtime, LRS, exports, CLI (`coursecraft`)
 │   ├── converter/         Job worker wrapping LibreOffice, pdf.js, ffmpeg (no app DB access)
 │   └── web/               React SPA: authoring tool, LMS admin, learner portal
 ├── packages/
@@ -49,7 +49,7 @@ player's renderer, so editing and playback draw the same pixels.
 ```
             ┌────────────────── reverse proxy (TLS) ──────────────────┐
             │  app origin                 content origin               │
-            │  https://lernwerk.lan       https://lernwerk.lan:8443    │
+            │  https://coursecraft.lan       https://coursecraft.lan:8443    │
             │                             or https://content.example.org│
             └──────────┬──────────────────────────┬───────────────────┘
                        │                          │
@@ -82,8 +82,8 @@ player's renderer, so editing and playback draw the same pixels.
 
 ### 3.1 Two origins
 
-The app origin (`LERNWERK_PUBLIC_URL`) serves the SPA and API. The content
-origin (`LERNWERK_CONTENT_URL`) serves course playback. It may differ from the
+The app origin (`COURSECRAFT_PUBLIC_URL`) serves the SPA and API. The content
+origin (`COURSECRAFT_CONTENT_URL`) serves course playback. It may differ from the
 app origin by host or by port:
 
 - `https://content.example.org` (subdomain). The `__Host-` session cookie is
@@ -91,7 +91,7 @@ app origin by host or by port:
   (e.g. `example-content.org`) isolates slightly more, because the two
   origins are then not same-site. That matters for `SameSite` cookies and
   some browser heuristics.
-- `https://lernwerk.lan:8443` (different port, same host). Different origin,
+- `https://coursecraft.lan:8443` (different port, same host). Different origin,
   same site. LAN installations need no second DNS name. Cookies ignore ports,
   so this relies on the session cookie never being sent to content requests:
   the content listener ignores every cookie and authenticates only by launch
@@ -145,7 +145,7 @@ why and links to the setup docs.
 **System binaries** (converter image only, separate processes, from Debian):
 LibreOffice (MPL-2.0) and ffmpeg (GPL build from Debian, including libx264).
 Running a GPL program as a separate process in the same image is aggregation
-and does not affect the Apache license of Lernwerk. Security updates come with
+and does not affect the Apache license of Coursecraft. Security updates come with
 the distribution. All system binaries are listed with license and reason in
 `scripts/system-binaries.json` and `THIRD_PARTY_NOTICES.md`, which points to
 the Debian source packages.
@@ -168,7 +168,7 @@ modules/       one folder per domain: routes.ts / service.ts / repo.ts / schemas
   library/ assignments/ paths/ lrs/ runtime/ reports/ certificates/
   comments/ reviews/ ai/ audit/ privacy/ settings/ setup/ mail/
 jobs/          pg-boss setup, app-side workers, converter job submission and result ingestion
-cli/           `lernwerk backup | restore | setup-token | migrate | ...`
+cli/           `coursecraft backup | restore | setup-token | migrate | ...`
 ```
 
 `routes.ts` validates input and declares permissions, `service.ts` holds
@@ -242,11 +242,11 @@ organization.
 
 ### 5.5 Database roles
 
-| Role                 | Used by                    | Rights                                                                                     |
-| -------------------- | -------------------------- | ------------------------------------------------------------------------------------------ |
-| `lernwerk_migrator`  | `migrate` service, restore | Owns the database and the schemas `public` and `pgboss`; DDL.                              |
-| `lernwerk_app`       | `app`, `lernwerk backup`   | DML on application tables (`INSERT, SELECT` only on `audit_log`); use of `pgboss`. No DDL. |
-| `lernwerk_converter` | `converter`                | Use of `pgboss` only. No access to `public`.                                               |
+| Role                    | Used by                     | Rights                                                                                     |
+| ----------------------- | --------------------------- | ------------------------------------------------------------------------------------------ |
+| `coursecraft_migrator`  | `migrate` service, restore  | Owns the database and the schemas `public` and `pgboss`; DDL.                              |
+| `coursecraft_app`       | `app`, `coursecraft backup` | DML on application tables (`INSERT, SELECT` only on `audit_log`); use of `pgboss`. No DDL. |
+| `coursecraft_converter` | `converter`                 | Use of `pgboss` only. No access to `public`.                                               |
 
 `docker/postgres-init/10-roles.sh` creates the roles on first DB start and
 sets default privileges, so every object the migrator creates is granted
@@ -291,7 +291,7 @@ job. The converter answers on `convert.done`; the app reads only expected
 file names, opens them without following symlinks, caps their size, and
 passes every file through the upload sanitiser (magic bytes, re-encoding)
 before it becomes an asset. Conversions without an answer are given up after
-`LERNWERK_CONVERSION_TIMEOUT_MINUTES` (default 20); a PPTX import then
+`COURSECRAFT_CONVERSION_TIMEOUT_MINUTES` (default 20); a PPTX import then
 creates the course without slide images. Without a work volume or queue the
 import completes immediately without slide images. Container limits via compose (`mem_limit`, `cpus`,
 `pids_limit`).
@@ -336,7 +336,7 @@ whitelists.
 
 ### 7.2 Sessions
 
-- 32 random bytes, base64url, cookie `__Host-lw_session; Path=/; Secure;
+- 32 random bytes, base64url, cookie `__Host-cc_session; Path=/; Secure;
 HttpOnly; SameSite=Lax`.
 - DB stores `sha256(token)` only. Every request looks it up, joined with
   `users` and `user_roles`. Permissions are never cached beyond the request.
@@ -359,7 +359,7 @@ HttpOnly; SameSite=Lax`.
 Synchronizer token per session: `HMAC(pepper, session id)`, so it needs no
 storage and cannot be forged without the server key. Delivered via
 `GET /api/session` and every login response, sent as `X-CSRF-Token`. Every unsafe request must also
-carry an `Origin` matching `LERNWERK_PUBLIC_URL` (fallback:
+carry an `Origin` matching `COURSECRAFT_PUBLIC_URL` (fallback:
 `Sec-Fetch-Site: same-origin`), and JSON bodies require `Content-Type:
 application/json`. Requests without a session (login, setup) are protected by the
 same Origin/`Sec-Fetch-Site` check; `text/plain`, form and multipart bodies are
@@ -387,7 +387,7 @@ app origin (SPA, session)                content origin (no cookies)
   heartbeat (sliding) and has an absolute maximum of 12 hours. It is revoked
   on completion, logout, or session deletion. It appears as a path segment
   (`/launch/<token>/…`), so relative URLs inside packages keep working.
-- **Wrapper:** a small static page served by Lernwerk. It initializes
+- **Wrapper:** a small static page served by Coursecraft. It initializes
   scorm-again with the CMI data it receives from the host via postMessage.
   It answers the package's synchronous API calls locally and forwards commits
   and finish calls to the host.
@@ -406,8 +406,8 @@ app origin (SPA, session)                content origin (no cookies)
 
 ### 7.5 Secrets
 
-AES-256-GCM with the master key from `LERNWERK_MASTER_KEY_FILE` (Docker
-secret) or `LERNWERK_MASTER_KEY`. Fresh 96-bit nonce per ciphertext,
+AES-256-GCM with the master key from `COURSECRAFT_MASTER_KEY_FILE` (Docker
+secret) or `COURSECRAFT_MASTER_KEY`. Fresh 96-bit nonce per ciphertext,
 AAD = `purpose || record id`, `key_version` for rotation. This covers AI keys,
 TOTP secrets, OIDC client secrets, and SMTP passwords. The API returns only
 `set` and `last4`.
@@ -519,7 +519,7 @@ TOTP secrets, OIDC client secrets, and SMTP passwords. The API returns only
 
 ## 12. AI adapter (Phase 7)
 
-- Two switches: the operator allows the adapter (`LERNWERK_AI_ENABLED`,
+- Two switches: the operator allows the adapter (`COURSECRAFT_AI_ENABLED`,
   default `false`), administrators configure providers in the app. Without
   both, no AI UI and no outbound request.
 - Tasks with fixed server-side prompts: revise text (simplify, shorten,
@@ -582,12 +582,12 @@ TOTP secrets, OIDC client secrets, and SMTP passwords. The API returns only
   credentials or the master key. Existing secrets are never overwritten.
 - **First start:** no account exists. The app writes a one-time setup token
   to its log. The token expires after 24 hours; the next start then creates a
-  new one. `docker compose exec app lernwerk setup-token` creates a new token
+  new one. `docker compose exec app coursecraft setup-token` creates a new token
   and prints it. The wizard requires the token, and the token is invalid once
   setup is complete.
 - Multi-arch images (amd64, arm64) with `docker buildx`.
-- Backup: `lernwerk backup` writes `pg_dump` and the `data` volume into one tar
-  under `data/backups`; `lernwerk restore <file>` reverses it.
+- Backup: `coursecraft backup` writes `pg_dump` and the `data` volume into one tar
+  under `data/backups`; `coursecraft restore <file>` reverses it.
 - Memory budget, idle / peak: Postgres 150/250 MB, app 200/400 MB, converter
   60/900 MB (LibreOffice ≈ 400 MB, ffmpeg ≈ 300 MB, never at the same time
   with concurrency 1). Total peak ≈ 1.6 GB. Measured at the end of Phase 0

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { Block, RichText } from '@lernwerk/course-model';
+import type { Block, RichText } from '@coursecraft/course-model';
 import { h } from './dom.js';
 import { color, type RenderContext } from './context.js';
 
@@ -60,7 +60,7 @@ function renderBlock(block: Block, ctx: RenderContext): HTMLElement {
       const tag = block.attrs.level === 1 ? 'h2' : block.attrs.level === 2 ? 'h3' : 'h4';
       const el = h(
         tag,
-        { class: `lw-h${block.attrs.level}` },
+        { class: `cc-h${block.attrs.level}` },
         (block.content ?? []).map((n) => renderInline(n, ctx)),
       );
       if (block.attrs.align) el.style.textAlign = block.attrs.align;

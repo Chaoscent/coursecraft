@@ -64,7 +64,7 @@ Supported versions: the latest minor release receives security fixes.
 | Credential stuffing, brute force | Argon2id (m=19 MiB, t=2, p=1 minimum, tuned to ~250 ms); rate limits per IP and per account on login, reset, 2FA; optional TOTP; generic error messages.   |
 | Session theft via XSS            | Cookie `HttpOnly`; strict CSP; no HTML storage; no `innerHTML`.                                                                                            |
 | Session fixation                 | Token issued only by the server, rotated on login, 2FA, password change, and privilege change. Tokens presented but unknown are ignored and never adopted. |
-| Hijacking the first-run setup    | One-time setup token (24 h, single use) printed to the container log or via `lernwerk setup-token`; required by the wizard; invalid after setup.           |
+| Hijacking the first-run setup    | One-time setup token (24 h, single use) printed to the container log or via `coursecraft setup-token`; required by the wizard; invalid after setup.        |
 | Forged review/launch access      | Capability tokens: 256 bit, stored hashed, scoped to one object, expiring, revocable.                                                                      |
 | SSO assertion forgery            | Established libraries (openid-client, node-saml); signature and audience validation; replay cache for SAML assertion ids.                                  |
 
@@ -199,7 +199,7 @@ change:
 
 ## 5b. Optional AI adapter
 
-- Off unless the operator sets `LERNWERK_AI_ENABLED=true` and an
+- Off unless the operator sets `COURSECRAFT_AI_ENABLED=true` and an
   administrator configures an enabled provider. Without both there is no AI
   UI and no AI request; configuration attempts are refused.
 - Only administrators (`settings.manage`) set base URLs; users can store a
@@ -235,7 +235,7 @@ change:
   The `__Host-` cookie is still never sent there, but a separate registrable
   domain isolates more (no same-site relationship).
 - Without a content origin, own courses run on the app origin in a frame
-  with `allow-same-origin`. They are authored in Lernwerk and keep the
+  with `allow-same-origin`. They are authored in Coursecraft and keep the
   strict CSP, but they are not isolated from the app the way third-party
   packages are; production setups should configure a content origin.
 - Report CSV files prefix cells starting with `= + - @` so spreadsheets do

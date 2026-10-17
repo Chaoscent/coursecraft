@@ -6,7 +6,7 @@ import {
   okSchema,
   totpLoginRequestSchema,
   type SessionInfo,
-} from '@lernwerk/shared';
+} from '@coursecraft/shared';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { clearSessionCookie, requireAuth, setSessionCookie, toAuthState } from '../../auth/plugin.js';

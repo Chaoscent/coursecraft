@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { ReportRow } from '@lernwerk/shared';
+import type { ReportRow } from '@coursecraft/shared';
 import type { AppContext, AuthState } from '../../http/context.js';
 import { notFound } from '../../http/errors.js';
 import type { PackageManifest } from '../library/manifest.js';

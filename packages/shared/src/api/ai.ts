@@ -38,7 +38,7 @@ export const aiProviderSchema = z.object({
 export type AiProvider = z.infer<typeof aiProviderSchema>;
 
 export const aiProvidersResponseSchema = z.object({
-  /** The operator switch (`LERNWERK_AI_ENABLED`); without it nothing can be enabled. */
+  /** The operator switch (`COURSECRAFT_AI_ENABLED`); without it nothing can be enabled. */
   allowedByOperator: z.boolean(),
   providers: z.array(aiProviderSchema),
 });

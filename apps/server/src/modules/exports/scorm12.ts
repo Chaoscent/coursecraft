@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { Course } from '@lernwerk/course-model';
+import type { Course } from '@coursecraft/course-model';
 import { escapeXml } from './xml.js';
 
 /** imsmanifest.xml for a single-SCO SCORM 1.2 package. */
 export function scorm12Manifest(course: Course, title: string, files: string[]): string {
-  const id = `lernwerk-${course.id}`;
+  const id = `coursecraft-${course.id}`;
   const t = escapeXml(title);
   return `<?xml version="1.0" encoding="UTF-8"?>
 <manifest identifier="${id}" version="1.0"

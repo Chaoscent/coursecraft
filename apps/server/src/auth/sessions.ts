@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { Role } from '@lernwerk/shared';
+import type { Role } from '@coursecraft/shared';
 import type { Kysely } from 'kysely';
 import { hashToken, hmac, randomToken } from '../crypto/tokens.js';
 import type { Database } from '../db/schema.js';
 
-export const SESSION_COOKIE = '__Host-lw_session';
+export const SESSION_COOKIE = '__Host-cc_session';
 
 /** `last_seen_at` and the idle expiry are written at most this often. */
 const TOUCH_INTERVAL_MS = 60_000;

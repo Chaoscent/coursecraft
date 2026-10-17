@@ -2,7 +2,7 @@
 import type { Kysely } from 'kysely';
 import { emptyJsonObject, exactlyOne, ident, now, oneOf, randomUuid } from './sql-helpers.js';
 
-const PACKAGE_KINDS = ['lernwerk', 'scorm12', 'scorm2004', 'xapi', 'cmi5'] as const;
+const PACKAGE_KINDS = ['coursecraft', 'scorm12', 'scorm2004', 'xapi', 'cmi5'] as const;
 const ITEM_STATUS = ['active', 'archived'] as const;
 const COMPLETION = ['unknown', 'incomplete', 'completed'] as const;
 const SUCCESS = ['unknown', 'passed', 'failed'] as const;

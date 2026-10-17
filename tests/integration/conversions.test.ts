@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { QUEUES } from '@lernwerk/shared';
+import { QUEUES } from '@coursecraft/shared';
 import { existsSync, mkdtempSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -17,8 +17,8 @@ let author: Actor;
 let other: Actor;
 let work: string;
 beforeAll(async () => {
-  work = mkdtempSync(join(tmpdir(), 'lw-work-'));
-  t = await createTestApp({ LERNWERK_WORK_DIR: work });
+  work = mkdtempSync(join(tmpdir(), 'cc-work-'));
+  t = await createTestApp({ COURSECRAFT_WORK_DIR: work });
   author = await t.actor(['author']);
   other = await t.actor(['author']);
 });
@@ -168,7 +168,7 @@ describe('PPTX import', () => {
 
   it('works without a work volume: no rendering, course created at once', async () => {
     writeFileSync(join(work, 'not-a-directory'), '');
-    const t2 = await createTestApp({ LERNWERK_WORK_DIR: join(work, 'not-a-directory') });
+    const t2 = await createTestApp({ COURSECRAFT_WORK_DIR: join(work, 'not-a-directory') });
     try {
       const actor = await t2.actor(['author']);
       const res = await uploadTo(t2, actor, '/api/courses/import', 'kurs.pptx', await sample());

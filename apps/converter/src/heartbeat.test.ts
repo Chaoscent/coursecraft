@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { beat, HEARTBEAT_MAX_AGE_MS, isAlive } from './heartbeat.js';
 
 describe('heartbeat', () => {
-  const file = join(mkdtempSync(join(tmpdir(), 'lw-hb-')), 'beat');
+  const file = join(mkdtempSync(join(tmpdir(), 'cc-hb-')), 'beat');
 
   it('is dead before the first beat', () => {
     expect(isAlive(file)).toBe(false);

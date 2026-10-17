@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { Question, QuizNode, SurveyNode } from '@lernwerk/course-model';
+import type { Question, QuizNode, SurveyNode } from '@coursecraft/course-model';
 import {
   describeResponse,
   drawQuestions,
@@ -8,7 +8,7 @@ import {
   seededRandom,
   type QuestionResult,
   type Response,
-} from '@lernwerk/course-model/scoring';
+} from '@coursecraft/course-model/scoring';
 import { localized } from '../render/context.js';
 import { h, present } from '../render/dom.js';
 import { renderRichText } from '../render/richtext.js';
@@ -49,7 +49,7 @@ export function renderQuiz(
   track: (record: InteractionRecord) => void,
 ): HTMLElement {
   const { ctx, strings: s } = api;
-  const root = h('section', { class: 'lw-quiz', attrs: { 'aria-label': localized(ctx, quiz.title) ?? '' } });
+  const root = h('section', { class: 'cc-quiz', attrs: { 'aria-label': localized(ctx, quiz.title) ?? '' } });
   let attempt = 0;
   let timer: number | undefined;
   let deadline = 0;
@@ -58,7 +58,7 @@ export function renderQuiz(
 
   const intro = () => {
     stopTimer();
-    const facts = h('dl', { class: 'lw-quiz-facts' });
+    const facts = h('dl', { class: 'cc-quiz-facts' });
     const questions = quiz.items.reduce((n, item) => n + (item.type === 'question' ? 1 : item.draw), 0);
     const add = (term: string, value: string) =>
       facts.append(h('dt', { text: term }), h('dd', { text: value }));
@@ -67,19 +67,19 @@ export function renderQuiz(
     if (quiz.settings.timeLimitSec) add(s.timeLimit, clock(quiz.settings.timeLimitSec * 1000));
     if (quiz.settings.attemptsAllowed) add(s.attempts, `${attempt} / ${quiz.settings.attemptsAllowed}`);
     const start = h('button', {
-      class: 'lw-button lw-button-primary',
+      class: 'cc-button cc-button-primary',
       attrs: { type: 'button' },
       text: s.startQuiz,
     });
     start.addEventListener('click', () => run());
     root.replaceChildren(
       ...present(
-        h('h2', { class: 'lw-quiz-title', text: localized(ctx, quiz.title) ?? '' }),
+        h('h2', { class: 'cc-quiz-title', text: localized(ctx, quiz.title) ?? '' }),
         quiz.intro
-          ? h('div', { class: 'lw-quiz-intro' }, [renderRichText(localized(ctx, quiz.intro), ctx)])
+          ? h('div', { class: 'cc-quiz-intro' }, [renderRichText(localized(ctx, quiz.intro), ctx)])
           : null,
         facts,
-        h('div', { class: 'lw-quiz-actions' }, [start]),
+        h('div', { class: 'cc-quiz-actions' }, [start]),
       ),
     );
     start.focus();
@@ -96,7 +96,7 @@ export function renderQuiz(
       deadline = Date.now() + quiz.settings.timeLimitSec * 1000;
       timer = window.setInterval(() => {
         const left = deadline - Date.now();
-        const label = root.querySelector('.lw-quiz-timer');
+        const label = root.querySelector('.cc-quiz-timer');
         if (label) label.textContent = `${s.timeLeft}: ${clock(left)}`;
         if (left <= 0) {
           stopTimer();
@@ -130,22 +130,22 @@ export function renderQuiz(
       const maxTries = question.type === 'likert' ? 1 : question.attempts;
       view = renderQuestion(question, ctx, s, random);
       const current = view;
-      const feedback = h('div', { class: 'lw-feedback', attrs: { role: 'status', 'aria-live': 'polite' } });
+      const feedback = h('div', { class: 'cc-feedback', attrs: { role: 'status', 'aria-live': 'polite' } });
       const submit = h('button', {
-        class: 'lw-button lw-button-primary',
+        class: 'cc-button cc-button-primary',
         attrs: { type: 'submit' },
         text: s.submit,
       });
       const next = h('button', {
-        class: 'lw-button lw-button-primary',
+        class: 'cc-button cc-button-primary',
         attrs: { type: 'button' },
         text: s.continue,
       });
       next.hidden = true;
-      const form = h('form', { class: 'lw-quiz-form', attrs: { novalidate: '' } }, [
+      const form = h('form', { class: 'cc-quiz-form', attrs: { novalidate: '' } }, [
         current.root,
         feedback,
-        h('div', { class: 'lw-quiz-actions' }, [submit, next]),
+        h('div', { class: 'cc-quiz-actions' }, [submit, next]),
       ]);
 
       form.addEventListener('submit', (event) => {
@@ -163,7 +163,7 @@ export function renderQuiz(
           result.state === 'ungraded' ||
           tries >= maxTries;
         feedback.replaceChildren(h('strong', { text: stateText(api, result.state) }));
-        feedback.className = `lw-feedback lw-feedback-${result.state}`;
+        feedback.className = `cc-feedback cc-feedback-${result.state}`;
         const custom =
           'feedback' in question
             ? question.feedback[
@@ -225,11 +225,11 @@ export function renderQuiz(
 
       root.replaceChildren(
         ...present(
-          h('div', { class: 'lw-quiz-head' }, [
+          h('div', { class: 'cc-quiz-head' }, [
             h('span', { text: format(s.questionOf, { n: index + 1, total: questions.length }) }),
             quiz.settings.timeLimitSec
               ? h('span', {
-                  class: 'lw-quiz-timer',
+                  class: 'cc-quiz-timer',
                   attrs: { role: 'timer' },
                   text: `${s.timeLeft}: ${clock(deadline - Date.now())}`,
                 })
@@ -256,10 +256,10 @@ export function renderQuiz(
     const percent = Math.round(result.scaled * 100);
     const canRetry =
       !result.passed && (!quiz.settings.attemptsAllowed || attempt < quiz.settings.attemptsAllowed);
-    const review = h('button', { class: 'lw-button', attrs: { type: 'button' }, text: s.review });
-    const retry = h('button', { class: 'lw-button', attrs: { type: 'button' }, text: s.retryQuiz });
+    const review = h('button', { class: 'cc-button', attrs: { type: 'button' }, text: s.review });
+    const retry = h('button', { class: 'cc-button', attrs: { type: 'button' }, text: s.retryQuiz });
     const next = h('button', {
-      class: 'lw-button lw-button-primary',
+      class: 'cc-button cc-button-primary',
       attrs: { type: 'button' },
       text: s.continueCourse,
     });
@@ -268,7 +268,7 @@ export function renderQuiz(
     next.addEventListener('click', () => api.next());
     retry.addEventListener('click', () => intro());
     review.addEventListener('click', () => {
-      const list = h('ol', { class: 'lw-review' });
+      const list = h('ol', { class: 'cc-review' });
       for (const answer of answers) {
         const view = renderQuestion(answer.question, ctx, s, seededRandom(1));
         view.disable();
@@ -277,7 +277,7 @@ export function renderQuiz(
           h('li', {}, [
             view.root,
             h('p', {
-              class: `lw-feedback lw-feedback-${answer.result.state}`,
+              class: `cc-feedback cc-feedback-${answer.result.state}`,
               text: `${stateText(api, answer.result.state)} ${s.yourAnswer}: ${describeResponse(answer.response) || '–'}`,
             }),
           ]),
@@ -288,20 +288,20 @@ export function renderQuiz(
     });
     root.replaceChildren(
       ...present(
-        h('h2', { class: 'lw-quiz-title', text: s.resultTitle }),
-        timedOut ? h('p', { class: 'lw-feedback lw-feedback-incorrect', text: s.timeUp }) : null,
+        h('h2', { class: 'cc-quiz-title', text: s.resultTitle }),
+        timedOut ? h('p', { class: 'cc-feedback cc-feedback-incorrect', text: s.timeUp }) : null,
         quiz.settings.showResults
-          ? h('p', { class: 'lw-quiz-score' }, [
+          ? h('p', { class: 'cc-quiz-score' }, [
               h('span', { text: `${s.yourScore}: ` }),
               h('strong', { text: `${percent} %` }),
             ])
           : null,
         h('p', {
-          class: `lw-feedback ${result.passed ? 'lw-feedback-correct' : 'lw-feedback-incorrect'}`,
+          class: `cc-feedback ${result.passed ? 'cc-feedback-correct' : 'cc-feedback-incorrect'}`,
           attrs: { role: 'status' },
           text: result.pending ? s.pending : result.passed ? s.passed : s.failed,
         }),
-        h('div', { class: 'lw-quiz-actions' }, [review, retry, next]),
+        h('div', { class: 'cc-quiz-actions' }, [review, retry, next]),
       ),
     );
     next.focus();
@@ -349,21 +349,21 @@ export function renderSurvey(
     return { sq, view };
   });
   const submit = h('button', {
-    class: 'lw-button lw-button-primary',
+    class: 'cc-button cc-button-primary',
     attrs: { type: 'submit' },
     text: s.surveySubmit,
   });
-  const form = h('form', { class: 'lw-quiz-form' }, [
+  const form = h('form', { class: 'cc-quiz-form' }, [
     ...views.map((v) => v.view.root),
-    h('div', { class: 'lw-quiz-actions' }, [submit]),
+    h('div', { class: 'cc-quiz-actions' }, [submit]),
   ]);
   const root = h(
     'section',
-    { class: 'lw-quiz lw-survey', attrs: { 'aria-label': localized(ctx, survey.title) ?? '' } },
+    { class: 'cc-quiz cc-survey', attrs: { 'aria-label': localized(ctx, survey.title) ?? '' } },
     [
-      h('h2', { class: 'lw-quiz-title', text: localized(ctx, survey.title) ?? '' }),
+      h('h2', { class: 'cc-quiz-title', text: localized(ctx, survey.title) ?? '' }),
       survey.intro
-        ? h('div', { class: 'lw-quiz-intro' }, [renderRichText(localized(ctx, survey.intro), ctx)])
+        ? h('div', { class: 'cc-quiz-intro' }, [renderRichText(localized(ctx, survey.intro), ctx)])
         : null,
       form,
     ],
@@ -385,14 +385,14 @@ export function renderSurvey(
     api.markViewed();
     api.allowNext();
     const next = h('button', {
-      class: 'lw-button lw-button-primary',
+      class: 'cc-button cc-button-primary',
       attrs: { type: 'button' },
       text: s.continueCourse,
     });
     next.addEventListener('click', () => api.next());
     form.replaceWith(
-      h('p', { class: 'lw-feedback lw-feedback-correct', attrs: { role: 'status' }, text: s.surveyThanks }),
-      h('div', { class: 'lw-quiz-actions' }, [next]),
+      h('p', { class: 'cc-feedback cc-feedback-correct', attrs: { role: 'status' }, text: s.surveyThanks }),
+      h('div', { class: 'cc-quiz-actions' }, [next]),
     );
     next.focus();
   });

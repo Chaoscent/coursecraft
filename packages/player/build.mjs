@@ -14,7 +14,7 @@ await build({
   target: ['es2020'],
   minify: true,
   legalComments: 'none',
-  banner: { js: '/* Lernwerk player. SPDX-License-Identifier: Apache-2.0 */' },
+  banner: { js: '/* Coursecraft player. SPDX-License-Identifier: Apache-2.0 */' },
   logLevel: 'info',
 });
 
@@ -27,7 +27,7 @@ await build({
   target: ['es2020'],
   minify: true,
   legalComments: 'none',
-  banner: { js: '/* Lernwerk SCORM wrapper. SPDX-License-Identifier: Apache-2.0 */' },
+  banner: { js: '/* Coursecraft SCORM wrapper. SPDX-License-Identifier: Apache-2.0 */' },
   logLevel: 'info',
 });
 const scormAgain = new URL('../../node_modules/scorm-again/', import.meta.url);

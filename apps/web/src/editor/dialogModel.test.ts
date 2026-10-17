@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { dialogNodeSchema, type DialogNode } from '@lernwerk/course-model';
+import { dialogNodeSchema, type DialogNode } from '@coursecraft/course-model';
 import { produce } from 'immer';
 import { describe, expect, it } from 'vitest';
 import { newDialog, newScene, removeCharacter, removeScene, unreachableScenes } from './dialogModel.js';

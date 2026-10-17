@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { PackageKind } from '@lernwerk/shared';
+import type { PackageKind } from '@coursecraft/shared';
 import { createHash, randomUUID } from 'node:crypto';
 import { hashToken, randomToken } from '../../crypto/tokens.js';
 import type { AppContext } from '../../http/context.js';
@@ -104,7 +104,7 @@ function checkStatement(launch: Launch, input: unknown, ctx: AppContext): Json {
     version: '1.0.3',
     authority: {
       objectType: 'Agent',
-      name: 'Lernwerk',
+      name: 'Coursecraft',
       account: { homePage: ctx.config.publicUrl.origin, name: 'launch' },
     },
   };

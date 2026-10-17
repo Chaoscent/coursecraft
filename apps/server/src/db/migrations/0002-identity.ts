@@ -100,7 +100,7 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     .execute();
   await db.schema.createIndex('audit_log_at_idx').on('audit_log').column('at').execute();
   await db.schema.createIndex('audit_log_actor_idx').on('audit_log').column('actor_user_id').execute();
-  await revokeWrites(db, ident('audit_log'), ident('lernwerk_app'));
+  await revokeWrites(db, ident('audit_log'), ident('coursecraft_app'));
 }
 
 export async function down(db: Kysely<unknown>): Promise<void> {

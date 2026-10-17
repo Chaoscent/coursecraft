@@ -27,7 +27,7 @@ export class CourseFormatError extends Error {
 export function loadCourse(raw: unknown): Course {
   const envelope = envelopeSchema.safeParse(raw);
   if (!envelope.success) {
-    throw new CourseFormatError('Not a Lernwerk course document', envelope.error.issues);
+    throw new CourseFormatError('Not a Coursecraft course document', envelope.error.issues);
   }
   let doc: Record<string, unknown> = envelope.data;
   const from = envelope.data.formatVersion;

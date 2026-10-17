@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { assetSchema, type Asset } from '@lernwerk/shared';
+import { assetSchema, type Asset } from '@coursecraft/shared';
 import { api } from '../api/client.js';
 
 export async function uploadAsset(courseId: string, file: File): Promise<Asset> {

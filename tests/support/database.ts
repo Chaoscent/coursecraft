@@ -17,7 +17,7 @@ export async function createTestDatabase(pg: PgInfo): Promise<{ url: string; dro
     await admin.end();
   }
   return {
-    url: pgUrl(pg, 'lernwerk_app', name),
+    url: pgUrl(pg, 'coursecraft_app', name),
     drop: async () => {
       const c = new Client({ connectionString: pgUrl(pg, 'postgres', 'postgres') });
       await c.connect();

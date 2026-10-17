@@ -1,5 +1,5 @@
 {
-  "name": "@lernwerk/converter",
+  "name": "@coursecraft/converter",
   "version": "0.0.0",
   "private": true,
   "license": "Apache-2.0",
@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@lernwerk/shared": "workspace:*",
+    "@coursecraft/shared": "workspace:*",
     "@napi-rs/canvas": "^1.0.11",
     "pdfjs-dist": "^6.4.299",
     "pg-boss": "^12.38.0",

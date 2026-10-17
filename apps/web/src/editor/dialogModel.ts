@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { DialogNode } from '@lernwerk/course-model';
+import type { DialogNode } from '@coursecraft/course-model';
 import type { Draft } from 'immer';
 import { newId } from './ids.js';
 import { paragraphDoc } from './model.js';

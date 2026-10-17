@@ -6,7 +6,7 @@ import {
   type AiProviderKind,
   type AiQuestion,
   type AiTask,
-} from '@lernwerk/shared';
+} from '@coursecraft/shared';
 import { z } from 'zod';
 import { AppError } from '../../http/errors.js';
 

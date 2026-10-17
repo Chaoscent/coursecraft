@@ -1,5 +1,5 @@
 {
-  "name": "@lernwerk/web",
+  "name": "@coursecraft/web",
   "version": "0.0.0",
   "private": true,
   "license": "Apache-2.0",
@@ -18,9 +18,9 @@
     "vite": "^8.3.4"
   },
   "dependencies": {
-    "@lernwerk/course-model": "workspace:*",
-    "@lernwerk/player": "workspace:*",
-    "@lernwerk/shared": "workspace:*",
+    "@coursecraft/course-model": "workspace:*",
+    "@coursecraft/player": "workspace:*",
+    "@coursecraft/shared": "workspace:*",
     "@tiptap/core": "^3.32.0",
     "@tiptap/extension-subscript": "^3.32.0",
     "@tiptap/extension-superscript": "^3.32.0",

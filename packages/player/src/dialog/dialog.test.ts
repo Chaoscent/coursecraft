@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // @vitest-environment jsdom
-import { dialogNodeSchema, type DialogNode } from '@lernwerk/course-model';
+import { dialogNodeSchema, type DialogNode } from '@coursecraft/course-model';
 import { describe, expect, it, vi } from 'vitest';
 import type { NodeApi } from '../runtime/player.js';
 import { stringsFor } from '../runtime/strings.js';

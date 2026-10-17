@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { Course, RichText, SlideElement, SlideNode } from '@lernwerk/course-model';
+import type { Course, RichText, SlideElement, SlideNode } from '@coursecraft/course-model';
 import { newId } from './ids.js';
 
 export type ElementType = SlideElement['type'];

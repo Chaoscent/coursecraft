@@ -7,7 +7,7 @@ deliberately left open. Newest first.
 
 **Built**
 
-- Operator switch `LERNWERK_AI_ENABLED` (off by default) plus providers
+- Operator switch `COURSECRAFT_AI_ENABLED` (off by default) plus providers
   managed by administrators: Anthropic Messages API or OpenAI-compatible
   chat completions (OpenAI, Ollama, llama.cpp, vLLM), base URL, model,
   enabled flag, daily quota, optional personal keys.
@@ -92,7 +92,7 @@ deliberately left open. Newest first.
   SCORM 1.2, SCORM 2004, xAPI (Tin Can) and cmi5 packages with manifest
   parsing and safe extraction; archive/restore. Third-party packages need
   the content origin and are refused without it.
-- Content origin: second listener (port 3001, `LERNWERK_CONTENT_URL`) that
+- Content origin: second listener (port 3001, `COURSECRAFT_CONTENT_URL`) that
   serves only `/launch/<token>/…`; without it own courses play on the app
   origin. Launch tokens with heartbeat, absolute lifetime, revocation on
   close and cascade deletion with the session.
@@ -296,7 +296,7 @@ deliberately left open. Newest first.
   the user), replay protection per time step, two-step login with
   short-lived challenges.
 - First-run setup with a one-time token (24 h, printed to the log or created
-  with `lernwerk setup-token`); impossible once an admin exists.
+  with `coursecraft setup-token`); impossible once an admin exists.
 - Users (create, edit, roles, groups, disable, password reset, GDPR export and
   erasure with tombstone, CSV bulk import with dry run), groups with
   hierarchy and members, append-only audit log (DB role cannot update or

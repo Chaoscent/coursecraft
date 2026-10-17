@@ -57,7 +57,7 @@ describe('login', () => {
         method: 'POST',
         url: '/api/auth/login',
         remoteAddress: `10.0.0.${i + 1}`,
-        headers: { origin: 'https://lernwerk.test', 'content-type': 'application/json' },
+        headers: { origin: 'https://coursecraft.test', 'content-type': 'application/json' },
         payload: JSON.stringify({ email: user.email, password: 'wrong password!' }),
       });
     }
@@ -65,7 +65,7 @@ describe('login', () => {
       method: 'POST',
       url: '/api/auth/login',
       remoteAddress: '10.0.1.1',
-      headers: { origin: 'https://lernwerk.test', 'content-type': 'application/json' },
+      headers: { origin: 'https://coursecraft.test', 'content-type': 'application/json' },
       payload: JSON.stringify({ email: user.email, password: PASSWORD }),
     });
     expect(res.statusCode).toBe(401);
@@ -78,7 +78,7 @@ describe('login', () => {
         method: 'POST',
         url: '/api/auth/login',
         remoteAddress: '10.9.9.9',
-        headers: { origin: 'https://lernwerk.test', 'content-type': 'application/json' },
+        headers: { origin: 'https://coursecraft.test', 'content-type': 'application/json' },
         payload: JSON.stringify({ email: 'x@example.org', password: 'whatever!!' }),
       });
       statuses.push(res.statusCode);
@@ -142,7 +142,7 @@ describe('session fixation and rotation', () => {
       method: 'POST',
       url: '/api/auth/login',
       headers: {
-        origin: 'https://lernwerk.test',
+        origin: 'https://coursecraft.test',
         'content-type': 'application/json',
         'x-csrf-token': planted.csrf,
       },

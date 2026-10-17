@@ -2,7 +2,7 @@
 import { z } from 'zod';
 import { uuidSchema } from './common.js';
 
-export const PACKAGE_KINDS = ['lernwerk', 'scorm12', 'scorm2004', 'xapi', 'cmi5'] as const;
+export const PACKAGE_KINDS = ['coursecraft', 'scorm12', 'scorm2004', 'xapi', 'cmi5'] as const;
 export const packageKindSchema = z.enum(PACKAGE_KINDS);
 export type PackageKind = z.infer<typeof packageKindSchema>;
 

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // @vitest-environment jsdom
-import { slideNodeSchema } from '@lernwerk/course-model';
+import { slideNodeSchema } from '@coursecraft/course-model';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderSlide } from '../render/slide.js';
 import { SlideTimeline } from './timeline.js';

@@ -27,7 +27,7 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm check
-      - run: pnpm --filter @lernwerk/course-model schema:check
+      - run: pnpm --filter @coursecraft/course-model schema:check
       - run: pnpm build
       - run: pnpm check:urls
       - run: pnpm audit --audit-level high
@@ -42,7 +42,7 @@ jobs:
       - run: npm install -g --ignore-scripts "$(node -p "require('./package.json').packageManager")"
       - run: pnpm install --frozen-lockfile
       # Export tests package the built player.
-      - run: pnpm --filter @lernwerk/player build
+      - run: pnpm --filter @coursecraft/player build
       - run: pnpm test:db
 
   images:

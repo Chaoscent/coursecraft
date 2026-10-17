@@ -5,7 +5,7 @@ import {
   pptxRenderJobSchema,
   QUEUES,
   type ConvertDoneJob,
-} from '@lernwerk/shared';
+} from '@coursecraft/shared';
 import { PgBoss } from 'pg-boss';
 import { loadConfig } from './config.js';
 import { beat, HEARTBEAT_INTERVAL_MS } from './heartbeat.js';

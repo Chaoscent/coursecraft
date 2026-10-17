@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { CONVERTER_OUTPUT, type MediaJob } from '@lernwerk/shared';
+import { CONVERTER_OUTPUT, type MediaJob } from '@coursecraft/shared';
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { z } from 'zod';

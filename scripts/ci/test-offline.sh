@@ -4,13 +4,13 @@
 # core functions work. Images must be built beforehand (no pulls at runtime).
 set -eu
 cd "$(dirname "$0")/../.."
-PROJECT=lernwerk-offline
+PROJECT=coursecraft-offline
 COMPOSE="docker compose -p $PROJECT -f docker-compose.yml -f tests/offline/compose.offline.yml"
 
 cleanup() { $COMPOSE down -v --remove-orphans >/dev/null 2>&1 || true; }
 trap cleanup EXIT
 
-LERNWERK_PUBLIC_URL=http://localhost:3000 $COMPOSE up -d --no-build --pull never --wait --wait-timeout 180
+COURSECRAFT_PUBLIC_URL=http://localhost:3000 $COMPOSE up -d --no-build --pull never --wait --wait-timeout 180
 
 echo "Checking readiness inside the app container"
 $COMPOSE exec -T app node -e "

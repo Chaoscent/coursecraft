@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // @vitest-environment jsdom
-import { interactionNodeSchema } from '@lernwerk/course-model';
+import { interactionNodeSchema } from '@coursecraft/course-model';
 import { describe, expect, it, vi } from 'vitest';
 import type { NodeApi } from '../runtime/player.js';
 import { stringsFor } from '../runtime/strings.js';
@@ -47,7 +47,7 @@ describe('interactions', () => {
       node({ variant: 'accordion', items: [entry('a', 'Eins'), entry('b', 'Zwei')] }, true),
       a,
     );
-    const buttons = [...root.querySelectorAll<HTMLButtonElement>('.lw-ix-acc-button')];
+    const buttons = [...root.querySelectorAll<HTMLButtonElement>('.cc-ix-acc-button')];
     expect(buttons).toHaveLength(2);
     buttons[0]?.click();
     expect(buttons[0]?.getAttribute('aria-expanded')).toBe('true');
@@ -82,16 +82,16 @@ describe('interactions', () => {
   it('steps disable the edges, cycles wrap around', () => {
     const items = [entry('a', 'Eins'), entry('b', 'Zwei')];
     const steps = renderInteraction(node({ variant: 'steps', items }), api());
-    const [prev, next] = [...steps.querySelectorAll<HTMLButtonElement>('.lw-ix-step-nav button')];
+    const [prev, next] = [...steps.querySelectorAll<HTMLButtonElement>('.cc-ix-step-nav button')];
     expect(prev?.disabled).toBe(true);
     next?.click();
     expect(steps.textContent).toContain('Schritt 2 von 2');
     expect(next?.disabled).toBe(true);
     const cycle = renderInteraction(node({ variant: 'cycle', items }), api());
-    const [, forward] = [...cycle.querySelectorAll<HTMLButtonElement>('.lw-ix-step-nav button')];
+    const [, forward] = [...cycle.querySelectorAll<HTMLButtonElement>('.cc-ix-step-nav button')];
     forward?.click();
     forward?.click();
-    expect(cycle.querySelector('.lw-ix-step-status')?.textContent).toBe('Schritt 1 von 2');
+    expect(cycle.querySelector('.cc-ix-step-status')?.textContent).toBe('Schritt 1 von 2');
   });
 
   it('glossary sorts and filters terms', () => {
@@ -123,10 +123,10 @@ describe('interactions', () => {
       }),
       api(),
     );
-    const marker = root.querySelector<HTMLButtonElement>('.lw-ix-marker');
+    const marker = root.querySelector<HTMLButtonElement>('.cc-ix-marker');
     expect(marker?.style.left).toBe('25%');
     expect(marker?.getAttribute('aria-label')).toBe('Schalter');
     marker?.click();
-    expect(root.querySelector('.lw-ix-marker-panel')?.textContent).toContain('Text Schalter');
+    expect(root.querySelector('.cc-ix-marker-panel')?.textContent).toContain('Text Schalter');
   });
 });

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { RichText, SlideElement } from '@lernwerk/course-model';
-import { color as resolveColor } from '@lernwerk/player';
+import type { RichText, SlideElement } from '@coursecraft/course-model';
+import { color as resolveColor } from '@coursecraft/player';
 import Subscript from '@tiptap/extension-subscript';
 import Superscript from '@tiptap/extension-superscript';
 import TextAlign from '@tiptap/extension-text-align';
@@ -24,9 +24,9 @@ export const useActiveTextEditor = create<{ editor: Editor | null; set: (editor:
 );
 
 const FONTS = {
-  sans: 'var(--lw-font-sans)',
-  serif: 'var(--lw-font-serif)',
-  mono: 'var(--lw-font-mono)',
+  sans: 'var(--cc-font-sans)',
+  serif: 'var(--cc-font-serif)',
+  mono: 'var(--cc-font-mono)',
 } as const;
 const SAFE = /^(https?:\/\/|mailto:)/i;
 
@@ -93,7 +93,7 @@ export function TextEditor({ element, slideId }: { element: TextLike; slideId: s
   return (
     <div
       data-text-editor
-      className={`lw-text ${styles.textEditor}`}
+      className={`cc-text ${styles.textEditor}`}
       onKeyDown={(event) => {
         if (event.key === 'Escape') {
           event.stopPropagation();

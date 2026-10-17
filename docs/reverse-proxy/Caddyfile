@@ -1,12 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
-# Caddy in front of Lernwerk on a LAN host without public DNS.
-# App origin:     https://lernwerk.lan
-# Content origin: https://lernwerk.lan:8443  (set LERNWERK_CONTENT_URL to this)
+# Caddy in front of Coursecraft on a LAN host without public DNS.
+# App origin:     https://coursecraft.lan
+# Content origin: https://coursecraft.lan:8443  (set COURSECRAFT_CONTENT_URL to this)
 #
 # .env:
-#   LERNWERK_PUBLIC_URL=https://lernwerk.lan
-#   LERNWERK_CONTENT_URL=https://lernwerk.lan:8443
-#   LERNWERK_TRUST_PROXY=true
+#   COURSECRAFT_PUBLIC_URL=https://coursecraft.lan
+#   COURSECRAFT_CONTENT_URL=https://coursecraft.lan:8443
+#   COURSECRAFT_TRUST_PROXY=true
 #
 # `tls internal` makes Caddy issue certificates from its own local CA. Import
 # that root certificate on every client once (see README in this folder).
@@ -16,13 +16,13 @@
 	admin localhost:2019
 }
 
-lernwerk.lan {
+coursecraft.lan {
 	tls internal
 	reverse_proxy 127.0.0.1:3000
 }
 
-lernwerk.lan:8443 {
+coursecraft.lan:8443 {
 	tls internal
-	# Content listener of the app container (LERNWERK_CONTENT_HTTP_PORT).
+	# Content listener of the app container (COURSECRAFT_CONTENT_HTTP_PORT).
 	reverse_proxy 127.0.0.1:3001
 }

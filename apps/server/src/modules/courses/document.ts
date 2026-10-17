@@ -5,7 +5,7 @@ import {
   courseSettingsSchema,
   slideNodeSchema,
   type CourseNode,
-} from '@lernwerk/course-model';
+} from '@coursecraft/course-model';
 import type { Kysely } from 'kysely';
 import { randomBytes } from 'node:crypto';
 import type { Database } from '../../db/schema.js';

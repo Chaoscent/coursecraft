@@ -47,14 +47,19 @@ export function initSecrets(layout: SecretLayout): string[] {
   for (const name of ['postgres_password', 'migrator_password', 'app_password', 'converter_password']) {
     write('db', name, () => hex(24), UIDS.postgres);
   }
-  write('migrate', 'database_url', () => url('lernwerk_migrator', read('db', 'migrator_password')), UIDS.app);
-  write('app', 'database_url', () => url('lernwerk_app', read('db', 'app_password')), UIDS.app);
+  write(
+    'migrate',
+    'database_url',
+    () => url('coursecraft_migrator', read('db', 'migrator_password')),
+    UIDS.app,
+  );
+  write('app', 'database_url', () => url('coursecraft_app', read('db', 'app_password')), UIDS.app);
   write('app', 'master_key', () => randomBytes(32).toString('base64'), UIDS.app);
   write('app', 'ip_pepper', () => randomBytes(32).toString('base64'), UIDS.app);
   write(
     'converter',
     'database_url',
-    () => url('lernwerk_converter', read('db', 'converter_password')),
+    () => url('coursecraft_converter', read('db', 'converter_password')),
     UIDS.converter,
   );
   for (const dir of dirs) chmodSync(dir, 0o500);

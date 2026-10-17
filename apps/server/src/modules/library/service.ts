@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { LibraryItem, PackageKind } from '@lernwerk/shared';
+import type { LibraryItem, PackageKind } from '@coursecraft/shared';
 import { randomUUID } from 'node:crypto';
 import type { AppContext, AuthState } from '../../http/context.js';
 import { AppError, notFound } from '../../http/errors.js';
@@ -53,7 +53,7 @@ async function storePackage(
 /** Imports a SCORM 1.2/2004, xAPI or cmi5 package as a new library item. */
 export async function importPackage(ctx: AppContext, auth: AuthState, bytes: Buffer) {
   if (!ctx.config.contentUrl)
-    throw new AppError('forbidden', 'Third-party packages need a content origin (LERNWERK_CONTENT_URL)');
+    throw new AppError('forbidden', 'Third-party packages need a content origin (COURSECRAFT_CONTENT_URL)');
   const { id: packageId, manifest } = await storePackage(ctx, bytes, { userId: auth.userId });
   const item = await ctx.db
     .insertInto('library_items')
@@ -82,7 +82,7 @@ export async function publishCourse(ctx: AppContext, auth: AuthState, courseId: 
   const { course } = await loadDocument(ctx.db, courseId);
   const built = await buildExport(course, 'cmi5', ctx.assets, ctx.config.playerDir);
   const { id: packageId } = await storePackage(ctx, built.buffer, {
-    kind: 'lernwerk',
+    kind: 'coursecraft',
     userId: auth.userId,
     sourceCourseId: courseId,
     sourceVersion: version,

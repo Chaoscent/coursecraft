@@ -1,6 +1,6 @@
-# Lernwerk UI design
+# Coursecraft UI design
 
-Lernwerk looks and behaves like professional desktop software (office, DTP,
+Coursecraft looks and behaves like professional desktop software (office, DTP,
 IDE): dense, calm, keyboard-driven. It does not look like a marketing site or
 a typical SaaS dashboard.
 
@@ -15,7 +15,7 @@ rules need a new approval.
 - `apps/web/sample/manage.html`: LMS administration with navigation, toolbar,
   data table, badges, dialog.
 
-To view them, run `pnpm --filter @lernwerk/web dev` and open
+To view them, run `pnpm --filter @coursecraft/web dev` and open
 `http://127.0.0.1:5173/sample/editor.html`. Append `?theme=dark` or
 `?theme=light` to force a theme; otherwise the system setting applies.
 

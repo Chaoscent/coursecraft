@@ -8,9 +8,9 @@ import { initSecrets } from './init-secrets.js';
 describe('initSecrets', () => {
   const dirs: string[] = [];
   const layout = () => {
-    const dir = mkdtempSync(join(tmpdir(), 'lw-secrets-'));
+    const dir = mkdtempSync(join(tmpdir(), 'cc-secrets-'));
     dirs.push(dir);
-    return { dir, dbHost: 'db', dbName: 'lernwerk', chown: false };
+    return { dir, dbHost: 'db', dbName: 'coursecraft', chown: false };
   };
 
   afterAll(() => {
@@ -27,7 +27,7 @@ describe('initSecrets', () => {
     const password = readFileSync(join(l.dir, 'db', 'converter_password'), 'utf8').trim();
     expect(password).toMatch(/^[0-9a-f]{48}$/);
     expect(readFileSync(join(l.dir, 'converter', 'database_url'), 'utf8').trim()).toBe(
-      `postgres://lernwerk_converter:${password}@db:5432/lernwerk`,
+      `postgres://coursecraft_converter:${password}@db:5432/coursecraft`,
     );
     expect(statSync(join(l.dir, 'app', 'master_key')).mode & 0o777).toBe(0o400);
   });

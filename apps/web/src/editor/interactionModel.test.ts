@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { interactionNodeSchema } from '@lernwerk/course-model';
+import { interactionNodeSchema } from '@coursecraft/course-model';
 import { describe, expect, it } from 'vitest';
 import { convertContent, entriesOf, newInteraction } from './interactionModel.js';
 

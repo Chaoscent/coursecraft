@@ -20,9 +20,9 @@ COPY packages/player/package.json packages/player/
 COPY packages/eslint-config/package.json packages/eslint-config/
 RUN pnpm install --frozen-lockfile
 COPY . .
-RUN pnpm --filter @lernwerk/server --filter @lernwerk/converter --filter @lernwerk/web --filter @lernwerk/player run build \
- && pnpm --filter @lernwerk/server deploy --prod /out/app \
- && pnpm --filter @lernwerk/converter deploy --prod /out/converter \
+RUN pnpm --filter @coursecraft/server --filter @coursecraft/converter --filter @coursecraft/web --filter @coursecraft/player run build \
+ && pnpm --filter @coursecraft/server deploy --prod /out/app \
+ && pnpm --filter @coursecraft/converter deploy --prod /out/converter \
  && mkdir -p /out/app/public /out/app/player \
  && cp -r apps/web/dist/. /out/app/public/ \
  && cp -r packages/player/dist/. /out/app/player/
@@ -36,13 +36,13 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/* \
  && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
       /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \
- && groupadd --gid 10000 lernwerk-work \
- && useradd --uid 10001 --gid 10000 --no-create-home --shell /usr/sbin/nologin lernwerk \
- && mkdir -p /data /work /run/lernwerk \
+ && groupadd --gid 10000 coursecraft-work \
+ && useradd --uid 10001 --gid 10000 --no-create-home --shell /usr/sbin/nologin coursecraft \
+ && mkdir -p /data /work /run/coursecraft \
  && chown 10001:10000 /data && chown 10001:10000 /work && chmod 2770 /work
 COPY --from=build /out/app /app
-COPY docker/lernwerk.sh /usr/local/bin/lernwerk
-ENV NODE_ENV=production LERNWERK_DATA_DIR=/data LERNWERK_WEB_DIR=/app/public LERNWERK_PLAYER_DIR=/app/player
+COPY docker/coursecraft.sh /usr/local/bin/coursecraft
+ENV NODE_ENV=production COURSECRAFT_DATA_DIR=/data COURSECRAFT_WEB_DIR=/app/public COURSECRAFT_PLAYER_DIR=/app/player
 USER 10001:10000
 WORKDIR /app
 EXPOSE 3000
@@ -58,11 +58,11 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/* \
  && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
       /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \
- && groupadd --gid 10000 lernwerk-work \
+ && groupadd --gid 10000 coursecraft-work \
  && useradd --uid 10002 --gid 10000 --no-create-home --shell /usr/sbin/nologin converter \
  && mkdir -p /work && chown 10002:10000 /work && chmod 2770 /work
 COPY --from=build /out/converter /converter
-ENV NODE_ENV=production LERNWERK_WORK_DIR=/work HOME=/tmp
+ENV NODE_ENV=production COURSECRAFT_WORK_DIR=/work HOME=/tmp
 USER 10002:10000
 WORKDIR /converter
 HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=3 CMD ["node", "/converter/dist/healthcheck.js"]

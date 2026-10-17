@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { LearningStatus } from '@lernwerk/shared';
+import type { LearningStatus } from '@coursecraft/shared';
 import type { Kysely } from 'kysely';
 import type { Completion, Database, Success } from '../../db/schema.js';
 

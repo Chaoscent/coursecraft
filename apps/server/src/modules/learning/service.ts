@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { LaunchResponse, MyItem, PackageKind } from '@lernwerk/shared';
+import type { LaunchResponse, MyItem, PackageKind } from '@coursecraft/shared';
 import type { Kysely } from 'kysely';
 import { hashToken, randomToken } from '../../crypto/tokens.js';
 import type { Database } from '../../db/schema.js';
@@ -191,7 +191,7 @@ export async function launch(
     cmi = stored?.cmi ?? {};
     url = `${base}/_lw/wrapper.html`;
   } else {
-    const activityId = manifest.activityId ?? `urn:lernwerk:package:${pkg.id}`;
+    const activityId = manifest.activityId ?? `urn:coursecraft:package:${pkg.id}`;
     const query = new URLSearchParams({
       endpoint: `${base}/xapi/`,
       actor: JSON.stringify(actor),

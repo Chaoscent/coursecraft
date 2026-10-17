@@ -14,7 +14,7 @@ interface ScormApi {
 type ScormApiConstructor = new (settings: Record<string, unknown>) => ScormApi;
 
 interface InitMessage {
-  type: 'lw:init';
+  type: 'cc:init';
   launchId: string;
   kind: 'scorm12' | 'scorm2004';
   cmi: Record<string, unknown>;
@@ -30,7 +30,7 @@ function isInit(data: unknown): data is InitMessage {
   if (typeof data !== 'object' || data === null) return false;
   const m = data as Record<string, unknown>;
   return (
-    m['type'] === 'lw:init' &&
+    m['type'] === 'cc:init' &&
     typeof m['launchId'] === 'string' &&
     (m['kind'] === 'scorm12' || m['kind'] === 'scorm2004') &&
     typeof m['cmi'] === 'object' &&
@@ -82,7 +82,7 @@ function start(init: InitMessage): void {
   }
   const send = (finished: boolean) =>
     window.parent.postMessage(
-      { type: 'lw:commit', launchId: init.launchId, cmi: plain(api.cmi), finished },
+      { type: 'cc:commit', launchId: init.launchId, cmi: plain(api.cmi), finished },
       appOrigin,
     );
   const commitEvent = init.kind === 'scorm12' ? 'LMSCommit' : 'Commit';
@@ -101,4 +101,4 @@ window.addEventListener('message', (event: MessageEvent<unknown>) => {
   started = true;
   start(event.data);
 });
-window.parent.postMessage({ type: 'lw:ready' }, appOrigin);
+window.parent.postMessage({ type: 'cc:ready' }, appOrigin);

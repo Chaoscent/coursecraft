@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { Question, QuizNode, SurveyNode } from '@lernwerk/course-model';
+import type { Question, QuizNode, SurveyNode } from '@coursecraft/course-model';
 import type { Draft } from 'immer';
 import { useState } from 'react';
 import { Menu, MenuItem, MenuTrigger, Popover } from 'react-aria-components';

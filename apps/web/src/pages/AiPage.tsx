@@ -6,7 +6,7 @@ import {
   okSchema,
   type AiProvider,
   type AiProviderKind,
-} from '@lernwerk/shared';
+} from '@coursecraft/shared';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/client.js';

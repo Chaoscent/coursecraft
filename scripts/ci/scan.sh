@@ -5,7 +5,7 @@ set -eu
 cd "$(dirname "$0")/../.."
 pnpm audit --audit-level high
 docker run --rm -v "$PWD:/src:ro" ghcr.io/google/osv-scanner:v2.6.0 scan source --lockfile /src/pnpm-lock.yaml
-for image in lernwerk/app:local lernwerk/converter:local; do
+for image in coursecraft/app:local coursecraft/converter:local; do
   docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.75.0 \
     image --skip-version-check --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed "$image"
 done

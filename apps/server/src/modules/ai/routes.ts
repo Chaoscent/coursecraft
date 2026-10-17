@@ -10,7 +10,7 @@ import {
   aiUserKeyInputSchema,
   idParamSchema,
   okSchema,
-} from '@lernwerk/shared';
+} from '@coursecraft/shared';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { requireAuth } from '../../auth/plugin.js';

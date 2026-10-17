@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { Course } from '@lernwerk/course-model';
-import { lockResponseSchema, okSchema, saveCourseResponseSchema } from '@lernwerk/shared';
+import type { Course } from '@coursecraft/course-model';
+import { lockResponseSchema, okSchema, saveCourseResponseSchema } from '@coursecraft/shared';
 import { api, ApiError } from '../api/client.js';
 import { errorMessage } from '../lib/errors.js';
 import type { EditorStore } from './store.js';

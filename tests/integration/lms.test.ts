@@ -6,7 +6,7 @@ import { openCourse, uploadTo } from '../support/courses.js';
 import { scorm12Package, scorm2004Package, tincanPackage, zipFiles } from '../support/packages.js';
 import { createTestApp, ORIGIN, type Actor, type TestApp } from '../support/test-app.js';
 
-const CONTENT = 'https://content.lernwerk.test';
+const CONTENT = 'https://content.coursecraft.test';
 let t: TestApp;
 let content: FastifyInstance;
 let admin: Actor;
@@ -17,7 +17,7 @@ let outsider: Actor;
 let parentGroup: string;
 
 beforeAll(async () => {
-  t = await createTestApp({ LERNWERK_CONTENT_URL: CONTENT });
+  t = await createTestApp({ COURSECRAFT_CONTENT_URL: CONTENT });
   content = await buildContentApp(t.ctx.config, t.ctx);
   await content.ready();
   admin = await t.actor(['admin']);
@@ -274,7 +274,7 @@ describe('cmi5 launch and LRS', () => {
       actor,
       verb: { id: 'http://adlnet.gov/expapi/verbs/answered' },
       object: {
-        id: 'urn:lernwerk:course:x/quiz/essay',
+        id: 'urn:coursecraft:course:x/quiz/essay',
         definition: { interactionType: 'long-fill-in', description: { de: 'Beschreiben Sie' } },
       },
       result: { response: 'Meine Antwort', score: { raw: 0, max: 4 } },
@@ -345,7 +345,7 @@ describe('cmi5 launch and LRS', () => {
     // Cookies are ignored on the content origin.
     const withCookie = await content.inject({
       url: `/launch/${'a'.repeat(43)}/index.html`,
-      cookies: { '__Host-lw_session': learner.cookie },
+      cookies: { '__Host-cc_session': learner.cookie },
     });
     expect(withCookie.statusCode).toBe(404);
     expect(

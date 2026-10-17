@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { gradingQueueSchema, okSchema } from '@lernwerk/shared';
+import { gradingQueueSchema, okSchema } from '@coursecraft/shared';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/client.js';

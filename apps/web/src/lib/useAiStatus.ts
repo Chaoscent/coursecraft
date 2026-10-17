@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { aiStatusSchema, type AiStatus } from '@lernwerk/shared';
+import { aiStatusSchema, type AiStatus } from '@coursecraft/shared';
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../api/client.js';
 import { useSession } from '../api/session.js';

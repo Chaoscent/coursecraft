@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { SlideElement, SlideNode } from '@lernwerk/course-model';
+import type { SlideElement, SlideNode } from '@coursecraft/course-model';
 import type { RenderedSlide } from '../render/slide.js';
 
 type Animation = NonNullable<SlideElement['entrance']>;
@@ -11,12 +11,12 @@ function flatten(elements: SlideElement[]): SlideElement[] {
 function animate(el: HTMLElement, animation: Animation | undefined, phase: 'in' | 'out'): void {
   if (!animation || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   el.style.animationDuration = `${animation.durationMs}ms`;
-  el.classList.remove('lw-anim-in', 'lw-anim-out');
+  el.classList.remove('cc-anim-in', 'cc-anim-out');
   el.dataset['effect'] = animation.effect;
   el.dataset['direction'] = animation.direction ?? 'left';
   // Restart the CSS animation.
   void el.offsetWidth;
-  el.classList.add(phase === 'in' ? 'lw-anim-in' : 'lw-anim-out');
+  el.classList.add(phase === 'in' ? 'cc-anim-in' : 'cc-anim-out');
 }
 
 /**

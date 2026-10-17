@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { SlideNode } from '@lernwerk/course-model';
-import { assetSchema } from '@lernwerk/shared';
+import type { SlideNode } from '@coursecraft/course-model';
+import { assetSchema } from '@coursecraft/shared';
 import type { Draft } from 'immer';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { SlideElement, SlideNode } from '@lernwerk/course-model';
+import type { SlideElement, SlideNode } from '@coursecraft/course-model';
 import { color, localized, type RenderContext } from './context.js';
 import { h, svg } from './dom.js';
 import { plainText, renderRichText } from './richtext.js';
@@ -22,9 +22,9 @@ export interface SlideRenderOptions {
 }
 
 const FONTS = {
-  sans: 'var(--lw-font-sans)',
-  serif: 'var(--lw-font-serif)',
-  mono: 'var(--lw-font-mono)',
+  sans: 'var(--cc-font-sans)',
+  serif: 'var(--cc-font-serif)',
+  mono: 'var(--cc-font-mono)',
 } as const;
 
 function place(el: HTMLElement, frame: SlideElement['frame'], origin = { x: 0, y: 0 }): void {
@@ -40,7 +40,7 @@ function textBox(
   style: ElementOf<'text'>['style'] | undefined,
   ctx: RenderContext,
 ): HTMLElement {
-  const box = h('div', { class: 'lw-text' });
+  const box = h('div', { class: 'cc-text' });
   if (style) {
     box.style.fontFamily = FONTS[style.font];
     box.style.fontSize = `${style.sizePx}px`;
@@ -169,7 +169,7 @@ function renderElement(
   options: SlideRenderOptions,
   origin = { x: 0, y: 0 },
 ): HTMLElement {
-  const box = h('div', { class: `lw-el lw-el-${el.type}`, attrs: { 'data-id': el.id } });
+  const box = h('div', { class: `cc-el cc-el-${el.type}`, attrs: { 'data-id': el.id } });
   place(box, el.frame, origin);
   if (el.hidden) box.hidden = true;
 
@@ -236,7 +236,7 @@ function renderElement(
       box.append(audio);
       if (el.transcript) {
         box.append(
-          h('details', { class: 'lw-transcript' }, [
+          h('details', { class: 'cc-transcript' }, [
             h('summary', { text: 'Transcript' }),
             h('div', {}, [renderRichText(localized(ctx, el.transcript), ctx)]),
           ]),
@@ -247,10 +247,10 @@ function renderElement(
     }
     case 'hotspot': {
       const button = h('button', {
-        class: 'lw-hotspot',
+        class: 'cc-hotspot',
         attrs: { type: 'button', 'aria-label': localized(ctx, el.label) ?? '' },
       });
-      if (el.shape === 'ellipse') button.classList.add('lw-hotspot-ellipse');
+      if (el.shape === 'ellipse') button.classList.add('cc-hotspot-ellipse');
       if (options.static) button.tabIndex = -1;
       box.append(button);
       break;
@@ -271,7 +271,7 @@ export function renderSlide(
   ctx: RenderContext,
   options: SlideRenderOptions,
 ): RenderedSlide {
-  const root = h('div', { class: 'lw-canvas', attrs: { 'data-slide': slide.id } });
+  const root = h('div', { class: 'cc-canvas', attrs: { 'data-slide': slide.id } });
   root.style.width = `${options.width}px`;
   root.style.height = `${options.height}px`;
   root.style.backgroundColor =
@@ -280,7 +280,7 @@ export function renderSlide(
   if (slide.useFallbackImage && slide.fallbackImage) {
     root.append(
       h('img', {
-        class: 'lw-fallback',
+        class: 'cc-fallback',
         attrs: { src: ctx.assetUrl(slide.fallbackImage.$asset), alt: localized(ctx, slide.title) ?? '' },
       }),
     );
@@ -294,7 +294,7 @@ export function renderSlide(
     for (const el of slide.elements) root.append(renderElement(el, ctx, out, options));
   }
   for (const layer of slide.layers) {
-    const layerEl = h('div', { class: 'lw-layer', attrs: { 'data-layer': layer.id } });
+    const layerEl = h('div', { class: 'cc-layer', attrs: { 'data-layer': layer.id } });
     layerEl.hidden = !layer.visibleInitially;
     for (const el of layer.elements) layerEl.append(renderElement(el, ctx, out, options));
     root.append(layerEl);
@@ -305,7 +305,7 @@ export function renderSlide(
 
 /** Linear, reflowing alternative of a slide (WCAG 1.4.10 reflow). */
 export function renderTextView(slide: SlideNode, ctx: RenderContext): HTMLElement {
-  const article = h('article', { class: 'lw-textview' }, [
+  const article = h('article', { class: 'cc-textview' }, [
     h('h2', { text: localized(ctx, slide.title) ?? '' }),
   ]);
   const add = (elements: SlideElement[]) => {
@@ -314,7 +314,7 @@ export function renderTextView(slide: SlideNode, ctx: RenderContext): HTMLElemen
       switch (el.type) {
         case 'text': {
           const doc = localized(ctx, el.content);
-          if (plainText(doc)) article.append(h('div', { class: 'lw-tv-text' }, [renderRichText(doc, ctx)]));
+          if (plainText(doc)) article.append(h('div', { class: 'cc-tv-text' }, [renderRichText(doc, ctx)]));
           break;
         }
         case 'image':
@@ -331,7 +331,7 @@ export function renderTextView(slide: SlideNode, ctx: RenderContext): HTMLElemen
         case 'shape':
           if (el.content)
             article.append(
-              h('div', { class: 'lw-tv-text' }, [renderRichText(localized(ctx, el.content), ctx)]),
+              h('div', { class: 'cc-tv-text' }, [renderRichText(localized(ctx, el.content), ctx)]),
             );
           break;
         case 'video':

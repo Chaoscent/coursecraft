@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { PERMISSIONS, rolesGrant, type Permission } from '@lernwerk/shared';
+import { PERMISSIONS, rolesGrant, type Permission } from '@coursecraft/shared';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { hmac, safeEqual } from '../crypto/tokens.js';
 import type { AppContext, AuthState } from '../http/context.js';

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { SlideElement } from '@lernwerk/course-model';
-import { renderSlide, type RenderContext, type RenderedSlide } from '@lernwerk/player';
+import type { SlideElement } from '@coursecraft/course-model';
+import { renderSlide, type RenderContext, type RenderedSlide } from '@coursecraft/player';
 import {
   useEffect,
   useLayoutEffect,

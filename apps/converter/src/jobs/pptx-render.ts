@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { PptxRenderJob } from '@lernwerk/shared';
+import type { PptxRenderJob } from '@coursecraft/shared';
 import { createCanvas } from '@napi-rs/canvas';
 import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -99,7 +99,7 @@ export async function pdfToPngs(pdf: string, outDir: string, widthPx: number): P
 
 export async function renderPresentation(workDir: string, job: PptxRenderJob): Promise<string[]> {
   const dir = join(workDir, job.jobId);
-  const tmp = mkdtempSync(join(tmpdir(), 'lw-pptx-'));
+  const tmp = mkdtempSync(join(tmpdir(), 'cc-pptx-'));
   try {
     const pdf = await presentationToPdf(join(dir, 'in', 'source.pptx'), tmp);
     return await pdfToPngs(pdf, join(dir, 'out'), job.widthPx);

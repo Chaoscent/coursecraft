@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // @vitest-environment jsdom
-import { questionSchema, type Question } from '@lernwerk/course-model';
-import { scoreQuestion, seededRandom } from '@lernwerk/course-model/scoring';
+import { questionSchema, type Question } from '@coursecraft/course-model';
+import { scoreQuestion, seededRandom } from '@coursecraft/course-model/scoring';
 import { describe, expect, it } from 'vitest';
 import { stringsFor } from '../runtime/strings.js';
 import { scorm2004Response } from '../tracking/scorm2004.js';

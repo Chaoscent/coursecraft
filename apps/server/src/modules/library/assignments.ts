@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { Assignment } from '@lernwerk/shared';
+import type { Assignment } from '@coursecraft/shared';
 import type { AppContext, AuthState } from '../../http/context.js';
 import { badRequest, notFound } from '../../http/errors.js';
 

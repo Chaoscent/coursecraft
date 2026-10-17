@@ -12,7 +12,7 @@ import {
 import { createHash, randomBytes } from 'node:crypto';
 import { join } from 'node:path';
 
-export { ASSET_EXTENSIONS as EXTENSIONS } from '@lernwerk/course-model';
+export { ASSET_EXTENSIONS as EXTENSIONS } from '@coursecraft/course-model';
 
 /**
  * Content-addressed file storage outside any served directory:

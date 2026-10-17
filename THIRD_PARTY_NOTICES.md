@@ -1,9 +1,9 @@
 # Third-party notices
 
-Lernwerk is licensed under the Apache License 2.0. The container images also
+Coursecraft is licensed under the Apache License 2.0. The container images also
 contain separately licensed programs. They are used only as separate
-processes and are never linked into Lernwerk code. Combining them in one
-image is aggregation; it does not change the license of Lernwerk or of these
+processes and are never linked into Coursecraft code. Combining them in one
+image is aggregation; it does not change the license of Coursecraft or of these
 programs.
 
 ## Programs from Debian (container images)

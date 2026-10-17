@@ -16,7 +16,7 @@ const MOVEON_CATEGORY = {
   objectType: 'Activity',
 };
 const MASTERY_EXTENSION = 'https://w3id.org/xapi/cmi5/context/extensions/masteryscore';
-const RESUME_STATE = 'urn:lernwerk:resume';
+const RESUME_STATE = 'urn:coursecraft:resume';
 
 interface LaunchData {
   contextTemplate?: { extensions?: Record<string, unknown>; contextActivities?: Record<string, unknown[]> };

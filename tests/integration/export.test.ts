@@ -153,7 +153,7 @@ describe('export formats with quizzes', () => {
       (await t.request(author, 'GET', `/api/courses/${id}/export?format=cmi5`)).rawPayload,
     );
     const structure = files.get('cmi5.xml')?.toString() ?? '';
-    expect(structure).toContain(`<course id="urn:lernwerk:course:${id}">`);
+    expect(structure).toContain(`<course id="urn:coursecraft:course:${id}">`);
     expect(structure).toContain('moveOn="Passed"');
     expect(structure).toContain('masteryScore="0.60"');
     expect(structure).toContain('<url>index.html</url>');

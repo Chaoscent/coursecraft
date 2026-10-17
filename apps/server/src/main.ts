@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { convertDoneJobSchema, QUEUES } from '@lernwerk/shared';
+import { convertDoneJobSchema, QUEUES } from '@coursecraft/shared';
 import { loadConfig } from './config/env.js';
 import { createContext } from './context-factory.js';
 import { checkReadiness } from './db/readiness.js';

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { InteractionNode } from '@lernwerk/course-model';
+import type { InteractionNode } from '@coursecraft/course-model';
 import { newId } from './ids.js';
 import { paragraphDoc } from './model.js';
 

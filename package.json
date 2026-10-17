@@ -1,5 +1,5 @@
 {
-  "name": "lernwerk",
+  "name": "coursecraft",
   "private": true,
   "license": "Apache-2.0",
   "type": "module",
@@ -25,8 +25,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@lernwerk/eslint-config": "workspace:*",
-    "@lernwerk/shared": "workspace:*",
+    "@coursecraft/eslint-config": "workspace:*",
+    "@coursecraft/shared": "workspace:*",
     "@playwright/test": "^1.64.1",
     "@types/node": "^24.19.2",
     "@types/pg": "^8.23.1",

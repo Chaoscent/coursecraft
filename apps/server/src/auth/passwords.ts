@@ -20,6 +20,6 @@ export async function verifyPassword(stored: string | null, password: string): P
 
 let dummy: Promise<string> | undefined;
 function dummyHash(): Promise<string> {
-  dummy ??= hash('lernwerk-timing-equalizer', OPTIONS);
+  dummy ??= hash('coursecraft-timing-equalizer', OPTIONS);
   return dummy;
 }

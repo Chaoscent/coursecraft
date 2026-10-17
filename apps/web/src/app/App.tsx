@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { Permission } from '@lernwerk/shared';
+import type { Permission } from '@coursecraft/shared';
 import type { ReactNode } from 'react';
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router';
 import { SessionProvider, useSession } from '../api/session.js';

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { listCoursesResponseSchema, okSchema, type CourseSummary } from '@lernwerk/shared';
+import { listCoursesResponseSchema, okSchema, type CourseSummary } from '@coursecraft/shared';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';

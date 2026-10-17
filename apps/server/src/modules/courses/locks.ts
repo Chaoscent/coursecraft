@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { LockInfo } from '@lernwerk/shared';
+import type { LockInfo } from '@coursecraft/shared';
 import type { Kysely } from 'kysely';
 import type { Database } from '../../db/schema.js';
 import type { AuthState } from '../../http/context.js';

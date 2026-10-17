@@ -57,9 +57,9 @@ beforeAll(async () => {
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
   base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   t = await createTestApp({
-    LERNWERK_AI_ENABLED: 'true',
-    LERNWERK_AI_TIMEOUT_SECONDS: '5',
-    LERNWERK_AI_RATE_LIMIT: '1000',
+    COURSECRAFT_AI_ENABLED: 'true',
+    COURSECRAFT_AI_TIMEOUT_SECONDS: '5',
+    COURSECRAFT_AI_RATE_LIMIT: '1000',
   });
   admin = await t.actor(['admin']);
   author = await t.actor(['author']);

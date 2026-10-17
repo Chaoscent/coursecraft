@@ -42,7 +42,7 @@ const DOCUMENT_PATHS: [string, DocumentKind][] = [
 
 /** CSP for playback: own courses strict, third-party packages as loose as they need, framed only by the app. */
 function playbackCsp(kind: string, frameAncestor: string): string {
-  const own = kind === 'lernwerk';
+  const own = kind === 'coursecraft';
   return [
     "default-src 'self'",
     own ? "script-src 'self'" : "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
@@ -64,7 +64,7 @@ function wrapperHtml(appOrigin: string): string {
 <html lang="en" data-app-origin="${appOrigin.replace(/[^a-zA-Z0-9:/.\-[\]]/g, '')}">
 <head>
 <meta charset="utf-8">
-<title>Lernwerk</title>
+<title>Coursecraft</title>
 <link rel="stylesheet" href="wrapper.css">
 <script src="scorm-again.min.js"></script>
 <script src="scorm-wrapper.js"></script>
@@ -102,7 +102,7 @@ export async function launchRoutes(app: FastifyInstance, ctx: AppContext, option
     const launchOf = async (request: FastifyRequest<{ Params: { token: string } }>): Promise<Launch> => {
       const launch = await resolveLaunch(ctx, request.params.token);
       // Third-party packages never run on the app origin.
-      if (!launch || (options.sameOrigin && launch.kind !== 'lernwerk'))
+      if (!launch || (options.sameOrigin && launch.kind !== 'coursecraft'))
         throw notFound('Launch not found or expired');
       return launch;
     };

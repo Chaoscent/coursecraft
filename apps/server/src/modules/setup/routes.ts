@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { loginResponseSchema, setupRequestSchema, setupStatusResponseSchema } from '@lernwerk/shared';
+import { loginResponseSchema, setupRequestSchema, setupStatusResponseSchema } from '@coursecraft/shared';
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { hashPassword } from '../../auth/passwords.js';

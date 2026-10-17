@@ -1,4 +1,4 @@
-# Lernwerk course format
+# Coursecraft course format
 
 Version: **1**. Machine-readable definition:
 `packages/course-model/src/` (Zod, normative) and
@@ -25,7 +25,7 @@ and the original file name.
 
 | Field                | Description                                                                                             |
 | -------------------- | ------------------------------------------------------------------------------------------------------- |
-| `format`             | Always `"lernwerk.course"`                                                                              |
+| `format`             | Always `"coursecraft.course"`                                                                           |
 | `formatVersion`      | Integer, currently `1`                                                                                  |
 | `id`                 | UUID of the course                                                                                      |
 | `meta`               | Title, description, authors, timestamps                                                                 |

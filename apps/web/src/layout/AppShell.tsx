@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { Permission } from '@lernwerk/shared';
+import type { Permission } from '@coursecraft/shared';
 import { useEffect, useState } from 'react';
 import {
   Button as AriaButton,
@@ -12,7 +12,7 @@ import {
 } from 'react-aria-components';
 import { useTranslation } from 'react-i18next';
 import { NavLink, Outlet, useNavigate } from 'react-router';
-import { okSchema } from '@lernwerk/shared';
+import { okSchema } from '@coursecraft/shared';
 import { api } from '../api/client.js';
 import { useSession } from '../api/session.js';
 import { Icon } from '../components/Icon.js';

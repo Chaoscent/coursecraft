@@ -19,8 +19,14 @@ test('WebKit rejects the secure session cookie on plain-http localhost', async (
   baseURL,
 }) => {
   test.skip(browserName !== 'webkit' || !plainHttp(baseURL), 'only WebKit over http');
-  await login(page, ADMIN.email, ADMIN.password);
-  expect((await context.cookies()).some((c) => c.name === '__Host-lw_session')).toBe(false);
+  await page.goto('/login');
+  await page.getByLabel('E-Mail').fill(ADMIN.email);
+  await page.getByLabel('Passwort').fill(ADMIN.password);
+  // The server sets the cookie; WebKit drops it. What the page shows next depends on timing.
+  const answered = page.waitForResponse((r) => r.url().endsWith('/api/auth/login') && r.ok());
+  await page.getByRole('button', { name: 'Anmelden' }).click();
+  expect(await (await answered).headerValue('set-cookie')).toContain('__Host-cc_session');
+  expect((await context.cookies()).some((c) => c.name === '__Host-cc_session')).toBe(false);
 });
 
 test.describe('application', () => {
@@ -34,7 +40,7 @@ test.describe('application', () => {
   test('session cookie is hardened and works on http://localhost', async ({ page, context, baseURL }) => {
     const problems = watchPage(page, baseURL ?? '');
     await login(page, ADMIN.email, ADMIN.password);
-    const cookie = (await context.cookies()).find((c) => c.name === '__Host-lw_session');
+    const cookie = (await context.cookies()).find((c) => c.name === '__Host-cc_session');
     expect(cookie).toMatchObject({ httpOnly: true, secure: true, sameSite: 'Lax', path: '/' });
     await page.reload();
     await expect(page.getByRole('navigation', { name: 'Hauptmenü' })).toBeVisible();
@@ -47,7 +53,7 @@ test.describe('application', () => {
     await page.getByLabel('Passwort').fill('definitely wrong');
     await page.getByRole('button', { name: 'Anmelden' }).click();
     await expect(page.getByRole('alert')).toContainText('falsch');
-    expect((await context.cookies()).some((c) => c.name === '__Host-lw_session')).toBe(false);
+    expect((await context.cookies()).some((c) => c.name === '__Host-cc_session')).toBe(false);
   });
 
   test('admin creates a user, who must set an own password', async ({ page, browserName, baseURL }) => {

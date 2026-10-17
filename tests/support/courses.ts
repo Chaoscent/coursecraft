@@ -51,7 +51,7 @@ export async function uploadTo(
   name: string,
   bytes: Buffer,
 ): Promise<LightMyRequestResponse> {
-  const boundary = '----lernwerk-test';
+  const boundary = '----coursecraft-test';
   const payload = Buffer.concat([
     Buffer.from(
       `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${name}"\r\nContent-Type: application/octet-stream\r\n\r\n`,

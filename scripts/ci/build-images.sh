@@ -7,10 +7,10 @@ cd "$(dirname "$0")/../.."
 TAG="${TAG:-local}"
 if [ -n "${PLATFORMS:-}" ]; then
   for target in app converter; do
-    docker buildx build --platform "$PLATFORMS" -f docker/Dockerfile --target "$target" -t "lernwerk/$target:$TAG" .
+    docker buildx build --platform "$PLATFORMS" -f docker/Dockerfile --target "$target" -t "coursecraft/$target:$TAG" .
   done
 else
   for target in app converter; do
-    docker build -f docker/Dockerfile --target "$target" -t "lernwerk/$target:$TAG" .
+    docker build -f docker/Dockerfile --target "$target" -t "coursecraft/$target:$TAG" .
   done
 fi

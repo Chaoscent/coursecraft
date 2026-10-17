@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { launchResponseSchema, okSchema, type LaunchResponse } from '@lernwerk/shared';
+import { launchResponseSchema, okSchema, type LaunchResponse } from '@coursecraft/shared';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
@@ -19,7 +19,7 @@ function isCommit(
   if (typeof data !== 'object' || data === null) return false;
   const m = data as Record<string, unknown>;
   return (
-    m['type'] === 'lw:commit' &&
+    m['type'] === 'cc:commit' &&
     m['launchId'] === launchId &&
     typeof m['cmi'] === 'object' &&
     m['cmi'] !== null &&
@@ -70,9 +70,9 @@ export function PlayerPage() {
     const onMessage = (event: MessageEvent<unknown>) => {
       if (event.origin !== launch.contentOrigin || event.source !== frame.current?.contentWindow) return;
       const data = event.data as { type?: unknown } | null;
-      if (data?.type === 'lw:ready' && launch.scorm && launch.cmi) {
+      if (data?.type === 'cc:ready' && launch.scorm && launch.cmi) {
         frame.current?.contentWindow?.postMessage(
-          { type: 'lw:init', launchId: launch.launchId, kind: launch.kind, cmi: launch.cmi, ...launch.scorm },
+          { type: 'cc:init', launchId: launch.launchId, kind: launch.kind, cmi: launch.cmi, ...launch.scorm },
           launch.contentOrigin,
         );
       } else if (isCommit(data, launch.launchId)) {

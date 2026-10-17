@@ -5,7 +5,7 @@ import {
   type ConversionResponse,
   type ConvertDoneJob,
   type ImportWarning,
-} from '@lernwerk/shared';
+} from '@coursecraft/shared';
 import { fileTypeFromBuffer } from 'file-type';
 import { randomUUID } from 'node:crypto';
 import type { AuthState, AppContext } from '../../http/context.js';

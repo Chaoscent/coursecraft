@@ -11,7 +11,7 @@ import {
   type Locale,
   type Role,
   type User,
-} from '@lernwerk/shared';
+} from '@coursecraft/shared';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { z } from 'zod';
@@ -358,7 +358,7 @@ function ImportDialog({ onClose, onDone }: { onClose: () => void; onDone: () => 
               const url = URL.createObjectURL(new Blob([passwordsCsv], { type: 'text/csv' }));
               const link = document.createElement('a');
               link.href = url;
-              link.download = 'lernwerk-initial-passwords.csv';
+              link.download = 'coursecraft-initial-passwords.csv';
               link.click();
               URL.revokeObjectURL(url);
             }}
@@ -456,7 +456,7 @@ export function UsersPage() {
             icon="download"
             isDisabled={!current}
             onPress={() =>
-              current && void download(`/api/users/${current.id}/export`, `lernwerk-${current.id}.json`)
+              current && void download(`/api/users/${current.id}/export`, `coursecraft-${current.id}.json`)
             }
           >
             {t('privacy.export')}

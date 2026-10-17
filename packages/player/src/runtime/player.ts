@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { Course, CourseNode, SlideNode } from '@lernwerk/course-model';
+import type { Course, CourseNode, SlideNode } from '@coursecraft/course-model';
 import { localized, type RenderContext } from '../render/context.js';
 import { h } from '../render/dom.js';
 import { renderSlide, renderTextView, type RenderedSlide } from '../render/slide.js';
@@ -97,40 +97,40 @@ export class Player {
     );
 
     const s = this.#strings;
-    this.#outline = h('ol', { class: 'lw-outline-list' });
-    this.#stage = h('main', { class: 'lw-stage', attrs: { tabindex: '-1' } });
-    this.#counter = h('span', { class: 'lw-counter', attrs: { 'aria-live': 'polite' } });
-    this.#progressBar = h('span', { class: 'lw-progress-fill' });
-    this.#prev = h('button', { class: 'lw-button', attrs: { type: 'button' }, text: s.previous });
+    this.#outline = h('ol', { class: 'cc-outline-list' });
+    this.#stage = h('main', { class: 'cc-stage', attrs: { tabindex: '-1' } });
+    this.#counter = h('span', { class: 'cc-counter', attrs: { 'aria-live': 'polite' } });
+    this.#progressBar = h('span', { class: 'cc-progress-fill' });
+    this.#prev = h('button', { class: 'cc-button', attrs: { type: 'button' }, text: s.previous });
     this.#next = h('button', {
-      class: 'lw-button lw-button-primary',
+      class: 'cc-button cc-button-primary',
       attrs: { type: 'button' },
       text: s.next,
     });
     this.#viewToggle = h('button', {
-      class: 'lw-button',
+      class: 'cc-button',
       attrs: { type: 'button', 'aria-pressed': 'false' },
       text: s.textView,
     });
     const outlineToggle = h('button', {
-      class: 'lw-button',
-      attrs: { type: 'button', 'aria-expanded': 'true', 'aria-controls': 'lw-outline' },
+      class: 'cc-button',
+      attrs: { type: 'button', 'aria-expanded': 'true', 'aria-controls': 'cc-outline' },
       text: s.outline,
     });
     const sidebar = course.settings.player.sidebar;
-    const outline = h('nav', { class: 'lw-outline', attrs: { id: 'lw-outline', 'aria-label': s.outline } }, [
+    const outline = h('nav', { class: 'cc-outline', attrs: { id: 'cc-outline', 'aria-label': s.outline } }, [
       this.#outline,
     ]);
 
-    this.#root = h('div', { class: `lw-player lw-sidebar-${sidebar}`, attrs: { lang } }, [
-      h('header', { class: 'lw-bar' }, [
+    this.#root = h('div', { class: `cc-player cc-sidebar-${sidebar}`, attrs: { lang } }, [
+      h('header', { class: 'cc-bar' }, [
         sidebar === 'none' ? null : outlineToggle,
-        h('h1', { class: 'lw-title', text: localized(this.#ctx, course.meta.title) ?? '' }),
+        h('h1', { class: 'cc-title', text: localized(this.#ctx, course.meta.title) ?? '' }),
         course.settings.player.showProgress
           ? h(
               'span',
               {
-                class: 'lw-progress',
+                class: 'cc-progress',
                 attrs: {
                   role: 'progressbar',
                   'aria-label': s.progress,
@@ -143,17 +143,17 @@ export class Player {
           : null,
         this.#viewToggle,
       ]),
-      h('div', { class: 'lw-body' }, [sidebar === 'none' ? null : outline, this.#stage]),
-      h('footer', { class: 'lw-nav' }, [this.#prev, this.#counter, this.#next]),
+      h('div', { class: 'cc-body' }, [sidebar === 'none' ? null : outline, this.#stage]),
+      h('footer', { class: 'cc-nav' }, [this.#prev, this.#counter, this.#next]),
     ]);
     if (course.settings.branding.logo) {
       const logo = h('img', {
-        class: 'lw-logo',
+        class: 'cc-logo',
         attrs: { src: opts.assetUrl(course.settings.branding.logo.$asset), alt: '' },
       });
-      this.#root.querySelector('.lw-bar')?.prepend(logo);
+      this.#root.querySelector('.cc-bar')?.prepend(logo);
     }
-    this.#root.style.setProperty('--lw-accent', this.#colorOr(course.settings.branding.accent, '#1f5fa6'));
+    this.#root.style.setProperty('--cc-accent', this.#colorOr(course.settings.branding.accent, '#1f5fa6'));
     container.replaceChildren(this.#root);
 
     outlineToggle.addEventListener('click', () => {
@@ -183,7 +183,7 @@ export class Player {
       const exit = opts.tracker.exitUrl?.();
       if (exit && /^https?:\/\//i.test(exit)) {
         const button = h('button', {
-          class: 'lw-button',
+          class: 'cc-button',
           attrs: { type: 'button' },
           text: this.#strings.exit,
         });
@@ -191,7 +191,7 @@ export class Player {
           opts.tracker.finish();
           window.location.assign(exit);
         });
-        this.#root.querySelector('.lw-bar')?.append(button);
+        this.#root.querySelector('.cc-bar')?.append(button);
       }
       this.#show();
     };
@@ -260,13 +260,13 @@ export class Player {
         chapter = entry.chapterTitle;
         list = h('ol');
         this.#outline.append(
-          h('li', { class: 'lw-chapter' }, [h('span', { class: 'lw-chapter-title', text: chapter }), list]),
+          h('li', { class: 'cc-chapter' }, [h('span', { class: 'cc-chapter-title', text: chapter }), list]),
         );
       }
       const title = localized(this.#ctx, entry.node.title) ?? '';
-      const button = h('button', { class: 'lw-outline-item', attrs: { type: 'button' }, text: title });
+      const button = h('button', { class: 'cc-outline-item', attrs: { type: 'button' }, text: title });
       if (i === this.#index) button.setAttribute('aria-current', 'step');
-      if (this.#viewed.has(i)) button.classList.add('lw-viewed');
+      if (this.#viewed.has(i)) button.classList.add('cc-viewed');
       if (i > this.#index && !this.#canEnter(i)) {
         button.disabled = true;
         button.title = this.#strings.locked;
@@ -300,25 +300,25 @@ export class Player {
       this.#markViewed();
     } else if (node.kind === 'quiz') {
       this.#stage.replaceChildren(
-        h('div', { class: 'lw-node-scroll' }, [renderQuiz(node, this.#nodeApi(), track)]),
+        h('div', { class: 'cc-node-scroll' }, [renderQuiz(node, this.#nodeApi(), track)]),
       );
     } else if (node.kind === 'survey') {
       this.#stage.replaceChildren(
-        h('div', { class: 'lw-node-scroll' }, [renderSurvey(node, this.#nodeApi(), track)]),
+        h('div', { class: 'cc-node-scroll' }, [renderSurvey(node, this.#nodeApi(), track)]),
       );
     } else if (node.kind === 'interaction') {
       this.#stage.replaceChildren(
-        h('div', { class: 'lw-node-scroll' }, [renderInteraction(node, this.#nodeApi())]),
+        h('div', { class: 'cc-node-scroll' }, [renderInteraction(node, this.#nodeApi())]),
       );
     } else if (node.kind === 'dialog') {
       this.#stage.replaceChildren(
-        h('div', { class: 'lw-node-scroll' }, [renderDialog(node, this.#nodeApi(), track)]),
+        h('div', { class: 'cc-node-scroll' }, [renderDialog(node, this.#nodeApi(), track)]),
       );
     } else {
       const custom = this.#opts.renderNode?.(node, this.#nodeApi());
       if (custom) this.#stage.replaceChildren(custom);
       else {
-        this.#stage.replaceChildren(h('p', { class: 'lw-unsupported', text: this.#strings.unsupported }));
+        this.#stage.replaceChildren(h('p', { class: 'cc-unsupported', text: this.#strings.unsupported }));
         this.#markViewed();
         this.#nextAllowed.add(this.#index);
       }
@@ -360,13 +360,13 @@ export class Player {
   #showSlide(slide: SlideNode): void {
     const { width, height } = this.#opts.course.settings.canvas;
     const rendered = renderSlide(slide, this.#ctx, { width, height });
-    const frame = h('div', { class: 'lw-canvas-frame' }, [rendered.root]);
+    const frame = h('div', { class: 'cc-canvas-frame' }, [rendered.root]);
     let narration: HTMLAudioElement | null = null;
     const narrationSource = slide.narration ? localized(this.#ctx, slide.narration.sources) : undefined;
     let captionBox: HTMLElement | null = null;
     if (narrationSource) {
       narration = h('audio', {
-        class: 'lw-narration',
+        class: 'cc-narration',
         attrs: {
           controls: '',
           preload: 'auto',
@@ -376,7 +376,7 @@ export class Player {
       });
       const captions = slide.narration ? localized(this.#ctx, slide.narration.captions) : undefined;
       if (captions) {
-        captionBox = h('div', { class: 'lw-captions', attrs: { 'aria-hidden': 'true' } });
+        captionBox = h('div', { class: 'cc-captions', attrs: { 'aria-hidden': 'true' } });
         const track = h('track', {
           attrs: {
             kind: 'captions',

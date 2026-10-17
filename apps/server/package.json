@@ -1,11 +1,11 @@
 {
-  "name": "@lernwerk/server",
+  "name": "@coursecraft/server",
   "version": "0.0.0",
   "private": true,
   "license": "Apache-2.0",
   "type": "module",
   "bin": {
-    "lernwerk": "./dist/cli.js"
+    "coursecraft": "./dist/cli.js"
   },
   "scripts": {
     "dev": "tsx watch src/main.ts",
@@ -18,8 +18,8 @@
     "@fastify/multipart": "^10.1.4",
     "@fastify/rate-limit": "^11.2.1",
     "@fastify/static": "^10.1.6",
-    "@lernwerk/course-model": "workspace:*",
-    "@lernwerk/shared": "workspace:*",
+    "@coursecraft/course-model": "workspace:*",
+    "@coursecraft/shared": "workspace:*",
     "@napi-rs/image": "^1.15.0",
     "@node-rs/argon2": "^2.2.2",
     "@xmldom/xmldom": "^0.9.12",

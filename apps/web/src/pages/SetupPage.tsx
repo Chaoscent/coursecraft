@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { loginResponseSchema, PASSWORD_MIN_LENGTH, type Locale } from '@lernwerk/shared';
+import { loginResponseSchema, PASSWORD_MIN_LENGTH, type Locale } from '@coursecraft/shared';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navigate, useNavigate } from 'react-router';

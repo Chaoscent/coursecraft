@@ -178,7 +178,7 @@ export interface ConversionsTable {
 type DefaultedTimestamp = ColumnType<Date, Date | string | undefined, Date | string>;
 type Json<T extends object = Record<string, unknown>> = JSONColumnType<T, string | undefined, string>;
 
-export type PackageKind = 'lernwerk' | 'scorm12' | 'scorm2004' | 'xapi' | 'cmi5';
+export type PackageKind = 'coursecraft' | 'scorm12' | 'scorm2004' | 'xapi' | 'cmi5';
 
 export interface PackagesTable {
   id: Generated<string>;

@@ -76,12 +76,12 @@ test('author builds tabs and a branching dialog; the preview plays both', async 
   await expect(preview.getByText('Brand erkennen und melden.')).toBeVisible();
   await expect(preview.getByText('Öffnen Sie alle Einträge, um fortzufahren.')).toBeVisible();
   // Free navigation (the default) never blocks, but the node counts as viewed only when all tabs were opened.
-  const current = preview.locator('.lw-outline-item[aria-current="step"]');
-  await expect(current).not.toHaveClass(/lw-viewed/);
+  const current = preview.locator('.cc-outline-item[aria-current="step"]');
+  await expect(current).not.toHaveClass(/cc-viewed/);
   await preview.getByRole('tab', { name: 'Retten' }).click();
   await preview.getByRole('tab', { name: 'Retten' }).press('ArrowRight');
   await expect(preview.getByRole('tab', { name: 'Löschen' })).toBeFocused();
-  await expect(current).toHaveClass(/lw-viewed/);
+  await expect(current).toHaveClass(/cc-viewed/);
   await next.click();
 
   await expect(preview.getByText('Es brennt im Lager!', { exact: true })).toBeVisible();
@@ -146,7 +146,7 @@ test('author records the screen, trims the clip and inserts it as MP4 + WebM wit
   await expect(dialog).toBeHidden({ timeout: 90_000 });
 
   // The canvas and the slide thumbnail both render the slide.
-  const video = page.locator('.lw-canvas video').first();
+  const video = page.locator('.cc-canvas video').first();
   await expect(video).toBeAttached();
   await expect(video).toHaveAttribute('poster', /\/assets\/[0-9a-f]{64}$/);
   const types = await video.locator('source').evaluateAll((s) => s.map((e) => e.getAttribute('type')));

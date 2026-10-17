@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { assetFileName, CourseFormatError, loadCourse, type Course } from '@lernwerk/course-model';
+import { assetFileName, CourseFormatError, loadCourse, type Course } from '@coursecraft/course-model';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { ZipFile } from 'yazl';
@@ -41,7 +41,7 @@ function exportCsp(tracking: Tracking): string {
   ].join('; ');
 }
 
-const PAGE_CSS = 'html,body{height:100%;margin:0}#lernwerk{height:100%}\n';
+const PAGE_CSS = 'html,body{height:100%;margin:0}#coursecraft{height:100%}\n';
 
 function courseTitle(course: Course): string {
   const title = course.meta.title;
@@ -56,13 +56,13 @@ function indexHtml(course: Course, tracking: Tracking): string {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="${exportCsp(tracking)}">
-<meta name="generator" content="Lernwerk">
+<meta name="generator" content="Coursecraft">
 <title>${escapeXml(courseTitle(course))}</title>
 <link rel="stylesheet" href="player/page.css">
 <link rel="stylesheet" href="player/player.css">
 </head>
 <body>
-<div id="lernwerk"></div>
+<div id="coursecraft"></div>
 <script src="data/course.js"></script>
 <script src="player/player.js"></script>
 </body>
@@ -72,7 +72,7 @@ function indexHtml(course: Course, tracking: Tracking): string {
 
 /** Course data as a classic script, so the package also runs from file://. */
 function courseScript(course: Course, tracking: Tracking): string {
-  return `window.LERNWERK_COURSE=${JSON.stringify(course)};\nwindow.LERNWERK_EXPORT=${JSON.stringify({ tracking })};\n`;
+  return `window.COURSECRAFT_COURSE=${JSON.stringify(course)};\nwindow.COURSECRAFT_EXPORT=${JSON.stringify({ tracking })};\n`;
 }
 
 function playerFiles(playerDir: string): Map<string, Buffer> {

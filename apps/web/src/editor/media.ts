@@ -3,7 +3,7 @@ import {
   conversionResponseSchema,
   startConversionResponseSchema,
   type ConversionResponse,
-} from '@lernwerk/shared';
+} from '@coursecraft/shared';
 import { api } from '../api/client.js';
 import { errorMessage } from '../lib/errors.js';
 import { videoElement } from './model.js';

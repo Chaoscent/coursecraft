@@ -3,7 +3,7 @@
  * The only place in the web app that talks to the network. Adds the CSRF
  * token, sends JSON, and validates every response with the shared schema.
  */
-import type { ErrorCode } from '@lernwerk/shared';
+import type { ErrorCode } from '@coursecraft/shared';
 import type { z } from 'zod';
 
 export class ApiError extends Error {

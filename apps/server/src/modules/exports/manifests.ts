@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { Course } from '@lernwerk/course-model';
+import type { Course } from '@coursecraft/course-model';
 import { escapeXml } from './xml.js';
 
 /** Stable activity IRIs (URNs) for xAPI and cmi5 packages. */
-export const courseIri = (course: Course) => `urn:lernwerk:course:${course.id}`;
-export const auIri = (course: Course) => `urn:lernwerk:course:${course.id}:au`;
+export const courseIri = (course: Course) => `urn:coursecraft:course:${course.id}`;
+export const auIri = (course: Course) => `urn:coursecraft:course:${course.id}:au`;
 
 function langStrings(tag: string, values: Record<string, string> | undefined, fallback: string): string {
   const entries = Object.entries(values ?? {}).filter(([, v]) => v);
@@ -24,7 +24,7 @@ export function scorm2004Manifest(course: Course, title: string, files: string[]
   const t = escapeXml(title);
   const mastery = masteryScore(course);
   return `<?xml version="1.0" encoding="UTF-8"?>
-<manifest identifier="lernwerk-${course.id}" version="1.0"
+<manifest identifier="coursecraft-${course.id}" version="1.0"
   xmlns="http://www.imsglobal.org/xsd/imscp_v1p1"
   xmlns:adlcp="http://www.adlnet.org/xsd/adlcp_v1p3"
   xmlns:adlseq="http://www.adlnet.org/xsd/adlseq_v1p3"

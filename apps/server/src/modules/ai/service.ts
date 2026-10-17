@@ -6,7 +6,7 @@ import type {
   AiProviderInput,
   AiRunResponse,
   AiStatus,
-} from '@lernwerk/shared';
+} from '@coursecraft/shared';
 import type { AppContext, AuthState } from '../../http/context.js';
 import { AppError, notFound } from '../../http/errors.js';
 import { assertCourseEditor } from '../../policy/courses.js';

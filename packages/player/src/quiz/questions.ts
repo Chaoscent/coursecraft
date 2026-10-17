@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { Question } from '@lernwerk/course-model';
-import { shuffle, type Response } from '@lernwerk/course-model/scoring';
+import type { Question } from '@coursecraft/course-model';
+import { shuffle, type Response } from '@coursecraft/course-model/scoring';
 import { localized, type RenderContext } from '../render/context.js';
 import { h } from '../render/dom.js';
 import { renderRichText } from '../render/richtext.js';
@@ -18,16 +18,16 @@ export interface QuestionView {
 }
 
 let uid = 0;
-const nextId = (prefix: string) => `lw-${prefix}-${++uid}`;
+const nextId = (prefix: string) => `cc-${prefix}-${++uid}`;
 
 function legend(question: Question, ctx: RenderContext): HTMLElement {
-  return h('legend', { class: 'lw-q-prompt' }, [renderRichText(localized(ctx, question.prompt), ctx)]);
+  return h('legend', { class: 'cc-q-prompt' }, [renderRichText(localized(ctx, question.prompt), ctx)]);
 }
 
 function media(question: Question, ctx: RenderContext): HTMLElement | null {
   if (!('media' in question) || !question.media) return null;
   return h('img', {
-    class: 'lw-q-media',
+    class: 'cc-q-media',
     attrs: {
       src: ctx.assetUrl(question.media.image.$asset),
       alt: localized(ctx, question.media.altText) ?? '',
@@ -74,18 +74,18 @@ function choiceList(
   const items = choices.map((choice) => {
     const input = h('input', { attrs: { type: multiple ? 'checkbox' : 'radio', name, value: choice.id } });
     inputs.set(choice.id, input);
-    return h('label', { class: 'lw-choice', attrs: { 'data-choice': choice.id } }, [
+    return h('label', { class: 'cc-choice', attrs: { 'data-choice': choice.id } }, [
       input,
       h('span', { text: localized(ctx, choice.text) ?? '' }),
     ]);
   });
-  return { list: h('div', { class: 'lw-choices' }, items), inputs, choices };
+  return { list: h('div', { class: 'cc-choices' }, items), inputs, choices };
 }
 
 function markChoices(root: HTMLElement, correctIds: string[]): void {
   for (const label of root.querySelectorAll<HTMLElement>('[data-choice]')) {
     const correct = correctIds.includes(label.dataset['choice'] ?? '');
-    label.classList.add(correct ? 'lw-is-correct' : 'lw-is-other');
+    label.classList.add(correct ? 'cc-is-correct' : 'cc-is-other');
   }
 }
 
@@ -95,7 +95,7 @@ export function renderQuestion(
   s: Strings,
   random: () => number,
 ): QuestionView {
-  const fieldset = h('fieldset', { class: `lw-question lw-q-${question.type}` }, [
+  const fieldset = h('fieldset', { class: `cc-question cc-q-${question.type}` }, [
     legend(question, ctx),
     media(question, ctx),
   ]);
@@ -133,12 +133,12 @@ export function renderQuestion(
       const yes = h('input', { attrs: { type: 'radio', name, value: 'true' } });
       const no = h('input', { attrs: { type: 'radio', name, value: 'false' } });
       fieldset.append(
-        h('div', { class: 'lw-choices' }, [
-          h('label', { class: 'lw-choice', attrs: { 'data-choice': 'true' } }, [
+        h('div', { class: 'cc-choices' }, [
+          h('label', { class: 'cc-choice', attrs: { 'data-choice': 'true' } }, [
             yes,
             h('span', { text: s.true }),
           ]),
-          h('label', { class: 'lw-choice', attrs: { 'data-choice': 'false' } }, [
+          h('label', { class: 'cc-choice', attrs: { 'data-choice': 'false' } }, [
             no,
             h('span', { text: s.false }),
           ]),
@@ -154,7 +154,7 @@ export function renderQuestion(
     case 'numeric': {
       const id = nextId('in');
       const input = h('input', {
-        class: 'lw-input',
+        class: 'cc-input',
         attrs: {
           id,
           type: 'text',
@@ -163,7 +163,7 @@ export function renderQuestion(
         },
       });
       fieldset.append(
-        h('label', { class: 'lw-field', attrs: { for: id } }, [h('span', { text: s.answer })]),
+        h('label', { class: 'cc-field', attrs: { for: id } }, [h('span', { text: s.answer })]),
         input,
       );
       const solution =
@@ -181,17 +181,17 @@ export function renderQuestion(
               }
             : { type: 'shortAnswer', text: input.value },
         () => input.value.trim() !== '',
-        () => fieldset.append(h('p', { class: 'lw-solution', text: `${s.correctAnswer}: ${solution}` })),
+        () => fieldset.append(h('p', { class: 'cc-solution', text: `${s.correctAnswer}: ${solution}` })),
       );
     }
     case 'essay': {
       const id = nextId('es');
       const area = h('textarea', {
-        class: 'lw-input lw-essay',
+        class: 'cc-input cc-essay',
         attrs: { id, rows: '8', maxlength: String(question.maxLength) },
       });
       const counter = h('span', {
-        class: 'lw-counter',
+        class: 'cc-counter',
         attrs: { 'aria-live': 'polite' },
         text: `0 / ${question.maxLength} ${s.characters}`,
       });
@@ -200,7 +200,7 @@ export function renderQuestion(
         () => (counter.textContent = `${area.value.length} / ${question.maxLength} ${s.characters}`),
       );
       fieldset.append(
-        h('label', { class: 'lw-field', attrs: { for: id } }, [h('span', { text: s.answer })]),
+        h('label', { class: 'cc-field', attrs: { for: id } }, [h('span', { text: s.answer })]),
         area,
         counter,
       );
@@ -214,7 +214,7 @@ export function renderQuestion(
     case 'selectBlanks':
     case 'wordBank': {
       const inputs = new Map<string, HTMLInputElement | HTMLSelectElement>();
-      const line = h('p', { class: 'lw-cloze' });
+      const line = h('p', { class: 'cc-cloze' });
       let n = 0;
       const words = question.type === 'wordBank' ? shuffle(question.words, random) : [];
       for (const part of templateParts(localized(ctx, question.template) ?? '')) {
@@ -227,11 +227,11 @@ export function renderQuestion(
         let control: HTMLInputElement | HTMLSelectElement;
         if (question.type === 'fillInBlanks') {
           control = h('input', {
-            class: 'lw-input lw-blank',
+            class: 'cc-input cc-blank',
             attrs: { type: 'text', autocomplete: 'off', 'aria-label': label },
           });
         } else {
-          control = h('select', { class: 'lw-input lw-blank', attrs: { 'aria-label': label } }, [
+          control = h('select', { class: 'cc-input cc-blank', attrs: { 'aria-label': label } }, [
             option('', s.choose),
           ]);
           if (question.type === 'selectBlanks') {
@@ -250,8 +250,8 @@ export function renderQuestion(
         fieldset.append(
           h(
             'div',
-            { class: 'lw-wordbank', attrs: { role: 'note', 'aria-label': s.wordBank } },
-            words.map((w) => h('span', { class: 'lw-word', text: localized(ctx, w.text) ?? '' })),
+            { class: 'cc-wordbank', attrs: { role: 'note', 'aria-label': s.wordBank } },
+            words.map((w) => h('span', { class: 'cc-word', text: localized(ctx, w.text) ?? '' })),
           ),
         );
       }
@@ -272,7 +272,7 @@ export function renderQuestion(
             return `${i + 1}: ${w ? (localized(ctx, w.text) ?? '') : ''}`;
           });
           fieldset.append(
-            h('p', { class: 'lw-solution', text: `${s.correctAnswer}: ${solution.join('; ')}` }),
+            h('p', { class: 'cc-solution', text: `${s.correctAnswer}: ${solution.join('; ')}` }),
           );
         },
       );
@@ -285,17 +285,17 @@ export function renderQuestion(
       const selects = new Map<string, HTMLSelectElement>();
       const rows = shuffle(question.pairs, random).map((pair) => {
         const id = nextId('m');
-        const select = h('select', { class: 'lw-input', attrs: { id } }, [
+        const select = h('select', { class: 'cc-input', attrs: { id } }, [
           option('', s.choose),
           ...options.map((o) => option(o.id, localized(ctx, o.text) ?? '')),
         ]);
         selects.set(pair.id, select);
-        return h('div', { class: 'lw-match-row' }, [
+        return h('div', { class: 'cc-match-row' }, [
           h('label', { attrs: { for: id }, text: localized(ctx, pair.left) ?? '' }),
           select,
         ]);
       });
-      fieldset.append(h('div', { class: 'lw-matching' }, rows));
+      fieldset.append(h('div', { class: 'cc-matching' }, rows));
       return view(
         () => ({
           type: 'matching',
@@ -307,7 +307,7 @@ export function renderQuestion(
         () =>
           fieldset.append(
             h('p', {
-              class: 'lw-solution',
+              class: 'cc-solution',
               text: `${s.correctAnswer}: ${question.pairs.map((p) => `${localized(ctx, p.left) ?? ''} → ${localized(ctx, p.right) ?? ''}`).join('; ')}`,
             }),
           ),
@@ -317,18 +317,18 @@ export function renderQuestion(
       let order = shuffle(question.items, random);
       if (order.every((item, i) => item.id === question.items[i]?.id) && order.length > 1)
         order = [...order.slice(1), order[0] as (typeof order)[number]];
-      const list = h('ol', { class: 'lw-sequence' });
+      const list = h('ol', { class: 'cc-sequence' });
       const draw = () => {
         list.replaceChildren(
           ...order.map((item, i) => {
             const text = localized(ctx, item.text) ?? '';
             const up = h('button', {
-              class: 'lw-icon-button',
+              class: 'cc-icon-button',
               attrs: { type: 'button', 'aria-label': `${s.moveUp}: ${text}` },
               text: '↑',
             });
             const down = h('button', {
-              class: 'lw-icon-button',
+              class: 'cc-icon-button',
               attrs: { type: 'button', 'aria-label': `${s.moveDown}: ${text}` },
               text: '↓',
             });
@@ -346,7 +346,7 @@ export function renderQuestion(
             };
             up.addEventListener('click', () => move(-1));
             down.addEventListener('click', () => move(1));
-            return h('li', { class: 'lw-seq-item' }, [h('span', { text }), up, down]);
+            return h('li', { class: 'cc-seq-item' }, [h('span', { text }), up, down]);
           }),
         );
       };
@@ -358,7 +358,7 @@ export function renderQuestion(
         () =>
           fieldset.append(
             h('p', {
-              class: 'lw-solution',
+              class: 'cc-solution',
               text: `${s.correctAnswer}: ${question.items.map((i) => localized(ctx, i.text) ?? '').join(' → ')}`,
             }),
           ),
@@ -368,12 +368,12 @@ export function renderQuestion(
       const zones = question.zones;
       const width = Math.max(...zones.map((z) => z.frame.x + z.frame.width), 400);
       const height = Math.max(...zones.map((z) => z.frame.y + z.frame.height), 200);
-      const board = h('div', { class: 'lw-dd-board' });
+      const board = h('div', { class: 'cc-dd-board' });
       board.style.aspectRatio = `${width} / ${height}`;
       if (question.background) {
         board.append(
           h('img', {
-            class: 'lw-dd-bg',
+            class: 'cc-dd-bg',
             attrs: {
               src: ctx.assetUrl(question.background.image.$asset),
               alt: localized(ctx, question.background.altText) ?? '',
@@ -383,8 +383,8 @@ export function renderQuestion(
       }
       const zoneEls = new Map<string, HTMLElement>();
       for (const zone of zones) {
-        const el = h('div', { class: 'lw-dd-zone', attrs: { 'data-zone': zone.id } }, [
-          h('span', { class: 'lw-dd-zone-label', text: localized(ctx, zone.label) ?? '' }),
+        const el = h('div', { class: 'cc-dd-zone', attrs: { 'data-zone': zone.id } }, [
+          h('span', { class: 'cc-dd-zone-label', text: localized(ctx, zone.label) ?? '' }),
         ]);
         el.style.left = `${(zone.frame.x / width) * 100}%`;
         el.style.top = `${(zone.frame.y / height) * 100}%`;
@@ -393,7 +393,7 @@ export function renderQuestion(
         zoneEls.set(zone.id, el);
         board.append(el);
       }
-      const bank = h('div', { class: 'lw-dd-bank' });
+      const bank = h('div', { class: 'cc-dd-bank' });
       const selects = new Map<string, HTMLSelectElement>();
       const chips = new Map<string, HTMLElement>();
       const place = (itemId: string, zoneId: string) => {
@@ -412,12 +412,12 @@ export function renderQuestion(
           item.content.type === 'image'
             ? h('img', { attrs: { src: ctx.assetUrl(item.content.image.$asset), alt: label } })
             : h('span', { text: label });
-        const select = h('select', { class: 'lw-input', attrs: { 'aria-label': `${s.target}: ${label}` } }, [
+        const select = h('select', { class: 'cc-input', attrs: { 'aria-label': `${s.target}: ${label}` } }, [
           option('', s.notAssigned),
           ...zones.map((z) => option(z.id, localized(ctx, z.label) ?? '')),
         ]);
         select.addEventListener('change', () => place(item.id, select.value));
-        const chip = h('div', { class: 'lw-dd-item', attrs: { draggable: 'true', 'data-item': item.id } }, [
+        const chip = h('div', { class: 'cc-dd-item', attrs: { draggable: 'true', 'data-item': item.id } }, [
           content,
         ]);
         chip.addEventListener('dragstart', (e) => e.dataTransfer?.setData('text/plain', item.id));
@@ -436,9 +436,9 @@ export function renderQuestion(
       }
       const controls = h(
         'div',
-        { class: 'lw-dd-controls' },
+        { class: 'cc-dd-controls' },
         [...selects].map(([itemId, select]) =>
-          h('label', { class: 'lw-dd-control' }, [
+          h('label', { class: 'cc-dd-control' }, [
             h('span', {
               text: chips.get(itemId)?.textContent || (chips.get(itemId)?.querySelector('img')?.alt ?? ''),
             }),
@@ -458,15 +458,15 @@ export function renderQuestion(
             const chip = chips.get(item.id);
             const zone = selects.get(item.id)?.value ?? '';
             const ok = item.correctZoneIds.length ? item.correctZoneIds.includes(zone) : zone === '';
-            chip?.classList.add(ok ? 'lw-is-correct' : 'lw-is-wrong');
+            chip?.classList.add(ok ? 'cc-is-correct' : 'cc-is-wrong');
           }
         },
       );
     }
     case 'hotspot': {
-      const board = h('div', { class: 'lw-hs-board' }, [
+      const board = h('div', { class: 'cc-hs-board' }, [
         h('img', {
-          class: 'lw-hs-img',
+          class: 'cc-hs-img',
           attrs: {
             src: ctx.assetUrl(question.image.image.$asset),
             alt: localized(ctx, question.image.altText) ?? '',
@@ -477,7 +477,7 @@ export function renderQuestion(
       const buttons = new Map<string, HTMLButtonElement>();
       for (const area of question.areas) {
         const button = h('button', {
-          class: 'lw-hs-area',
+          class: 'cc-hs-area',
           attrs: { type: 'button', 'aria-pressed': 'false', 'aria-label': localized(ctx, area.label) ?? '' },
         });
         const shape = area.shape;
@@ -532,12 +532,12 @@ export function renderQuestion(
         () => selected.size > 0,
         () => {
           for (const area of question.areas)
-            if (area.correct) buttons.get(area.id)?.classList.add('lw-is-correct');
+            if (area.correct) buttons.get(area.id)?.classList.add('cc-is-correct');
         },
       );
     }
     case 'likert': {
-      const table = h('table', { class: 'lw-likert' });
+      const table = h('table', { class: 'cc-likert' });
       table.append(
         h('thead', {}, [
           h('tr', {}, [

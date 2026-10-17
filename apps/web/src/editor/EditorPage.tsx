@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import '@lernwerk/player/player.css';
-import { loadCourse } from '@lernwerk/course-model';
-import { courseDocumentResponseSchema, lockResponseSchema } from '@lernwerk/shared';
+import '@coursecraft/player/player.css';
+import { loadCourse } from '@coursecraft/course-model';
+import { courseDocumentResponseSchema, lockResponseSchema } from '@coursecraft/shared';
 import { useCallback, useEffect, useState } from 'react';
 import {
   Button as AriaButton,

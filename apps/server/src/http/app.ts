@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { ErrorBody, ErrorCode } from '@lernwerk/shared';
+import type { ErrorBody, ErrorCode } from '@coursecraft/shared';
 import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastify';
 import {
   hasZodFastifySchemaValidationErrors,

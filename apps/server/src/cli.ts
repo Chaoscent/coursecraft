@@ -12,7 +12,7 @@ function secretFromEnv(name: string): string {
   return value;
 }
 
-const USAGE = `Usage: lernwerk <command>
+const USAGE = `Usage: coursecraft <command>
 
 Commands:
   migrate               Apply database migrations and create job queues
@@ -24,7 +24,7 @@ async function run(args: string[]): Promise<number> {
   const [command, ...rest] = args;
   switch (command) {
     case 'migrate': {
-      const { applied } = await migrate(secretFromEnv('LERNWERK_MIGRATOR_DATABASE_URL'));
+      const { applied } = await migrate(secretFromEnv('COURSECRAFT_MIGRATOR_DATABASE_URL'));
       console.log(applied.length ? `Applied: ${applied.join(', ')}` : 'Database is up to date.');
       return 0;
     }
@@ -36,15 +36,15 @@ async function run(args: string[]): Promise<number> {
       }
       const created = initSecrets({
         dir,
-        dbHost: process.env['LERNWERK_DB_HOST'] ?? 'db',
-        dbName: process.env['LERNWERK_DB_NAME'] ?? 'lernwerk',
+        dbHost: process.env['COURSECRAFT_DB_HOST'] ?? 'db',
+        dbName: process.env['COURSECRAFT_DB_NAME'] ?? 'coursecraft',
         chown: process.getuid?.() === 0,
       });
       console.log(created.length ? `Created: ${created.join(', ')}` : 'All secrets present.');
       return 0;
     }
     case 'setup-token': {
-      const db = createDatabase(secretFromEnv('LERNWERK_DATABASE_URL'), { max: 1 });
+      const db = createDatabase(secretFromEnv('COURSECRAFT_DATABASE_URL'), { max: 1 });
       try {
         const setup = await issueSetupToken(db);
         console.log(

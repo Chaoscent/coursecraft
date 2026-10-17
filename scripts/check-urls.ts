@@ -34,7 +34,7 @@ const ALLOWED = [
   /^http:\/\/schemas\.openxmlformats\.org\//,
   /^http:\/\/schemas\.microsoft\.com\/office\/powerpoint\/2010\/main$/,
   /^http:\/\/purl\.org\/dc\/elements\/1\.1\/$/,
-  /^https:\/\/lernwerk\.invalid\//,
+  /^https:\/\/coursecraft\.invalid\//,
   /^http:\/\/www\.imsglobal\.org\/xsd\//,
   /^http:\/\/www\.imsproject\.org\/xsd\//,
   /^http:\/\/www\.adlnet\.org\/xsd\//,

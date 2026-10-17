@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { listAuditResponseSchema, type AuditEntry } from '@lernwerk/shared';
+import { listAuditResponseSchema, type AuditEntry } from '@coursecraft/shared';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/client.js';

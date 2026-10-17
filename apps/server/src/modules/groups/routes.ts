@@ -7,7 +7,7 @@ import {
   listGroupsResponseSchema,
   okSchema,
   updateGroupRequestSchema,
-} from '@lernwerk/shared';
+} from '@coursecraft/shared';
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import type { Kysely } from 'kysely';

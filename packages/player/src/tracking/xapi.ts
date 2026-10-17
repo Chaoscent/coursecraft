@@ -9,7 +9,7 @@ import {
   type Tracker,
 } from './types.js';
 
-/** ADL verbs used by Lernwerk. */
+/** ADL verbs used by Coursecraft. */
 export const VERBS = {
   initialized: 'http://adlnet.gov/expapi/verbs/initialized',
   experienced: 'http://adlnet.gov/expapi/verbs/experienced',
@@ -210,7 +210,7 @@ export function parseActor(raw: string | null): Record<string, unknown> | null {
   }
 }
 
-const RESUME_STATE = 'urn:lernwerk:resume';
+const RESUME_STATE = 'urn:coursecraft:resume';
 
 /** xAPI (Tin Can launch): statements for progress, answers and results. */
 export function xapiTracker(
@@ -225,7 +225,7 @@ export function xapiTracker(
     auth: params.get('auth') ?? '',
     actor,
     registration: params.get('registration') ?? undefined,
-    activityId: params.get('activity_id') ?? `urn:lernwerk:course:${course.id}`,
+    activityId: params.get('activity_id') ?? `urn:coursecraft:course:${course.id}`,
     courseTitle: course.title,
     lang: course.lang,
   });

@@ -13,7 +13,7 @@ import {
   sha256Schema,
 } from './primitives.js';
 
-export const COURSE_FORMAT = 'lernwerk.course';
+export const COURSE_FORMAT = 'coursecraft.course';
 export const CURRENT_FORMAT_VERSION = 1;
 
 export const nodeSchema = z.union([

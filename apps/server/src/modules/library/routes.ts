@@ -12,7 +12,7 @@ import {
   okSchema,
   publishCourseSchema,
   updateLibraryItemSchema,
-} from '@lernwerk/shared';
+} from '@coursecraft/shared';
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';

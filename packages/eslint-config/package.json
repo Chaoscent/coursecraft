@@ -1,5 +1,5 @@
 {
-  "name": "@lernwerk/eslint-config",
+  "name": "@coursecraft/eslint-config",
   "version": "0.0.0",
   "private": true,
   "license": "Apache-2.0",

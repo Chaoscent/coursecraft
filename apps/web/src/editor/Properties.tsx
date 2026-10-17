@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { SlideElement, SlideNode } from '@lernwerk/course-model';
+import type { SlideElement, SlideNode } from '@coursecraft/course-model';
 import type { Draft } from 'immer';
 import { useTranslation } from 'react-i18next';
 import { Button, ToggleTool, ToolButton } from '../components/Button.js';

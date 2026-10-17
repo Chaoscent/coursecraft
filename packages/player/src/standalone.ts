@@ -5,8 +5,8 @@
  * the tracking adapter chosen at export time. No schema library is bundled:
  * the export validates the course, which keeps the player small.
  */
-import type { Course } from '@lernwerk/course-model';
-import { assetFileName } from '@lernwerk/course-model/assets';
+import type { Course } from '@coursecraft/course-model';
+import { assetFileName } from '@coursecraft/course-model/assets';
 import { Player } from './runtime/player.js';
 import { cmi5Tracker } from './tracking/cmi5.js';
 import { scorm12Tracker } from './tracking/scorm12.js';
@@ -16,16 +16,16 @@ import { xapiTracker } from './tracking/xapi.js';
 
 declare global {
   interface Window {
-    LERNWERK_COURSE?: unknown;
-    LERNWERK_EXPORT?: { tracking: 'none' | 'scorm12' | 'scorm2004' | 'xapi' | 'cmi5' };
+    COURSECRAFT_COURSE?: unknown;
+    COURSECRAFT_EXPORT?: { tracking: 'none' | 'scorm12' | 'scorm2004' | 'xapi' | 'cmi5' };
   }
 }
 
 function start(): void {
-  const root = document.getElementById('lernwerk');
+  const root = document.getElementById('coursecraft');
   if (!root) return;
   // Validated and migrated by the server when the package was exported.
-  const course = window.LERNWERK_COURSE as Course;
+  const course = window.COURSECRAFT_COURSE as Course;
   const info = {
     id: course.id,
     title: course.meta.title[course.languages.default] ?? '',
@@ -38,7 +38,7 @@ function start(): void {
     xapi: () => xapiTracker(info),
     cmi5: () => cmi5Tracker(info),
   };
-  const tracker = (trackers[window.LERNWERK_EXPORT?.tracking ?? 'none'] ?? (() => noTracking))();
+  const tracker = (trackers[window.COURSECRAFT_EXPORT?.tracking ?? 'none'] ?? (() => noTracking))();
   new Player(root, {
     course,
     tracker,

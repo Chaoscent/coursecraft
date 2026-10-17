@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-import { slideNodeSchema, type CourseNode } from '@lernwerk/course-model';
-import type { ImportWarning } from '@lernwerk/shared';
+import { slideNodeSchema, type CourseNode } from '@coursecraft/course-model';
+import type { ImportWarning } from '@coursecraft/shared';
 import { Transformer } from '@napi-rs/image';
 import type { Kysely } from 'kysely';
 import { posix } from 'node:path';

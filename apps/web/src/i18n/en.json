@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Lernwerk"
+    "name": "Coursecraft"
   },
   "common": {
     "close": "Close",
@@ -95,9 +95,9 @@
   "setup": {
     "title": "Setup: first administrator account",
     "submit": "Create account",
-    "intro": "Lernwerk is not set up yet. Create the first administrator account.",
+    "intro": "Coursecraft is not set up yet. Create the first administrator account.",
     "token": "Setup token",
-    "tokenHint": "Printed in the app container log, or created with “lernwerk setup-token”."
+    "tokenHint": "Printed in the app container log, or created with “coursecraft setup-token”."
   },
   "password": {
     "forcedTitle": "Set a new password",
@@ -788,9 +788,9 @@
     "empty": "Nothing in the library yet. Publish a course or import a package.",
     "imported": "“{{title}}” was imported.",
     "importedMulti": "“{{title}}” was imported. The package has several units; only the first one is launched.",
-    "noContentOrigin": "Third-party packages (SCORM, xAPI, cmi5) need a separate content origin (LERNWERK_CONTENT_URL). Own courses work without it.",
+    "noContentOrigin": "Third-party packages (SCORM, xAPI, cmi5) need a separate content origin (COURSECRAFT_CONTENT_URL). Own courses work without it.",
     "kinds": {
-      "lernwerk": "Lernwerk",
+      "coursecraft": "Coursecraft",
       "scorm12": "SCORM 1.2",
       "scorm2004": "SCORM 2004",
       "xapi": "xAPI",
@@ -992,7 +992,7 @@
     "on": "Active",
     "off": "Off",
     "empty": "No providers set up. Without a provider there are no AI features and no outbound requests.",
-    "offByOperator": "The AI adapter is switched off. Operators can allow it with LERNWERK_AI_ENABLED=true.",
+    "offByOperator": "The AI adapter is switched off. Operators can allow it with COURSECRAFT_AI_ENABLED=true.",
     "privacyNote": "Course content goes to a provider only after an author has seen and confirmed the exact request. The audit log keeps metadata only.",
     "userKeys": "AI keys",
     "userKeysHint": "You can store your own API key for these providers. It is stored encrypted and used before the shared key.",

@@ -3,7 +3,7 @@
  * Builds the real application against a fresh copy of the migrated database,
  * connected as the restricted app role, plus helpers to act as users.
  */
-import type { Role } from '@lernwerk/shared';
+import type { Role } from '@coursecraft/shared';
 import type { FastifyInstance, LightMyRequestResponse } from 'fastify';
 import { randomBytes } from 'node:crypto';
 import { mkdtempSync } from 'node:fs';
@@ -20,7 +20,7 @@ import type { AppContext } from '../../apps/server/src/http/context.js';
 import type { RegisteredRoute } from '../../apps/server/src/http/routes.js';
 import { createTestDatabase } from './database.js';
 
-export const ORIGIN = 'https://lernwerk.test';
+export const ORIGIN = 'https://coursecraft.test';
 export const PASSWORD = 'correct horse battery staple';
 
 export interface Actor {
@@ -58,13 +58,13 @@ export async function createTestApp(env: Record<string, string> = {}): Promise<T
   const pg = inject('pg');
   const { url, drop } = await createTestDatabase(pg);
   const config = loadConfig({
-    LERNWERK_PUBLIC_URL: ORIGIN,
-    LERNWERK_DATABASE_URL: url,
-    LERNWERK_MASTER_KEY: randomBytes(32).toString('base64'),
-    LERNWERK_IP_PEPPER: randomBytes(32).toString('base64'),
-    LERNWERK_LOG_LEVEL: 'fatal',
-    LERNWERK_DATA_DIR: mkdtempSync(join(tmpdir(), 'lw-data-')),
-    LERNWERK_PLAYER_DIR: new URL('../../packages/player/dist/', import.meta.url).pathname,
+    COURSECRAFT_PUBLIC_URL: ORIGIN,
+    COURSECRAFT_DATABASE_URL: url,
+    COURSECRAFT_MASTER_KEY: randomBytes(32).toString('base64'),
+    COURSECRAFT_IP_PEPPER: randomBytes(32).toString('base64'),
+    COURSECRAFT_LOG_LEVEL: 'fatal',
+    COURSECRAFT_DATA_DIR: mkdtempSync(join(tmpdir(), 'cc-data-')),
+    COURSECRAFT_PLAYER_DIR: new URL('../../packages/player/dist/', import.meta.url).pathname,
     ...env,
   });
   const ctx = createContext(config);

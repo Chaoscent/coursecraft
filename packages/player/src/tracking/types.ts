@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { Response } from '@lernwerk/course-model/scoring';
+import type { Response } from '@coursecraft/course-model/scoring';
 /** State the player restores when a learner returns. */
 export interface ResumeState {
   /** Index of the node the learner was on. */
@@ -18,7 +18,7 @@ export interface CompletionResult {
 /** One answered question, for SCORM interactions and xAPI "answered" statements. */
 export interface InteractionRecord {
   id: string;
-  /** Lernwerk question type; adapters map it to their vocabulary. */
+  /** Coursecraft question type; adapters map it to their vocabulary. */
   questionType: string;
   description: string;
   response: string;

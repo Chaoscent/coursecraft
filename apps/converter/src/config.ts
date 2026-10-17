@@ -12,12 +12,12 @@ const schema = z.object({
 export type ConverterConfig = z.infer<typeof schema>;
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): ConverterConfig {
-  const file = env['LERNWERK_CONVERTER_DATABASE_URL_FILE'];
+  const file = env['COURSECRAFT_CONVERTER_DATABASE_URL_FILE'];
   const result = schema.safeParse({
-    databaseUrl: file ? readFileSync(file, 'utf8').trim() : env['LERNWERK_CONVERTER_DATABASE_URL'],
-    workDir: env['LERNWERK_WORK_DIR'],
-    heartbeatFile: env['LERNWERK_HEARTBEAT_FILE'],
-    concurrency: env['LERNWERK_CONVERTER_CONCURRENCY'],
+    databaseUrl: file ? readFileSync(file, 'utf8').trim() : env['COURSECRAFT_CONVERTER_DATABASE_URL'],
+    workDir: env['COURSECRAFT_WORK_DIR'],
+    heartbeatFile: env['COURSECRAFT_HEARTBEAT_FILE'],
+    concurrency: env['COURSECRAFT_CONVERTER_CONCURRENCY'],
   });
   if (!result.success) {
     const problems = result.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`);

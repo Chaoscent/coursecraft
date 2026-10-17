@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { SlideNode } from '@lernwerk/course-model';
+import type { SlideNode } from '@coursecraft/course-model';
 import {
   AI_LIMITS,
   aiPreviewSchema,
@@ -8,7 +8,7 @@ import {
   type AiPreview,
   type AiRunResponse,
   type AiStatus,
-} from '@lernwerk/shared';
+} from '@coursecraft/shared';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api/client.js';

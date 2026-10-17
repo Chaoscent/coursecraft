@@ -9,7 +9,7 @@ import {
   totpDisableRequestSchema,
   totpSetupResponseSchema,
   updateProfileRequestSchema,
-} from '@lernwerk/shared';
+} from '@coursecraft/shared';
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { generateSecret, generateURI } from 'otplib';
@@ -184,7 +184,7 @@ export function accountRoutes(app: FastifyInstance, ctx: AppContext): void {
         .set({ totp_secret: JSON.stringify(sealed), totp_last_step: null })
         .where('id', '=', auth.userId)
         .execute();
-      return { secret, uri: generateURI({ issuer: 'Lernwerk', label: auth.email, secret }) };
+      return { secret, uri: generateURI({ issuer: 'Coursecraft', label: auth.email, secret }) };
     },
   );
 
@@ -264,7 +264,7 @@ export function accountRoutes(app: FastifyInstance, ctx: AppContext): void {
         targetId: auth.userId,
         ipHmac: request.ipHmac,
       });
-      void reply.header('Content-Disposition', 'attachment; filename="lernwerk-personal-data.json"');
+      void reply.header('Content-Disposition', 'attachment; filename="coursecraft-personal-data.json"');
       return exportUserData(ctx, auth.userId);
     },
   );

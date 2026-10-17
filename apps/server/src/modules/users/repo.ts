@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { Role, User } from '@lernwerk/shared';
+import type { Role, User } from '@coursecraft/shared';
 import type { Kysely } from 'kysely';
 import type { Database } from '../../db/schema.js';
 

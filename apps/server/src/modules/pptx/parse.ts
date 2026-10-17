@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { ImportWarning } from '@lernwerk/shared';
+import type { ImportWarning } from '@coursecraft/shared';
 import { posix } from 'node:path';
 import { AppError } from '../../http/errors.js';
 import type { ZipArchive } from '../../lib/zip.js';

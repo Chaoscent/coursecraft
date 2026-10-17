@@ -9,7 +9,7 @@ import {
   resetPasswordRequestSchema,
   updateUserRequestSchema,
   userSchema,
-} from '@lernwerk/shared';
+} from '@coursecraft/shared';
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
@@ -104,7 +104,7 @@ export function userRoutes(app: FastifyInstance, ctx: AppContext): void {
         targetId: user.id,
         ipHmac: request.ipHmac,
       });
-      void reply.header('Content-Disposition', 'attachment; filename="lernwerk-personal-data.json"');
+      void reply.header('Content-Disposition', 'attachment; filename="coursecraft-personal-data.json"');
       return exportUserData(ctx, user.id);
     },
   );

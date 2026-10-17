@@ -2,7 +2,7 @@
 import { z } from 'zod';
 import { isoDateSchema, uuidSchema } from './common.js';
 
-/** Course documents are validated against @lernwerk/course-model on both sides. */
+/** Course documents are validated against @coursecraft/course-model on both sides. */
 const documentPart = z.record(z.string(), z.unknown());
 
 export const COURSE_SORT_KEYS = ['title', 'updated'] as const;

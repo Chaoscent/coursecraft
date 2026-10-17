@@ -20,20 +20,20 @@ export interface PgInfo {
 }
 
 export async function startPostgres(): Promise<{ container: StartedTestContainer; info: PgInfo }> {
-  const secrets = mkdtempSync(join(tmpdir(), 'lw-pg-'));
-  initSecrets({ dir: secrets, dbHost: 'db', dbName: 'lernwerk', chown: false });
+  const secrets = mkdtempSync(join(tmpdir(), 'cc-pg-'));
+  initSecrets({ dir: secrets, dbHost: 'db', dbName: 'coursecraft', chown: false });
   const dbSecrets = join(secrets, 'db');
   const read = (name: string) => readFileSync(join(dbSecrets, name), 'utf8').trim();
   const container = await new GenericContainer('postgres:17-trixie')
     .withEnvironment({
-      POSTGRES_DB: 'lernwerk',
+      POSTGRES_DB: 'coursecraft',
       POSTGRES_USER: 'postgres',
       POSTGRES_PASSWORD: read('postgres_password'),
     })
     .withCopyFilesToContainer([
       ...readdirSync(dbSecrets).map((name) => ({
         source: join(dbSecrets, name),
-        target: `/run/lernwerk/${name}`,
+        target: `/run/coursecraft/${name}`,
         mode: 0o444,
       })),
       ...readdirSync(INIT_DIR).map((name) => ({
@@ -56,9 +56,9 @@ export async function startPostgres(): Promise<{ container: StartedTestContainer
       app: read('app_password'),
       converter: read('converter_password'),
     },
-    template: 'lernwerk',
+    template: 'coursecraft',
   };
-  await migrate(pgUrl(info, 'lernwerk_migrator', info.template));
+  await migrate(pgUrl(info, 'coursecraft_migrator', info.template));
   return { container, info };
 }
 
@@ -66,9 +66,9 @@ export function pgUrl(info: PgInfo, role: string, database: string): string {
   const password =
     role === 'postgres'
       ? info.passwords.postgres
-      : role === 'lernwerk_migrator'
+      : role === 'coursecraft_migrator'
         ? info.passwords.migrator
-        : role === 'lernwerk_app'
+        : role === 'coursecraft_app'
           ? info.passwords.app
           : info.passwords.converter;
   return `postgres://${role}:${password}@${info.host}:${info.port}/${database}`;

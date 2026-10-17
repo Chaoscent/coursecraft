@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { Course, SlideElement } from '@lernwerk/course-model';
+import type { Course, SlideElement } from '@coursecraft/course-model';
 import { applyPatches, enablePatches, produceWithPatches, type Draft, type Patch } from 'immer';
 import { createStore } from 'zustand/vanilla';
 import { cloneElement, containerOf, findElement, orderedNodes, slideOf } from './model.js';

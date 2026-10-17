@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { PERMISSIONS, type RoutePermission } from '@lernwerk/shared';
+import { PERMISSIONS, type RoutePermission } from '@coursecraft/shared';
 import type { FastifyInstance, RouteOptions } from 'fastify';
 
 declare module 'fastify' {

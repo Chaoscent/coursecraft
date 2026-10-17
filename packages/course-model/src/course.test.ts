@@ -24,7 +24,7 @@ describe('course format v1', () => {
   });
 
   it('rejects foreign documents', () => {
-    expect(() => loadCourse({ hello: 'world' })).toThrow('Not a Lernwerk course document');
+    expect(() => loadCourse({ hello: 'world' })).toThrow('Not a Coursecraft course document');
   });
 
   it('rejects unknown properties', () => {

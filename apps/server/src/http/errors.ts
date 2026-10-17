@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { ErrorCode } from '@lernwerk/shared';
+import type { ErrorCode } from '@coursecraft/shared';
 
 const STATUS: Record<ErrorCode, number> = {
   bad_request: 400,

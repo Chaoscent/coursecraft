@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { PGBOSS_SCHEMA, QUEUES } from '@lernwerk/shared';
+import { PGBOSS_SCHEMA, QUEUES } from '@coursecraft/shared';
 import { PgBoss } from 'pg-boss';
 import { createDatabase } from '../db/connection.js';
 import { createMigrator } from '../db/migrations/index.js';

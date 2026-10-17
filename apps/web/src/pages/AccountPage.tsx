@@ -6,7 +6,7 @@ import {
   sessionResponseSchema,
   totpSetupResponseSchema,
   type Locale,
-} from '@lernwerk/shared';
+} from '@coursecraft/shared';
 import QRCode from 'qrcode';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -353,7 +353,7 @@ function DataExport() {
       <div>
         <Button
           icon="download"
-          onPress={() => void download('/api/account/export', 'lernwerk-personal-data.json')}
+          onPress={() => void download('/api/account/export', 'coursecraft-personal-data.json')}
         >
           {t('privacy.export')}
         </Button>

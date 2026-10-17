@@ -1,4 +1,4 @@
-# Lernwerk
+# Coursecraft
 
 Self-hosted e-learning authoring suite and LMS. Create courses in the
 browser (slides, quizzes, interactions, dialog simulations), export them as
@@ -15,24 +15,24 @@ third-party services.
 Requirements: Docker Engine 26+ with Compose 2.30+, 2 GB RAM, amd64 or arm64.
 
 ```sh
-git clone <repository-url> lernwerk && cd lernwerk
-cp .env.example .env          # adjust LERNWERK_PUBLIC_URL if not on localhost
+git clone <repository-url> coursecraft && cd coursecraft
+cp .env.example .env          # adjust COURSECRAFT_PUBLIC_URL if not on localhost
 docker compose up -d
 ```
 
 Check that everything is up: `curl http://localhost:3000/readyz` returns
 `{"status":"ready"}`. (Phase 0 has no UI yet. From Phase 1 on, the setup
 wizard at <http://localhost:3000> asks for a one-time setup token from
-`docker compose logs app` or `docker compose exec app lernwerk setup-token`.)
+`docker compose logs app` or `docker compose exec app coursecraft setup-token`.)
 
 The first start builds the images locally (about 2–5 minutes). Compose first
-tries to pull `lernwerk/app` and `lernwerk/converter` and prints "pull access
+tries to pull `coursecraft/app` and `coursecraft/converter` and prints "pull access
 denied"; that warning is expected until images are published.
 
 Secrets (database passwords, encryption key) are generated automatically on
 first start and stored in the `secrets` volume.
 
-For production, put Lernwerk behind a reverse proxy with TLS (examples in
+For production, put Coursecraft behind a reverse proxy with TLS (examples in
 `docs/reverse-proxy/`). Plain HTTP is only supported on `localhost`, and only
 in Chrome, Edge and Firefox: Safari needs HTTPS even locally (see
 `docs/reverse-proxy/README.md`).
@@ -42,16 +42,16 @@ in Chrome, Edge and Firefox: Safari needs HTTPS even locally (see
 Voraussetzungen: Docker Engine 26+ mit Compose 2.30+, 2 GB RAM, amd64 oder arm64.
 
 ```sh
-git clone <repository-url> lernwerk && cd lernwerk
-cp .env.example .env          # LERNWERK_PUBLIC_URL anpassen, falls nicht localhost
+git clone <repository-url> coursecraft && cd coursecraft
+cp .env.example .env          # COURSECRAFT_PUBLIC_URL anpassen, falls nicht localhost
 docker compose up -d
 ```
 
 Prüfen: `curl http://localhost:3000/readyz` liefert `{"status":"ready"}`.
 Ab Phase 1 fragt der Einrichtungsassistent unter <http://localhost:3000> nach
 dem einmaligen Setup-Token aus `docker compose logs app` bzw.
-`docker compose exec app lernwerk setup-token`.
-Für den Produktivbetrieb Lernwerk hinter einen Reverse Proxy mit TLS stellen.
+`docker compose exec app coursecraft setup-token`.
+Für den Produktivbetrieb Coursecraft hinter einen Reverse Proxy mit TLS stellen.
 Unverschlüsseltes HTTP funktioniert nur auf `localhost`.
 
 ## Services
@@ -77,7 +77,7 @@ pnpm test:e2e                              # Playwright in the official containe
 scripts/ci/build-images.sh                 # build both images
 scripts/ci/test-offline.sh                 # full stack without network access
 pnpm check                                 # SPDX headers, forbidden terms, licenses
-pnpm --filter @lernwerk/web dev            # design samples at /sample/editor.html
+pnpm --filter @coursecraft/web dev            # design samples at /sample/editor.html
 ```
 
 Read [CLAUDE.md](CLAUDE.md) for conventions, [SECURITY.md](SECURITY.md) for

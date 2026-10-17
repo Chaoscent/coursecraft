@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { listAuditQuerySchema, listAuditResponseSchema } from '@lernwerk/shared';
+import { listAuditQuerySchema, listAuditResponseSchema } from '@coursecraft/shared';
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import type { AppContext } from '../../http/context.js';

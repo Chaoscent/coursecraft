@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { Response } from '@lernwerk/course-model/scoring';
+import type { Response } from '@coursecraft/course-model/scoring';
 import {
   decodeState,
   encodeState,
@@ -152,7 +152,7 @@ export function scorm2004Tracker(api: Scorm2004Api | null = findScorm2004Api()):
       const n = Number(api.GetValue('cmi.interactions._count')) || 0;
       const type = TYPES[record.questionType] ?? 'other';
       const p = `cmi.interactions.${n}`;
-      set(`${p}.id`, `urn:lernwerk:${sid(record.parentId)}:${sid(record.id)}`);
+      set(`${p}.id`, `urn:coursecraft:${sid(record.parentId)}:${sid(record.id)}`);
       set(`${p}.type`, type);
       set(`${p}.timestamp`, new Date().toISOString().slice(0, 19));
       set(

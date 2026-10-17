@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { DialogNode } from '@lernwerk/course-model';
+import type { DialogNode } from '@coursecraft/course-model';
 import { h } from '../render/dom.js';
 import { localized } from '../render/context.js';
 import { renderRichText } from '../render/richtext.js';
@@ -53,12 +53,12 @@ export function renderDialog(
   const best = maxScore(dialog);
   let score = 0;
   let shownAt = Date.now();
-  const stage = h('div', { class: 'lw-dialog-stage' });
-  const live = h('div', { class: 'lw-sr-only', attrs: { 'aria-live': 'polite' } });
+  const stage = h('div', { class: 'cc-dialog-stage' });
+  const live = h('div', { class: 'cc-sr-only', attrs: { 'aria-live': 'polite' } });
   const root = h(
     'section',
-    { class: 'lw-dialog', attrs: { 'aria-label': localized(ctx, dialog.title) ?? '' } },
-    [h('h2', { class: 'lw-ix-title', text: localized(ctx, dialog.title) ?? '' }), stage, live],
+    { class: 'cc-dialog', attrs: { 'aria-label': localized(ctx, dialog.title) ?? '' } },
+    [h('h2', { class: 'cc-ix-title', text: localized(ctx, dialog.title) ?? '' }), stage, live],
   );
 
   const finish = () => {
@@ -69,25 +69,25 @@ export function renderDialog(
     api.markViewed();
     api.allowNext();
     const heading = h('h3', {
-      class: 'lw-dialog-outcome-title',
+      class: 'cc-dialog-outcome-title',
       text: localized(ctx, outcome?.title ?? {}) ?? '',
       attrs: { tabindex: '-1' },
     });
     const body = outcome ? localized(ctx, outcome.body) : undefined;
-    const again = h('button', { class: 'lw-button', attrs: { type: 'button' }, text: strings.dialogRetry });
+    const again = h('button', { class: 'cc-button', attrs: { type: 'button' }, text: strings.dialogRetry });
     again.addEventListener('click', () => {
       score = 0;
       show(dialog.startSceneId);
     });
     stage.replaceChildren(
-      h('div', { class: `lw-dialog-outcome ${passed ? 'lw-passed' : 'lw-failed'}` }, [
+      h('div', { class: `cc-dialog-outcome ${passed ? 'cc-passed' : 'cc-failed'}` }, [
         heading,
         ...(body ? [h('div', {}, [renderRichText(body, ctx)])] : []),
         h('p', {
-          class: 'lw-dialog-score',
+          class: 'cc-dialog-score',
           text: strings.dialogScore.replace('{score}', String(score)).replace('{max}', String(best)),
         }),
-        h('div', { class: 'lw-ix-step-nav' }, [again]),
+        h('div', { class: 'cc-ix-step-nav' }, [again]),
       ]),
     );
     heading.focus();
@@ -106,13 +106,13 @@ export function renderDialog(
     const speech = localized(ctx, scene.speech) ?? '';
     const audioRef = scene.audio ? localized(ctx, scene.audio) : undefined;
     const responses = h('div', {
-      class: 'lw-dialog-responses',
+      class: 'cc-dialog-responses',
       attrs: { role: 'group', 'aria-label': strings.yourAnswer },
     });
-    const feedbackBox = h('div', { class: 'lw-dialog-feedback', attrs: { 'aria-live': 'polite' } });
+    const feedbackBox = h('div', { class: 'cc-dialog-feedback', attrs: { 'aria-live': 'polite' } });
     for (const response of scene.responses) {
       const button = h('button', {
-        class: 'lw-button lw-dialog-response',
+        class: 'cc-button cc-dialog-response',
         attrs: { type: 'button' },
         text: localized(ctx, response.text) ?? '',
       });
@@ -138,7 +138,7 @@ export function renderDialog(
         }
         responses.querySelectorAll('button').forEach((b) => (b.disabled = true));
         const cont = h('button', {
-          class: 'lw-button lw-button-primary',
+          class: 'cc-button cc-button-primary',
           attrs: { type: 'button' },
           text: strings.dialogContinue,
         });
@@ -150,27 +150,27 @@ export function renderDialog(
     }
     if (!scene.responses.length) {
       const end = h('button', {
-        class: 'lw-button lw-button-primary',
+        class: 'cc-button cc-button-primary',
         attrs: { type: 'button' },
         text: strings.dialogContinue,
       });
       end.addEventListener('click', finish);
       responses.append(end);
     }
-    const speechEl = h('blockquote', { class: 'lw-dialog-speech', attrs: { tabindex: '-1' } }, [
-      h('p', { class: 'lw-dialog-name', text: name }),
+    const speechEl = h('blockquote', { class: 'cc-dialog-speech', attrs: { tabindex: '-1' } }, [
+      h('p', { class: 'cc-dialog-name', text: name }),
       h('p', { text: speech }),
     ]);
-    const view = h('div', { class: 'lw-dialog-scene' }, [
+    const view = h('div', { class: 'cc-dialog-scene' }, [
       ...(image
         ? [
             h('img', {
-              class: 'lw-dialog-character',
+              class: 'cc-dialog-character',
               attrs: { src: ctx.assetUrl(image.$asset), alt: localized(ctx, character?.altText ?? {}) ?? '' },
             }),
           ]
         : []),
-      h('div', { class: 'lw-dialog-main' }, [
+      h('div', { class: 'cc-dialog-main' }, [
         speechEl,
         ...(audioRef
           ? [h('audio', { attrs: { controls: '', src: ctx.assetUrl(audioRef.$asset), 'aria-label': name } })]

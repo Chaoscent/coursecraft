@@ -1,5 +1,5 @@
 {
-  "name": "@lernwerk/player",
+  "name": "@coursecraft/player",
   "version": "0.0.0",
   "private": true,
   "license": "Apache-2.0",
@@ -13,7 +13,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@lernwerk/course-model": "workspace:*"
+    "@coursecraft/course-model": "workspace:*"
   },
   "devDependencies": {
     "esbuild": "^0.28.2"

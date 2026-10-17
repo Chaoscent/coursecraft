@@ -45,7 +45,7 @@
   "$defs": {
     "__schema0": {
       "type": "string",
-      "const": "lernwerk.course"
+      "const": "coursecraft.course"
     },
     "__schema1": {
       "type": "number",
@@ -3951,6 +3951,6 @@
       "additionalProperties": false
     }
   },
-  "$id": "https://lernwerk.invalid/schema/course.v1.json",
-  "title": "Lernwerk course format v1"
+  "$id": "https://coursecraft.invalid/schema/course.v1.json",
+  "title": "Coursecraft course format v1"
 }

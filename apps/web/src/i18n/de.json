@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Lernwerk"
+    "name": "Coursecraft"
   },
   "common": {
     "close": "Schließen",
@@ -95,9 +95,9 @@
   "setup": {
     "title": "Einrichtung: erstes Administrationskonto",
     "submit": "Konto anlegen",
-    "intro": "Lernwerk ist noch nicht eingerichtet. Legen Sie das erste Administrationskonto an.",
+    "intro": "Coursecraft ist noch nicht eingerichtet. Legen Sie das erste Administrationskonto an.",
     "token": "Setup-Token",
-    "tokenHint": "Steht im Log des App-Containers oder kommt von „lernwerk setup-token“."
+    "tokenHint": "Steht im Log des App-Containers oder kommt von „coursecraft setup-token“."
   },
   "password": {
     "forcedTitle": "Neues Passwort festlegen",
@@ -788,9 +788,9 @@
     "empty": "Noch nichts in der Bibliothek. Veröffentlichen Sie einen Kurs oder importieren Sie ein Paket.",
     "imported": "„{{title}}“ wurde importiert.",
     "importedMulti": "„{{title}}“ wurde importiert. Das Paket enthält mehrere Lerneinheiten; gestartet wird nur die erste.",
-    "noContentOrigin": "Fremdpakete (SCORM, xAPI, cmi5) brauchen einen eigenen Content-Origin (LERNWERK_CONTENT_URL). Eigene Kurse funktionieren ohne.",
+    "noContentOrigin": "Fremdpakete (SCORM, xAPI, cmi5) brauchen einen eigenen Content-Origin (COURSECRAFT_CONTENT_URL). Eigene Kurse funktionieren ohne.",
     "kinds": {
-      "lernwerk": "Lernwerk",
+      "coursecraft": "Coursecraft",
       "scorm12": "SCORM 1.2",
       "scorm2004": "SCORM 2004",
       "xapi": "xAPI",
@@ -992,7 +992,7 @@
     "on": "Aktiv",
     "off": "Aus",
     "empty": "Keine Anbieter eingerichtet. Ohne Anbieter gibt es keine KI-Funktionen und keine Anfragen nach außen.",
-    "offByOperator": "Die KI-Anbindung ist abgeschaltet. Der Betrieb kann sie mit LERNWERK_AI_ENABLED=true freigeben.",
+    "offByOperator": "Die KI-Anbindung ist abgeschaltet. Der Betrieb kann sie mit COURSECRAFT_AI_ENABLED=true freigeben.",
     "privacyNote": "Kursinhalte gehen nur an einen Anbieter, wenn eine Autorin oder ein Autor die genaue Anfrage gesehen und bestätigt hat. Das Audit-Log speichert nur Metadaten.",
     "userKeys": "KI-Schlüssel",
     "userKeysHint": "Für diese Anbieter können Sie einen eigenen API-Schlüssel hinterlegen. Er wird verschlüsselt gespeichert und vor dem gemeinsamen Schlüssel verwendet.",

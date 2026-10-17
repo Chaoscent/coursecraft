@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { questionSchema } from '@lernwerk/course-model';
+import { questionSchema } from '@coursecraft/course-model';
 import { describe, expect, it } from 'vitest';
 import { questionFromDraft } from './quizModel.js';
 

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { getSessionResponseSchema, type Permission, type SessionInfo } from '@lernwerk/shared';
+import { getSessionResponseSchema, type Permission, type SessionInfo } from '@coursecraft/shared';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { i18n } from '../i18n/index.js';
 import { api, onUnauthenticated, setCsrfToken } from './client.js';

@@ -26,19 +26,19 @@ const url = (role: 'migrate' | 'app' | 'converter') =>
     .replace('@db:5432', `@${container.getHost()}:${container.getMappedPort(5432)}`);
 
 beforeAll(async () => {
-  secrets = mkdtempSync(join(tmpdir(), 'lw-db-'));
-  initSecrets({ dir: secrets, dbHost: 'db', dbName: 'lernwerk', chown: false });
+  secrets = mkdtempSync(join(tmpdir(), 'cc-db-'));
+  initSecrets({ dir: secrets, dbHost: 'db', dbName: 'coursecraft', chown: false });
   const dbSecrets = join(secrets, 'db');
   container = await new GenericContainer('postgres:17-trixie')
     .withEnvironment({
-      POSTGRES_DB: 'lernwerk',
+      POSTGRES_DB: 'coursecraft',
       POSTGRES_USER: 'postgres',
       POSTGRES_PASSWORD: readFileSync(join(dbSecrets, 'postgres_password'), 'utf8').trim(),
     })
     .withCopyFilesToContainer([
       ...readdirSync(dbSecrets).map((name) => ({
         source: join(dbSecrets, name),
-        target: `/run/lernwerk/${name}`,
+        target: `/run/coursecraft/${name}`,
         mode: 0o444,
       })),
       ...readdirSync(INIT_DIR).map((name) => ({

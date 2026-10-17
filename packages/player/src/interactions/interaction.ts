@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { InteractionNode } from '@lernwerk/course-model';
+import type { InteractionNode } from '@coursecraft/course-model';
 import { h } from '../render/dom.js';
 import { localized, type RenderContext } from '../render/context.js';
 import { renderRichText } from '../render/richtext.js';
@@ -30,14 +30,14 @@ function entryBody(entry: Entry, ctx: RenderContext): Node[] {
   if (entry.media)
     parts.push(
       h('img', {
-        class: 'lw-ix-media',
+        class: 'cc-ix-media',
         attrs: {
           src: ctx.assetUrl(entry.media.image.$asset),
           alt: localized(ctx, entry.media.altText) ?? '',
         },
       }),
     );
-  parts.push(h('div', { class: 'lw-ix-body' }, [renderRichText(localized(ctx, entry.body), ctx)]));
+  parts.push(h('div', { class: 'cc-ix-body' }, [renderRichText(localized(ctx, entry.body), ctx)]));
   return parts;
 }
 
@@ -45,17 +45,17 @@ function accordion(items: Entry[], api: NodeApi, seen: (id: string) => void): HT
   const { ctx } = api;
   return h(
     'div',
-    { class: 'lw-ix-accordion' },
+    { class: 'cc-ix-accordion' },
     items.map((item) => {
-      const panelId = uid('lw-acc');
+      const panelId = uid('cc-acc');
       const button = h('button', {
-        class: 'lw-ix-acc-button',
+        class: 'cc-ix-acc-button',
         attrs: { type: 'button', 'aria-expanded': 'false', 'aria-controls': panelId },
         text: localized(ctx, item.title) ?? '',
       });
       const panel = h(
         'div',
-        { class: 'lw-ix-acc-panel', attrs: { id: panelId, role: 'region' } },
+        { class: 'cc-ix-acc-panel', attrs: { id: panelId, role: 'region' } },
         entryBody(item, ctx),
       );
       panel.setAttribute('aria-label', localized(ctx, item.title) ?? '');
@@ -66,8 +66,8 @@ function accordion(items: Entry[], api: NodeApi, seen: (id: string) => void): HT
         panel.hidden = !open;
         if (open) seen(item.id);
       });
-      return h('div', { class: 'lw-ix-acc-item' }, [
-        h('h3', { class: 'lw-ix-acc-heading' }, [button]),
+      return h('div', { class: 'cc-ix-acc-item' }, [
+        h('h3', { class: 'cc-ix-acc-heading' }, [button]),
         panel,
       ]);
     }),
@@ -77,7 +77,7 @@ function accordion(items: Entry[], api: NodeApi, seen: (id: string) => void): HT
 /** WAI-ARIA tabs: arrow keys move between tabs, the panel follows. */
 function tabs(items: Entry[], api: NodeApi, seen: (id: string) => void): HTMLElement {
   const { ctx } = api;
-  const list = h('div', { class: 'lw-ix-tablist', attrs: { role: 'tablist' } });
+  const list = h('div', { class: 'cc-ix-tablist', attrs: { role: 'tablist' } });
   const panels: HTMLElement[] = [];
   const buttons: HTMLButtonElement[] = [];
   const select = (index: number, focus: boolean) => {
@@ -92,10 +92,10 @@ function tabs(items: Entry[], api: NodeApi, seen: (id: string) => void): HTMLEle
     if (item) seen(item.id);
   };
   items.forEach((item, i) => {
-    const tabId = uid('lw-tab');
-    const panelId = uid('lw-tabpanel');
+    const tabId = uid('cc-tab');
+    const panelId = uid('cc-tabpanel');
     const button = h('button', {
-      class: 'lw-ix-tab',
+      class: 'cc-ix-tab',
       attrs: { type: 'button', role: 'tab', id: tabId, 'aria-controls': panelId },
       text: localized(ctx, item.title) ?? '',
     });
@@ -127,14 +127,14 @@ function tabs(items: Entry[], api: NodeApi, seen: (id: string) => void): HTMLEle
       h(
         'div',
         {
-          class: 'lw-ix-tabpanel',
+          class: 'cc-ix-tabpanel',
           attrs: { role: 'tabpanel', id: panelId, 'aria-labelledby': tabId, tabindex: '0' },
         },
         entryBody(item, ctx),
       ),
     );
   });
-  const root = h('div', { class: 'lw-ix-tabs' }, [list, ...panels]);
+  const root = h('div', { class: 'cc-ix-tabs' }, [list, ...panels]);
   select(0, false);
   return root;
 }
@@ -143,22 +143,22 @@ function tabs(items: Entry[], api: NodeApi, seen: (id: string) => void): HTMLEle
 function stepper(items: Entry[], api: NodeApi, seen: (id: string) => void, cycle: boolean): HTMLElement {
   const { ctx, strings } = api;
   let index = 0;
-  const status = h('p', { class: 'lw-ix-step-status', attrs: { 'aria-live': 'polite' } });
-  const panel = h('div', { class: 'lw-ix-step-panel' });
-  const prev = h('button', { class: 'lw-button', attrs: { type: 'button' }, text: strings.previous });
+  const status = h('p', { class: 'cc-ix-step-status', attrs: { 'aria-live': 'polite' } });
+  const panel = h('div', { class: 'cc-ix-step-panel' });
+  const prev = h('button', { class: 'cc-button', attrs: { type: 'button' }, text: strings.previous });
   const next = h('button', {
-    class: 'lw-button lw-button-primary',
+    class: 'cc-button cc-button-primary',
     attrs: { type: 'button' },
     text: strings.next,
   });
   const ring = cycle
     ? h(
         'ol',
-        { class: 'lw-ix-cycle', attrs: { 'aria-label': strings.overview } },
+        { class: 'cc-ix-cycle', attrs: { 'aria-label': strings.overview } },
         items.map((item, i) => {
           const angle = (i / items.length) * 2 * Math.PI - Math.PI / 2;
           const b = h('button', {
-            class: 'lw-ix-cycle-item',
+            class: 'cc-ix-cycle-item',
             attrs: { type: 'button' },
             text: localized(ctx, item.title) ?? '',
           });
@@ -177,7 +177,7 @@ function stepper(items: Entry[], api: NodeApi, seen: (id: string) => void, cycle
     const item = items[index];
     if (!item) return;
     panel.replaceChildren(
-      h('h3', { class: 'lw-ix-step-title', text: localized(ctx, item.title) ?? '' }),
+      h('h3', { class: 'cc-ix-step-title', text: localized(ctx, item.title) ?? '' }),
       ...entryBody(item, ctx),
     );
     status.textContent = strings.stepOf
@@ -199,11 +199,11 @@ function stepper(items: Entry[], api: NodeApi, seen: (id: string) => void, cycle
     render();
   });
   render();
-  return h('div', { class: cycle ? 'lw-ix-steps lw-ix-has-cycle' : 'lw-ix-steps' }, [
+  return h('div', { class: cycle ? 'cc-ix-steps cc-ix-has-cycle' : 'cc-ix-steps' }, [
     ...(ring ? [ring] : []),
     status,
     panel,
-    h('div', { class: 'lw-ix-step-nav' }, [prev, next]),
+    h('div', { class: 'cc-ix-step-nav' }, [prev, next]),
   ]);
 }
 
@@ -215,21 +215,21 @@ function timeline(
   const { ctx } = api;
   return h(
     'ol',
-    { class: 'lw-ix-timeline' },
+    { class: 'cc-ix-timeline' },
     events.map((event) => {
-      const panelId = uid('lw-tl');
+      const panelId = uid('cc-tl');
       const button = h(
         'button',
         {
-          class: 'lw-ix-tl-button',
+          class: 'cc-ix-tl-button',
           attrs: { type: 'button', 'aria-expanded': 'false', 'aria-controls': panelId },
         },
         [
-          h('span', { class: 'lw-ix-tl-date', text: localized(ctx, event.dateLabel) ?? '' }),
-          h('span', { class: 'lw-ix-tl-title', text: localized(ctx, event.title) ?? '' }),
+          h('span', { class: 'cc-ix-tl-date', text: localized(ctx, event.dateLabel) ?? '' }),
+          h('span', { class: 'cc-ix-tl-title', text: localized(ctx, event.title) ?? '' }),
         ],
       );
-      const panel = h('div', { class: 'lw-ix-tl-panel', attrs: { id: panelId } }, entryBody(event, ctx));
+      const panel = h('div', { class: 'cc-ix-tl-panel', attrs: { id: panelId } }, entryBody(event, ctx));
       panel.hidden = true;
       button.addEventListener('click', () => {
         const open = button.getAttribute('aria-expanded') !== 'true';
@@ -237,7 +237,7 @@ function timeline(
         panel.hidden = !open;
         if (open) seen(event.id);
       });
-      return h('li', { class: 'lw-ix-tl-event' }, [button, panel]);
+      return h('li', { class: 'cc-ix-tl-event' }, [button, panel]);
     }),
   );
 }
@@ -248,11 +248,11 @@ function glossary(terms: Extract<Content, { variant: 'glossary' }>['terms'], api
     (localized(ctx, a.term) ?? '').localeCompare(localized(ctx, b.term) ?? '', ctx.lang),
   );
   const search = h('input', {
-    class: 'lw-ix-search',
+    class: 'cc-ix-search',
     attrs: { type: 'search', 'aria-label': strings.searchGlossary },
   });
-  const count = h('p', { class: 'lw-ix-count', attrs: { 'aria-live': 'polite' } });
-  const list = h('dl', { class: 'lw-ix-glossary' });
+  const count = h('p', { class: 'cc-ix-count', attrs: { 'aria-live': 'polite' } });
+  const list = h('dl', { class: 'cc-ix-glossary' });
   const rows = sorted.map((term) => ({
     text: (localized(ctx, term.term) ?? '').toLocaleLowerCase(),
     nodes: [
@@ -268,7 +268,7 @@ function glossary(terms: Extract<Content, { variant: 'glossary' }>['terms'], api
   };
   search.addEventListener('input', filter);
   filter();
-  return h('div', { class: 'lw-ix-glossary-wrap' }, [search, count, list]);
+  return h('div', { class: 'cc-ix-glossary-wrap' }, [search, count, list]);
 }
 
 /** Image with numbered markers; every marker is also a button in a list (keyboard, screen readers). */
@@ -278,14 +278,14 @@ function labeledGraphic(
   seen: (id: string) => void,
 ): HTMLElement {
   const { ctx } = api;
-  const panel = h('div', { class: 'lw-ix-marker-panel', attrs: { 'aria-live': 'polite' } });
+  const panel = h('div', { class: 'cc-ix-marker-panel', attrs: { 'aria-live': 'polite' } });
   const show = (marker: (typeof content.markers)[number], button: HTMLElement) => {
     figure.querySelectorAll('[aria-pressed]').forEach((b) => b.setAttribute('aria-pressed', 'false'));
     button.setAttribute('aria-pressed', 'true');
     panel.replaceChildren(h('h3', { text: localized(ctx, marker.title) ?? '' }), ...entryBody(marker, ctx));
     seen(marker.id);
   };
-  const figure = h('div', { class: 'lw-ix-graphic' }, [
+  const figure = h('div', { class: 'cc-ix-graphic' }, [
     h('img', {
       attrs: {
         src: ctx.assetUrl(content.image.image.$asset),
@@ -295,7 +295,7 @@ function labeledGraphic(
   ]);
   content.markers.forEach((marker, i) => {
     const b = h('button', {
-      class: 'lw-ix-marker',
+      class: 'cc-ix-marker',
       attrs: { type: 'button', 'aria-pressed': 'false', 'aria-label': localized(ctx, marker.title) ?? '' },
       text: String(i + 1),
     });
@@ -304,7 +304,7 @@ function labeledGraphic(
     b.addEventListener('click', () => show(marker, b));
     figure.append(b);
   });
-  return h('div', { class: 'lw-ix-labeled' }, [figure, panel]);
+  return h('div', { class: 'cc-ix-labeled' }, [figure, panel]);
 }
 
 export function renderInteraction(node: InteractionNode, api: NodeApi): HTMLElement {
@@ -350,12 +350,12 @@ export function renderInteraction(node: InteractionNode, api: NodeApi): HTMLElem
   const intro = node.intro ? localized(ctx, node.intro) : undefined;
   return h(
     'section',
-    { class: `lw-ix lw-ix-${content.variant}`, attrs: { 'aria-label': localized(ctx, node.title) ?? '' } },
+    { class: `cc-ix cc-ix-${content.variant}`, attrs: { 'aria-label': localized(ctx, node.title) ?? '' } },
     [
-      h('h2', { class: 'lw-ix-title', text: localized(ctx, node.title) ?? '' }),
-      ...(intro ? [h('div', { class: 'lw-ix-intro' }, [renderRichText(intro, ctx)])] : []),
+      h('h2', { class: 'cc-ix-title', text: localized(ctx, node.title) ?? '' }),
+      ...(intro ? [h('div', { class: 'cc-ix-intro' }, [renderRichText(intro, ctx)])] : []),
       body,
-      ...(node.requireAllViewed ? [h('p', { class: 'lw-ix-hint', text: api.strings.openAll })] : []),
+      ...(node.requireAllViewed ? [h('p', { class: 'cc-ix-hint', text: api.strings.openAll })] : []),
     ],
   );
 }

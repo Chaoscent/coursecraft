@@ -58,9 +58,9 @@ test('author creates, edits and saves a course; changes survive a reload', async
   await expect(page.getByText('Folie 1 von 2')).toBeVisible();
   // Thumbnail and canvas both render the slide.
   await expect(
-    page.locator('[data-slide] .lw-el-text').filter({ hasText: 'Hallo aus dem Editor' }),
+    page.locator('[data-slide] .cc-el-text').filter({ hasText: 'Hallo aus dem Editor' }),
   ).toHaveCount(2);
-  await expect(page.locator('[data-slide] .lw-el-shape')).toHaveCount(2);
+  await expect(page.locator('[data-slide] .cc-el-shape')).toHaveCount(2);
 
   // Preview runs the real player.
   await page.locator('body').press('F5');

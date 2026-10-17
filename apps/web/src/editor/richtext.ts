@@ -3,7 +3,7 @@
  * Conversion between TipTap/ProseMirror documents and the course format's
  * restricted rich text. Anything the format does not allow is dropped.
  */
-import { richTextSchema, type RichText } from '@lernwerk/course-model';
+import { richTextSchema, type RichText } from '@coursecraft/course-model';
 import type { JSONContent } from '@tiptap/core';
 
 type Mark = { type: string; attrs?: Record<string, unknown> };

@@ -1,24 +1,24 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 /* Fonts for exported packages (files in player/fonts/). The web app loads its own. */
 @font-face {
-  font-family: 'Lernwerk Sans';
+  font-family: 'Coursecraft Sans';
   src: url('fonts/IBMPlexSans-Regular.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
 }
 @font-face {
-  font-family: 'Lernwerk Sans';
+  font-family: 'Coursecraft Sans';
   src: url('fonts/IBMPlexSans-Italic.woff2') format('woff2');
   font-weight: 400;
   font-style: italic;
 }
 @font-face {
-  font-family: 'Lernwerk Sans';
+  font-family: 'Coursecraft Sans';
   src: url('fonts/IBMPlexSans-Bold.woff2') format('woff2');
   font-weight: 600 700;
   font-style: normal;
 }
 @font-face {
-  font-family: 'Lernwerk Mono';
+  font-family: 'Coursecraft Mono';
   src: url('fonts/IBMPlexMono-Regular.woff2') format('woff2');
 }

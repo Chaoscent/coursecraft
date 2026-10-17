@@ -8,6 +8,6 @@ networks:
 services:
   app:
     environment:
-      LERNWERK_PUBLIC_URL: http://localhost:3000
+      COURSECRAFT_PUBLIC_URL: http://localhost:3000
     # Ports cannot be published from internal-only networks.
     ports: !reset []

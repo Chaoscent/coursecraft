@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 /**
- * Licenses compatible with distributing Lernwerk under Apache-2.0.
+ * Licenses compatible with distributing Coursecraft under Apache-2.0.
  * MPL-2.0 is allowed only for unmodified, separate packages (pnpm never
  * patches dependencies in this repository).
  */

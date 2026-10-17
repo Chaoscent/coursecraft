@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { ROLES, emailSchema, displayNameSchema, localeSchema, type Role } from '@lernwerk/shared';
+import { ROLES, emailSchema, displayNameSchema, localeSchema, type Role } from '@coursecraft/shared';
 import { parse } from 'csv-parse/sync';
 import { randomBytes } from 'node:crypto';
 import type { Kysely } from 'kysely';

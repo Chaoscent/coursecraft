@@ -169,10 +169,10 @@ importers:
       '@eslint/js':
         specifier: ^10.0.1
         version: 10.0.1(eslint@10.12.0)
-      '@lernwerk/eslint-config':
+      '@coursecraft/eslint-config':
         specifier: workspace:*
         version: link:packages/eslint-config
-      '@lernwerk/shared':
+      '@coursecraft/shared':
         specifier: workspace:*
         version: link:packages/shared
       '@playwright/test':
@@ -250,7 +250,7 @@ importers:
 
   apps/converter:
     dependencies:
-      '@lernwerk/shared':
+      '@coursecraft/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       '@napi-rs/canvas':
@@ -287,10 +287,10 @@ importers:
       '@fastify/static':
         specifier: ^10.1.6
         version: 10.1.6
-      '@lernwerk/course-model':
+      '@coursecraft/course-model':
         specifier: workspace:*
         version: link:../../packages/course-model
-      '@lernwerk/shared':
+      '@coursecraft/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       '@napi-rs/image':
@@ -363,13 +363,13 @@ importers:
 
   apps/web:
     dependencies:
-      '@lernwerk/course-model':
+      '@coursecraft/course-model':
         specifier: workspace:*
         version: link:../../packages/course-model
-      '@lernwerk/player':
+      '@coursecraft/player':
         specifier: workspace:*
         version: link:../../packages/player
-      '@lernwerk/shared':
+      '@coursecraft/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       '@tiptap/core':
@@ -476,7 +476,7 @@ importers:
 
   packages/player:
     dependencies:
-      '@lernwerk/course-model':
+      '@coursecraft/course-model':
         specifier: workspace:*
         version: link:../course-model
     devDependencies:

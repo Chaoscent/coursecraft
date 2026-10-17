@@ -4,7 +4,7 @@ import {
   okSchema,
   startConversionResponseSchema,
   type ConversionResponse,
-} from '@lernwerk/shared';
+} from '@coursecraft/shared';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
