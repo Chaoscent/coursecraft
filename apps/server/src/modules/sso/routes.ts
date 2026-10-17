@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import {
   idParamSchema,
+  ldapLoginRequestSchema,
+  loginResponseSchema,
   okSchema,
   publicSsoProvidersSchema,
   ssoProviderInputSchema,
@@ -13,6 +15,7 @@ import { requireAuth } from '../../auth/plugin.js';
 import type { AppContext } from '../../http/context.js';
 import { AppError } from '../../http/errors.js';
 import { startSession } from '../auth/routes.js';
+import { ldapLogin } from './ldap.js';
 import {
   deleteProvider,
   finishOidc,
@@ -60,6 +63,43 @@ export function ssoRoutes(app: FastifyInstance, ctx: AppContext): void {
     '/api/auth/sso/providers',
     { config: { permission: 'public' }, schema: { response: { 200: publicSsoProvidersSchema } } },
     async () => ({ items: await publicProviders(ctx) }),
+  );
+
+  r.post(
+    '/api/auth/ldap/login',
+    {
+      config: { permission: 'public', rateLimit: rate },
+      schema: { body: ldapLoginRequestSchema, response: { 200: loginResponseSchema } },
+    },
+    async (request, reply) => {
+      const outcome = await ldapLogin(
+        ctx,
+        request.body.providerId,
+        request.body.username,
+        request.body.password,
+      );
+      if ('error' in outcome) {
+        await ctx.audit.record({
+          actorUserId: null,
+          action: 'auth.sso_failed',
+          meta: { reason: outcome.error, directory: true },
+          ipHmac: request.ipHmac,
+        });
+        // Only after the directory accepted the password do the reasons differ; none of them
+        // reveals anything the person did not just prove they know.
+        if (outcome.error === 'denied' || outcome.error === 'failed')
+          throw new AppError('invalid_credentials', 'User name or password is wrong');
+        throw new AppError('forbidden', 'This account may not sign in');
+      }
+      const session = await startSession(ctx, request, reply, outcome.userId);
+      await ctx.audit.record({
+        actorUserId: outcome.userId,
+        action: 'auth.login',
+        meta: { directory: true },
+        ipHmac: request.ipHmac,
+      });
+      return { status: 'ok' as const, session };
+    },
   );
 
   r.get(

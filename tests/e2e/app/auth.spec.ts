@@ -24,7 +24,7 @@ test('WebKit rejects the secure session cookie on plain-http localhost', async (
   await page.getByLabel('Passwort').fill(ADMIN.password);
   // The server sets the cookie; WebKit drops it. What the page shows next depends on timing.
   const answered = page.waitForResponse((r) => r.url().endsWith('/api/auth/login') && r.ok());
-  await page.getByRole('button', { name: 'Anmelden' }).click();
+  await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
   expect(await (await answered).headerValue('set-cookie')).toContain('__Host-cc_session');
   expect((await context.cookies()).some((c) => c.name === '__Host-cc_session')).toBe(false);
 });
@@ -51,7 +51,7 @@ test.describe('application', () => {
     await page.goto('/login');
     await page.getByLabel('E-Mail').fill(ADMIN.email);
     await page.getByLabel('Passwort').fill('definitely wrong');
-    await page.getByRole('button', { name: 'Anmelden' }).click();
+    await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
     await expect(page.getByRole('alert')).toContainText('falsch');
     expect((await context.cookies()).some((c) => c.name === '__Host-cc_session')).toBe(false);
   });
@@ -76,7 +76,7 @@ test.describe('application', () => {
 
     await page.getByLabel('E-Mail').fill(email);
     await page.getByLabel('Passwort').fill('temporary password 1');
-    await page.getByRole('button', { name: 'Anmelden' }).click();
+    await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Neues Passwort festlegen' })).toBeVisible();
     await page.getByLabel('Aktuelles Passwort').fill('temporary password 1');
     await page.getByRole('textbox', { name: 'Neues Passwort' }).fill('my own password 123');

@@ -98,7 +98,11 @@
         "no_email": "Der Anbieter hat keine bestätigte E-Mail-Adresse geliefert.",
         "expired": "Die Anmeldung ist abgelaufen. Bitte erneut versuchen."
       }
-    }
+    },
+    "method": "Anmelden bei",
+    "local": "Lokales Konto",
+    "username": "Benutzername",
+    "usernameHint": "Wie im Firmennetz, z. B. m.muster"
   },
   "fields": {
     "email": "E-Mail",
@@ -280,7 +284,7 @@
   },
   "errors": {
     "bad_request": "Die Eingaben sind unvollständig oder ungültig.",
-    "invalid_credentials": "E-Mail, Passwort oder Code ist falsch.",
+    "invalid_credentials": "Benutzername/E-Mail, Passwort oder Code ist falsch.",
     "password_change_required": "Bitte zuerst das Passwort ändern.",
     "unauthenticated": "Bitte melden Sie sich an.",
     "forbidden": "Dafür fehlt die Berechtigung.",
@@ -1184,7 +1188,8 @@
     "kind": "Protokoll",
     "kinds": {
       "oidc": "OpenID Connect",
-      "saml": "SAML 2.0"
+      "saml": "SAML 2.0",
+      "ldap": "LDAP / Active Directory"
     },
     "entryPoint": "Single-Sign-on-URL des Anbieters",
     "entryPointHint": "Dorthin wird der Browser zum Anmelden geschickt (HTTP-Redirect).",
@@ -1195,6 +1200,31 @@
     "spEntityId": "Entity-ID von Coursecraft",
     "spEntityIdHint": "Wird beim Anbieter als Service Provider eingetragen; muss dort übereinstimmen.",
     "acsHint": "Tragen Sie beim Anbieter diese Assertion-Consumer-URL (ACS) ein: {{url}}",
-    "metadataHint": "Metadaten zum Import: {{url}}"
+    "metadataHint": "Metadaten zum Import: {{url}}",
+    "ldapUrl": "Server-Adresse",
+    "ldapUrlHint": "ldaps://dc.firma.de oder ldap://dc.firma.de mit StartTLS. Passwörter werden nie unverschlüsselt gesendet.",
+    "startTls": "StartTLS verwenden (bei ldap://)",
+    "caCert": "Zertifizierungsstelle des Servers (PEM)",
+    "caCertHint": "Leer = Zertifikate des Systems. Bei einer internen CA hier das CA-Zertifikat einfügen.",
+    "tlsServerName": "Name im Serverzertifikat",
+    "tlsServerNameHint": "Nur nötig, wenn er von der Server-Adresse abweicht (z. B. bei Adressen mit IP).",
+    "bindDn": "Dienstkonto (DN oder UPN)",
+    "bindDnHint": "Darf Benutzer suchen und Gruppen lesen, sonst nichts. Leer = anonyme Suche.",
+    "bindPassword": "Passwort des Dienstkontos",
+    "userBase": "Suchbasis",
+    "userBaseHint": "z. B. OU=Mitarbeiter,DC=firma,DC=de",
+    "userFilter": "Suchfilter",
+    "userFilterHint": "{username} steht für den eingegebenen Namen. Active Directory: (&(objectClass=user)(sAMAccountName={username}))",
+    "subjectAttribute": "Eindeutiges Attribut",
+    "subjectAttributeHint": "Ändert sich nie: objectGUID (AD) oder entryUUID.",
+    "emailAttribute": "E-Mail-Attribut",
+    "nameAttribute": "Namensattribut",
+    "groupAttribute": "Gruppenattribut",
+    "requiredGroup": "Nur Mitglieder dieser Gruppe (DN)",
+    "requiredGroupHint": "Leer = alle gefundenen Benutzer. Verschachtelte AD-Gruppen: Filter mit 1.2.840.113556.1.4.1941 verwenden.",
+    "groupRoles": "Gruppen und Rollen",
+    "groupRolesHint": "Eine Zeile je Zuordnung: Gruppen-DN => Rolle (learner, author, trainer). Wirkt bei jeder Anmeldung. Administrator wird nie vergeben.",
+    "ldapNote": "Coursecraft prüft Passwörter direkt am Verzeichnisserver und speichert sie nicht. Konten werden über die E-Mail-Adresse verknüpft.",
+    "groupRolesInvalid": "Ungültige Zeile in den Gruppenzuordnungen: {{line}}"
   }
 }

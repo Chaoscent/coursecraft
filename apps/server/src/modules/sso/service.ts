@@ -15,7 +15,7 @@ const HTTP_TIMEOUT_MS = 15_000;
 
 export type SsoError = 'failed' | 'denied' | 'domain' | 'no_account' | 'disabled' | 'no_email' | 'expired';
 
-const secretAad = (id: string) => `sso-secret:${id}`;
+export const secretAad = (id: string) => `sso-secret:${id}`;
 const verifierAad = (stateHash: string) => `sso-verifier:${stateHash}`;
 export const callbackUrl = (ctx: AppContext) =>
   new URL('/api/auth/sso/callback', ctx.config.publicUrl).toString();
@@ -23,9 +23,9 @@ export const acsUrl = (ctx: AppContext) => new URL('/api/auth/sso/saml/acs', ctx
 export const metadataUrl = (ctx: AppContext, id: string) =>
   new URL(`/api/auth/sso/${id}/metadata`, ctx.config.publicUrl).toString();
 
-type Row = {
+export type Row = {
   id: string;
-  kind: 'oidc' | 'saml';
+  kind: 'oidc' | 'saml' | 'ldap';
   name: string;
   enabled: boolean;
   config: Record<string, unknown>;
@@ -49,7 +49,7 @@ const toProvider = (ctx: AppContext, r: Row): SsoProvider => ({
   emailTrusted: r.email_trusted,
   config: r.config,
   secret: { set: r.secret !== null, last4: r.secret_last4 },
-  callbackUrl: r.kind === 'saml' ? acsUrl(ctx) : callbackUrl(ctx),
+  callbackUrl: r.kind === 'saml' ? acsUrl(ctx) : r.kind === 'ldap' ? '' : callbackUrl(ctx),
   metadataUrl: r.kind === 'saml' ? metadataUrl(ctx, r.id) : null,
   updatedAt: r.updated_at.toISOString(),
 });
@@ -69,22 +69,45 @@ export async function publicProviders(ctx: AppContext) {
   return rows;
 }
 
+function providerConfig(input: SsoProviderInput): Record<string, unknown> {
+  switch (input.kind) {
+    case 'oidc':
+      return { issuer: input.issuer.replace(/\/+$/, ''), clientId: input.clientId, scopes: input.scopes };
+    case 'saml':
+      return {
+        entryPoint: input.entryPoint,
+        idpIssuer: input.idpIssuer,
+        idpCert: input.idpCert,
+        spEntityId: input.spEntityId,
+      };
+    case 'ldap':
+      return {
+        url: input.url,
+        startTls: input.startTls,
+        caCert: input.caCert,
+        tlsServerName: input.tlsServerName,
+        bindDn: input.bindDn,
+        userBase: input.userBase,
+        userFilter: input.userFilter,
+        subjectAttribute: input.subjectAttribute,
+        emailAttribute: input.emailAttribute,
+        nameAttribute: input.nameAttribute,
+        groupAttribute: input.groupAttribute,
+        requiredGroup: input.requiredGroup,
+        groupRoles: input.groupRoles,
+      };
+  }
+}
+
 export async function saveProvider(
   ctx: AppContext,
   auth: AuthState,
   id: string | null,
   input: SsoProviderInput,
 ): Promise<string> {
-  const config =
-    input.kind === 'oidc'
-      ? { issuer: input.issuer.replace(/\/+$/, ''), clientId: input.clientId, scopes: input.scopes }
-      : {
-          entryPoint: input.entryPoint,
-          idpIssuer: input.idpIssuer,
-          idpCert: input.idpCert,
-          spEntityId: input.spEntityId,
-        };
-  const secret = input.kind === 'oidc' ? input.clientSecret : undefined;
+  const config = providerConfig(input);
+  const secret =
+    input.kind === 'oidc' ? input.clientSecret : input.kind === 'ldap' ? input.bindPassword : undefined;
   const fields = {
     kind: input.kind,
     name: input.name,
@@ -190,7 +213,11 @@ async function oidcConfiguration(ctx: AppContext, row: Row): Promise<client.Conf
   return config;
 }
 
-async function enabledProvider(ctx: AppContext, id: string, kind: 'oidc' | 'saml'): Promise<Row> {
+export async function enabledProvider(
+  ctx: AppContext,
+  id: string,
+  kind: 'oidc' | 'saml' | 'ldap',
+): Promise<Row> {
   const row = await ctx.db
     .selectFrom('sso_providers')
     .selectAll()
@@ -444,7 +471,7 @@ export async function startLogin(ctx: AppContext, reply: FastifyReply, providerI
     .where('id', '=', providerId)
     .where('enabled', '=', true)
     .executeTakeFirst();
-  if (!row) throw notFound('Provider not found');
+  if (!row || row.kind === 'ldap') throw notFound('Provider not found');
   return row.kind === 'saml' ? startSaml(ctx, reply, providerId) : startOidc(ctx, reply, providerId);
 }
 

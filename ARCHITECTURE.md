@@ -607,6 +607,14 @@ TOTP secrets, OIDC client secrets, and SMTP passwords. The API returns only
 - OpenID Connect through `openid-client` (discovery cached per provider
   version). The fake provider in `tests/support/oidc-idp.ts` drives the
   integration tests on loopback.
+- LDAP / Active Directory (`modules/sso/ldap.ts`, kind `ldap`, migration 0011)
+  through `ldapts`: the login page offers a provider selector next to the
+  local account; `POST /api/auth/ldap/login` finds the entry with the service
+  account, checks the password by binding as that entry and then reuses the
+  same account mapping as OIDC/SAML. An optional required group restricts who
+  may sign in; group-to-role mappings are applied at every sign-in
+  (administrator is never mapped). `tests/integration/ldap.test.ts` runs
+  against an OpenLDAP container over LDAPS.
 
 ## 12e. Performance (Phase 8)
 

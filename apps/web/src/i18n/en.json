@@ -98,7 +98,11 @@
         "no_email": "The provider did not deliver a verified e-mail address.",
         "expired": "The sign-in expired. Please try again."
       }
-    }
+    },
+    "method": "Sign in with",
+    "local": "Local account",
+    "username": "User name",
+    "usernameHint": "As used on the company network, e.g. j.doe"
   },
   "fields": {
     "email": "E-mail",
@@ -280,7 +284,7 @@
   },
   "errors": {
     "bad_request": "Some input is missing or invalid.",
-    "invalid_credentials": "E-mail, password or code is wrong.",
+    "invalid_credentials": "User name or e-mail, password or code is wrong.",
     "password_change_required": "Change your password first.",
     "unauthenticated": "Please sign in.",
     "forbidden": "You do not have permission for this.",
@@ -1184,7 +1188,8 @@
     "kind": "Protocol",
     "kinds": {
       "oidc": "OpenID Connect",
-      "saml": "SAML 2.0"
+      "saml": "SAML 2.0",
+      "ldap": "LDAP / Active Directory"
     },
     "entryPoint": "Provider sign-on URL",
     "entryPointHint": "The browser is sent here to sign in (HTTP-Redirect).",
@@ -1195,6 +1200,31 @@
     "spEntityId": "Coursecraft entity ID",
     "spEntityIdHint": "Registered at the provider as the service provider; must match there.",
     "acsHint": "Enter this assertion consumer URL (ACS) at the provider: {{url}}",
-    "metadataHint": "Metadata for import: {{url}}"
+    "metadataHint": "Metadata for import: {{url}}",
+    "ldapUrl": "Server address",
+    "ldapUrlHint": "ldaps://dc.example.com, or ldap://dc.example.com with StartTLS. Passwords are never sent unencrypted.",
+    "startTls": "Use StartTLS (for ldap://)",
+    "caCert": "Server's certificate authority (PEM)",
+    "caCertHint": "Empty = the system certificates. For an internal CA, paste its certificate here.",
+    "tlsServerName": "Name in the server certificate",
+    "tlsServerNameHint": "Only needed if it differs from the server address (e.g. when connecting by IP).",
+    "bindDn": "Service account (DN or UPN)",
+    "bindDnHint": "May search users and read groups, nothing else. Empty = anonymous search.",
+    "bindPassword": "Service account password",
+    "userBase": "Search base",
+    "userBaseHint": "e.g. OU=Staff,DC=example,DC=com",
+    "userFilter": "Search filter",
+    "userFilterHint": "{username} stands for the name typed in. Active Directory: (&(objectClass=user)(sAMAccountName={username}))",
+    "subjectAttribute": "Unique attribute",
+    "subjectAttributeHint": "Never changes: objectGUID (AD) or entryUUID.",
+    "emailAttribute": "E-mail attribute",
+    "nameAttribute": "Name attribute",
+    "groupAttribute": "Group attribute",
+    "requiredGroup": "Members of this group only (DN)",
+    "requiredGroupHint": "Empty = every user found. Nested AD groups: use a filter with 1.2.840.113556.1.4.1941.",
+    "groupRoles": "Groups and roles",
+    "groupRolesHint": "One mapping per line: group DN => role (learner, author, trainer). Applied at every sign-in. Administrator is never granted.",
+    "ldapNote": "Coursecraft checks passwords directly against the directory server and never stores them. Accounts are linked by e-mail address.",
+    "groupRolesInvalid": "Invalid line in the group mappings: {{line}}"
   }
 }

@@ -2,7 +2,7 @@
 import { z } from 'zod';
 import { uuidSchema } from './common.js';
 
-export const SSO_KINDS = ['oidc', 'saml'] as const;
+export const SSO_KINDS = ['oidc', 'saml', 'ldap'] as const;
 export const SSO_ROLES = ['learner', 'author', 'trainer'] as const;
 /** Reasons the login page can show after a failed single sign-on. */
 export const SSO_ERRORS = [
@@ -77,7 +77,71 @@ const samlInput = z
   })
   .strict();
 
-export const ssoProviderInputSchema = z.discriminatedUnion('kind', [oidcInput, samlInput]);
+const PEM = /-----BEGIN CERTIFICATE-----[\s\S]+-----END CERTIFICATE-----/;
+const attribute = z
+  .string()
+  .trim()
+  .regex(/^[A-Za-z][A-Za-z0-9-]*$/)
+  .max(64);
+
+const ldapInput = z
+  .object({
+    kind: z.literal('ldap'),
+    ...common,
+    /** `ldaps://host[:port]`, or `ldap://host[:port]` together with StartTLS. */
+    url: z
+      .string()
+      .trim()
+      .regex(/^ldaps?:\/\/[^\s/?#@]+$/)
+      .max(300),
+    startTls: z.boolean(),
+    /** Certificate authority of the directory server (PEM); empty uses the system store. */
+    caCert: z
+      .string()
+      .trim()
+      .max(50_000)
+      .refine((v) => v === '' || PEM.test(v), 'PEM certificate'),
+    /** Name the server certificate is issued for, when it differs from the host in the address. */
+    tlsServerName: z.union([
+      z.literal(''),
+      z
+        .string()
+        .trim()
+        .toLowerCase()
+        .regex(/^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$/)
+        .max(253),
+    ]),
+    /** Service account that looks up users; empty searches anonymously. */
+    bindDn: z.string().trim().max(500),
+    /** New bind password; omitted keeps the stored one, null removes it. */
+    bindPassword: z.string().min(1).max(2000).nullable().optional(),
+    userBase: z.string().trim().min(1).max(500),
+    /** Search filter; `{username}` stands for the escaped name typed at sign-in. */
+    userFilter: z
+      .string()
+      .trim()
+      .min(1)
+      .max(500)
+      .refine((v) => v.includes('{username}'), 'Contains {username}'),
+    /** Attribute that never changes for a person (objectGUID in Active Directory). */
+    subjectAttribute: attribute,
+    emailAttribute: attribute,
+    nameAttribute: attribute,
+    groupAttribute: attribute,
+    /** Distinguished name of a group; only its members may sign in (empty = everyone found). */
+    requiredGroup: z.string().trim().max(500),
+    /** Directory group (distinguished name) to Coursecraft role; never administrator. */
+    groupRoles: z
+      .array(z.object({ group: z.string().trim().min(1).max(500), role: z.enum(SSO_ROLES) }))
+      .max(50),
+  })
+  .strict()
+  .refine((v) => v.url.startsWith('ldaps://') || v.startTls, {
+    path: ['startTls'],
+    message: 'Passwords are only sent over ldaps:// or StartTLS',
+  });
+
+export const ssoProviderInputSchema = z.discriminatedUnion('kind', [oidcInput, samlInput, ldapInput]);
 export type SsoProviderInput = z.infer<typeof ssoProviderInputSchema>;
 
 export const ssoProviderSchema = z.object({
@@ -100,6 +164,14 @@ export const ssoProviderSchema = z.object({
 });
 export type SsoProvider = z.infer<typeof ssoProviderSchema>;
 export const ssoProvidersResponseSchema = z.object({ items: z.array(ssoProviderSchema) });
+
+export const ldapLoginRequestSchema = z
+  .object({
+    providerId: uuidSchema,
+    username: z.string().trim().min(1).max(256),
+    password: z.string().min(1).max(1024),
+  })
+  .strict();
 
 export const publicSsoProvidersSchema = z.object({
   items: z.array(z.object({ id: uuidSchema, name: z.string(), kind: z.enum(SSO_KINDS) })),

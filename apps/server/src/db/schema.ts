@@ -393,7 +393,7 @@ export interface PathAssignmentsTable {
 
 export interface SsoProvidersTable {
   id: Generated<string>;
-  kind: 'oidc' | 'saml';
+  kind: 'oidc' | 'saml' | 'ldap';
   name: string;
   enabled: ColumnType<boolean, boolean | undefined, boolean>;
   config: JSONColumnType<Record<string, unknown>, string, string>;

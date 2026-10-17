@@ -9,7 +9,7 @@ import {
 } from '@coursecraft/shared';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api } from '../api/client.js';
+import { api, ApiError } from '../api/client.js';
 import { Badge } from '../components/Badge.js';
 import { Button, ToolButton } from '../components/Button.js';
 import { DataTable, type Selection } from '../components/DataTable.js';
@@ -21,6 +21,31 @@ import { errorMessage } from '../lib/errors.js';
 import { useApi } from '../lib/useApi.js';
 import { ConfirmDialog } from './UsersPage.js';
 import styles from './AdminPages.module.css';
+
+const DEFAULT_FILTER = '(&(objectClass=user)(sAMAccountName={username}))';
+
+const groupRolesText = (p: SsoProvider | null): string => {
+  const value = p?.config['groupRoles'];
+  if (!Array.isArray(value)) return '';
+  return value
+    .map((m: { group?: string; role?: string }) => `${m.group ?? ''} => ${m.role ?? ''}`)
+    .join('\n');
+};
+
+/** Lines of `group DN => role`; a line without a valid role is reported as an error. */
+function parseGroupRoles(text: string): { group: string; role: (typeof SSO_ROLES)[number] }[] {
+  return text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const at = line.lastIndexOf('=>');
+      const group = line.slice(0, Math.max(at, 0)).trim();
+      const role = SSO_ROLES.find((r) => r === line.slice(at + 2).trim());
+      if (at < 0 || !group || !role) throw new Error(line);
+      return { group, role };
+    });
+}
 
 const cfg = (p: SsoProvider | null, key: string, fallback = ''): string => {
   const value = p?.config[key];
@@ -52,6 +77,19 @@ function ProviderDialog({
   const [autoCreate, setAutoCreate] = useState(provider?.autoCreate ?? false);
   const [role, setRole] = useState<(typeof SSO_ROLES)[number]>(provider?.defaultRole ?? 'learner');
   const [emailTrusted, setEmailTrusted] = useState(provider?.emailTrusted ?? false);
+  const [ldapUrl, setLdapUrl] = useState(cfg(provider, 'url'));
+  const [startTls, setStartTls] = useState(provider?.config['startTls'] === true);
+  const [caCert, setCaCert] = useState(cfg(provider, 'caCert'));
+  const [tlsServerName, setTlsServerName] = useState(cfg(provider, 'tlsServerName'));
+  const [bindDn, setBindDn] = useState(cfg(provider, 'bindDn'));
+  const [userBase, setUserBase] = useState(cfg(provider, 'userBase'));
+  const [userFilter, setUserFilter] = useState(cfg(provider, 'userFilter', DEFAULT_FILTER));
+  const [subjectAttribute, setSubjectAttribute] = useState(cfg(provider, 'subjectAttribute', 'objectGUID'));
+  const [emailAttribute, setEmailAttribute] = useState(cfg(provider, 'emailAttribute', 'mail'));
+  const [nameAttribute, setNameAttribute] = useState(cfg(provider, 'nameAttribute', 'displayName'));
+  const [groupAttribute, setGroupAttribute] = useState(cfg(provider, 'groupAttribute', 'memberOf'));
+  const [requiredGroup, setRequiredGroup] = useState(cfg(provider, 'requiredGroup'));
+  const [groupRoles, setGroupRoles] = useState(groupRolesText(provider));
   const [enabled, setEnabled] = useState(provider?.enabled ?? true);
   const [error, setError] = useState<string | null>(null);
 
@@ -68,22 +106,47 @@ function ProviderDialog({
         defaultRole: role,
         emailTrusted,
       };
+      const secretField = (name: string) =>
+        removeSecret ? { [name]: null } : secret ? { [name]: secret } : {};
       const body =
         kind === 'saml'
           ? { kind, ...shared, entryPoint, idpIssuer, idpCert, spEntityId }
-          : {
-              kind,
-              ...shared,
-              issuer,
-              clientId,
-              scopes,
-              ...(removeSecret ? { clientSecret: null } : secret ? { clientSecret: secret } : {}),
-            };
+          : kind === 'ldap'
+            ? {
+                kind,
+                ...shared,
+                url: ldapUrl,
+                startTls,
+                caCert,
+                tlsServerName,
+                bindDn,
+                userBase,
+                userFilter,
+                subjectAttribute,
+                emailAttribute,
+                nameAttribute,
+                groupAttribute,
+                requiredGroup,
+                groupRoles: parseGroupRoles(groupRoles),
+                ...secretField('bindPassword'),
+              }
+            : {
+                kind,
+                ...shared,
+                issuer,
+                clientId,
+                scopes,
+                ...secretField('clientSecret'),
+              };
       if (provider) await api(idParamSchema, `/api/sso/providers/${provider.id}`, { method: 'PUT', body });
       else await api(idParamSchema, '/api/sso/providers', { method: 'POST', body });
       onSaved();
     } catch (e) {
-      setError(errorMessage(e));
+      setError(
+        e instanceof Error && !(e instanceof ApiError)
+          ? t('sso.groupRolesInvalid', { line: e.message })
+          : errorMessage(e),
+      );
     }
   };
 
@@ -104,7 +167,9 @@ function ProviderDialog({
       }
     >
       {error ? <Notice tone="danger">{error}</Notice> : null}
-      {provider ? (
+      {kind === 'ldap' ? (
+        <Notice tone="info">{t('sso.ldapNote')}</Notice>
+      ) : provider ? (
         <Notice tone="info">
           {t(kind === 'saml' ? 'sso.acsHint' : 'sso.callbackHint', { url: provider.callbackUrl })}
           {provider.metadataUrl ? ` ${t('sso.metadataHint', { url: provider.metadataUrl })}` : ''}
@@ -160,6 +225,112 @@ function ProviderDialog({
             ) : null}
             <TextField label={t('sso.scopes')} value={scopes} onChange={setScopes} />
           </>
+        ) : kind === 'ldap' ? (
+          <>
+            <TextField
+              label={t('sso.ldapUrl')}
+              value={ldapUrl}
+              onChange={setLdapUrl}
+              isRequired
+              description={t('sso.ldapUrlHint')}
+            />
+            <FormRow label="">
+              <Checkbox isSelected={startTls} onChange={setStartTls}>
+                {t('sso.startTls')}
+              </Checkbox>
+            </FormRow>
+            <TextField
+              label={t('sso.caCert')}
+              multiline
+              value={caCert}
+              onChange={setCaCert}
+              description={t('sso.caCertHint')}
+            />
+            <TextField
+              label={t('sso.tlsServerName')}
+              value={tlsServerName}
+              onChange={setTlsServerName}
+              description={t('sso.tlsServerNameHint')}
+            />
+            <TextField
+              label={t('sso.bindDn')}
+              value={bindDn}
+              onChange={setBindDn}
+              description={t('sso.bindDnHint')}
+            />
+            <TextField
+              label={t('sso.bindPassword')}
+              type="password"
+              autoComplete="off"
+              value={secret}
+              onChange={setSecret}
+              isDisabled={removeSecret}
+              description={
+                provider?.secret.set
+                  ? t('sso.secretStored', { last4: provider.secret.last4 ?? '' })
+                  : t('sso.secretHint')
+              }
+            />
+            {provider?.secret.set ? (
+              <FormRow label="">
+                <Checkbox isSelected={removeSecret} onChange={setRemoveSecret}>
+                  {t('sso.removeSecret')}
+                </Checkbox>
+              </FormRow>
+            ) : null}
+            <TextField
+              label={t('sso.userBase')}
+              value={userBase}
+              onChange={setUserBase}
+              isRequired
+              description={t('sso.userBaseHint')}
+            />
+            <TextField
+              label={t('sso.userFilter')}
+              value={userFilter}
+              onChange={setUserFilter}
+              isRequired
+              description={t('sso.userFilterHint')}
+            />
+            <TextField
+              label={t('sso.subjectAttribute')}
+              value={subjectAttribute}
+              onChange={setSubjectAttribute}
+              isRequired
+              description={t('sso.subjectAttributeHint')}
+            />
+            <TextField
+              label={t('sso.emailAttribute')}
+              value={emailAttribute}
+              onChange={setEmailAttribute}
+              isRequired
+            />
+            <TextField
+              label={t('sso.nameAttribute')}
+              value={nameAttribute}
+              onChange={setNameAttribute}
+              isRequired
+            />
+            <TextField
+              label={t('sso.groupAttribute')}
+              value={groupAttribute}
+              onChange={setGroupAttribute}
+              isRequired
+            />
+            <TextField
+              label={t('sso.requiredGroup')}
+              value={requiredGroup}
+              onChange={setRequiredGroup}
+              description={t('sso.requiredGroupHint')}
+            />
+            <TextField
+              label={t('sso.groupRoles')}
+              multiline
+              value={groupRoles}
+              onChange={setGroupRoles}
+              description={t('sso.groupRolesHint')}
+            />
+          </>
         ) : (
           <>
             <TextField
@@ -199,7 +370,7 @@ function ProviderDialog({
           onChange={setDomains}
           description={t('sso.domainsHint')}
         />
-        {kind === 'oidc' ? (
+        {kind !== 'saml' ? (
           <FormRow label="">
             <Checkbox isSelected={emailTrusted} onChange={setEmailTrusted}>
               {t('sso.emailTrusted')}
@@ -282,7 +453,11 @@ export function SsoPage() {
           columns={[
             { id: 'name', label: t('sso.name'), isRowHeader: true, render: (p) => p.name },
             { id: 'kind', label: t('sso.kind'), render: (p) => t(`sso.kinds.${p.kind}`) },
-            { id: 'issuer', label: t('sso.issuer'), render: (p) => cfg(p, 'issuer') || cfg(p, 'entryPoint') },
+            {
+              id: 'issuer',
+              label: t('sso.issuer'),
+              render: (p) => cfg(p, 'issuer') || cfg(p, 'entryPoint') || cfg(p, 'url'),
+            },
             {
               id: 'create',
               label: t('sso.autoCreate'),

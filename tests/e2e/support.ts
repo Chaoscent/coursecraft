@@ -25,6 +25,6 @@ export async function login(page: Page, email: string, password: string): Promis
   await page.goto('/login');
   await page.getByLabel('E-Mail').fill(email);
   await page.getByLabel('Passwort').fill(password);
-  await page.getByRole('button', { name: 'Anmelden' }).click();
+  await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
   await expect(page.getByRole('navigation', { name: 'Hauptmenü' })).toBeVisible();
 }

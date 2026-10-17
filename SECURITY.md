@@ -281,6 +281,28 @@ change:
   Responses are replay-limited by the single-use relay state and the short
   validity window; encrypted assertions and single logout are not supported.
 
+## 5f. Directory sign-in (LDAP / Active Directory)
+
+- Passwords are sent only over `ldaps://` or StartTLS (the settings refuse
+  plain `ldap://`); the server certificate is always verified (own CA
+  certificate and expected name configurable). Coursecraft never stores a
+  directory password; the service account's password is sealed like other
+  provider secrets and never returned.
+- The typed name is escaped for the search filter (RFC 4515), so `*`, `(` and
+  `)` cannot widen the search. A search must find exactly one entry. An empty
+  password is refused before any bind (many servers treat it as an anonymous,
+  successful bind).
+- The password is checked by binding as the found entry; unknown name and
+  wrong password give the same answer. Only after a correct password does the
+  person learn about account problems (no account, disabled, domain).
+- Throttled by the sign-in rate limit per client address. Directory lockout
+  policies still apply; Coursecraft adds no counter per account, so a
+  directory that locks accounts after a few failures can be locked by someone
+  guessing from several addresses.
+- Group mappings run at every sign-in and never grant administrator. Nested
+  groups are not expanded by `memberOf`; use the in-chain matching rule in the
+  search filter for that.
+
 ## 8. Known limitations
 
 - Third-party packages run arbitrary JavaScript on the content origin. They

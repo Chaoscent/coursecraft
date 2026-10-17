@@ -31,7 +31,12 @@ issue once the repository is published.
 
 ## Single sign-on
 
-- [ ] Map provider groups or claims to Coursecraft groups and roles.
+- [ ] Map OIDC/SAML provider groups or claims to Coursecraft roles (done for
+      LDAP) and map directory groups to Coursecraft groups.
+- [ ] Kerberos/SPNEGO single sign-on for domain computers (GPO-managed browsers).
+- [ ] Scheduled directory sync (deactivate accounts that left the directory);
+      per-account sign-in throttle for directory logins.
+- [ ] Option to restrict local password sign-in to administrators.
 - [ ] Single logout and back-channel logout; encrypted SAML assertions.
 - [ ] E2E run against a real provider container (Keycloak) in a nightly job.
 - [ ] Per-provider button icons.

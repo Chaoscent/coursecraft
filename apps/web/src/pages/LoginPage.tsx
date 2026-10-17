@@ -6,12 +6,30 @@ import { Link, Navigate, useNavigate, useSearchParams } from 'react-router';
 import { api } from '../api/client.js';
 import { useSession } from '../api/session.js';
 import { Button } from '../components/Button.js';
-import { FormGrid, TextField } from '../components/Field.js';
+import { FormGrid, SelectField, TextField } from '../components/Field.js';
 import { Notice } from '../components/Notice.js';
 import { AuthFrame } from '../layout/AuthFrame.js';
 import { errorMessage } from '../lib/errors.js';
 import { useApi } from '../lib/useApi.js';
 import styles from './LoginPage.module.css';
+
+const METHOD_KEY = 'cc.login-method';
+
+function rememberedMethod(): string {
+  try {
+    return window.localStorage.getItem(METHOD_KEY) ?? 'local';
+  } catch {
+    return 'local';
+  }
+}
+
+function rememberMethod(method: string): void {
+  try {
+    window.localStorage.setItem(METHOD_KEY, method);
+  } catch {
+    // Private windows may refuse storage; the choice is then simply not remembered.
+  }
+}
 
 export function LoginPage() {
   const { t } = useTranslation();
@@ -22,6 +40,11 @@ export function LoginPage() {
   const providers = useApi(
     useCallback(() => api(publicSsoProvidersSchema, '/api/auth/sso/providers').then((r) => r.items), []),
   ).data;
+  const directories = providers?.filter((p) => p.kind === 'ldap') ?? [];
+  const redirects = providers?.filter((p) => p.kind !== 'ldap') ?? [];
+  // The local account unless the person picked a directory before on this browser.
+  const [chosen, setChosen] = useState<string>(rememberedMethod);
+  const method = directories.some((d) => d.id === chosen) ? chosen : 'local';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [challenge, setChallenge] = useState<string | null>(null);
@@ -41,11 +64,17 @@ export function LoginPage() {
             method: 'POST',
             body: { challenge, code },
           })
-        : await api(loginResponseSchema, '/api/auth/login', { method: 'POST', body: { email, password } });
+        : method === 'local'
+          ? await api(loginResponseSchema, '/api/auth/login', { method: 'POST', body: { email, password } })
+          : await api(loginResponseSchema, '/api/auth/ldap/login', {
+              method: 'POST',
+              body: { providerId: method, username: email, password },
+            });
       if (result.status === 'totp_required') {
         setChallenge(result.challenge);
         setPassword('');
       } else {
+        rememberMethod(method);
         setSession(result.session);
         void navigate('/');
       }
@@ -89,9 +118,20 @@ export function LoginPage() {
             />
           ) : (
             <>
+              {directories.length ? (
+                <SelectField
+                  label={t('login.method')}
+                  value={method}
+                  onChange={setChosen}
+                  options={[
+                    ...directories.map((d) => ({ id: d.id, label: d.name })),
+                    { id: 'local', label: t('login.local') },
+                  ]}
+                />
+              ) : null}
               <TextField
-                label={t('fields.email')}
-                type="email"
+                label={method === 'local' ? t('fields.email') : t('login.username')}
+                type={method === 'local' ? 'email' : 'text'}
                 value={email}
                 onChange={setEmail}
                 autoComplete="username"
@@ -109,10 +149,10 @@ export function LoginPage() {
             </>
           )}
         </FormGrid>
-        {!challenge && providers?.length ? (
+        {!challenge && redirects.length ? (
           <div className={styles.sso}>
             <span className={styles.ssoLabel}>{t('login.sso.or')}</span>
-            {providers.map((p) => (
+            {redirects.map((p) => (
               // A full page navigation: the provider's pages replace ours and send the browser back.
               <a key={p.id} className={styles.ssoLink} href={`/api/auth/sso/${p.id}/start`}>
                 {t('login.sso.with', { name: p.name })}

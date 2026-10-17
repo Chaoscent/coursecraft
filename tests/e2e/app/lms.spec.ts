@@ -84,7 +84,7 @@ test('learner completes an own course (cmi5) and a SCORM package; trainer sees t
   await page.goto('/login');
   await page.getByLabel('E-Mail').fill(learner.email);
   await page.getByLabel('Passwort').fill(learner.password);
-  await page.getByRole('button', { name: 'Anmelden' }).click();
+  await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
   await page.getByLabel('Aktuelles Passwort').fill(learner.password);
   await page.getByRole('textbox', { name: 'Neues Passwort', exact: true }).fill('learner own password');
   await page.getByLabel('Wiederholen').fill('learner own password');
