@@ -143,6 +143,27 @@ services:
     cpus: ${COURSECRAFT_CONVERTER_CPUS:-2}
     pids_limit: 256
 
+  # On demand only: `docker compose --profile maintenance run --rm maintenance restore <file>`.
+  # Has the DDL-capable role and the data volume; stop app and converter first.
+  maintenance:
+    <<: [*app-image, *hardening]
+    profiles: [maintenance]
+    restart: 'no'
+    environment:
+      COURSECRAFT_MIGRATOR_DATABASE_URL_FILE: /run/coursecraft/database_url
+      COURSECRAFT_DATA_DIR: /data
+    entrypoint: ['node', '/app/dist/cli.js']
+    volumes:
+      - data:/data
+      - type: volume
+        source: secrets
+        target: /run/coursecraft
+        read_only: true
+        volume: { subpath: migrate }
+    tmpfs:
+      - /tmp:size=64m
+    networks: [backend]
+
 networks:
   edge: {}
   # No route to the outside world: database and converter live only here.

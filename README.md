@@ -54,6 +54,21 @@ dem einmaligen Setup-Token aus `docker compose logs app` bzw.
 Für den Produktivbetrieb Coursecraft hinter einen Reverse Proxy mit TLS stellen.
 Unverschlüsseltes HTTP funktioniert nur auf `localhost`.
 
+## Backup and restore
+
+```sh
+docker compose exec app coursecraft backup          # writes /data/backups/coursecraft-<time>.tar
+docker compose stop app converter
+docker compose --profile maintenance run --rm maintenance restore /data/backups/coursecraft-<time>.tar
+docker compose up -d
+```
+
+Backups contain personal data and the course files. Copy them off the host
+(`docker compose cp app:/data/backups/<file> .`) and store them encrypted.
+The secrets volume (encryption key) is not part of a backup; keep a copy of
+it separately, otherwise encrypted values (2FA, AI and SMTP keys) cannot be
+read after restoring on a new host.
+
 ## Services
 
 | Service     | Purpose                                                                 |

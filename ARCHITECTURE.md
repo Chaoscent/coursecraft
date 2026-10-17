@@ -592,8 +592,15 @@ TOTP secrets, OIDC client secrets, and SMTP passwords. The API returns only
   and prints it. The wizard requires the token, and the token is invalid once
   setup is complete.
 - Multi-arch images (amd64, arm64) with `docker buildx`.
-- Backup: `coursecraft backup` writes `pg_dump` and the `data` volume into one tar
-  under `data/backups`; `coursecraft restore <file>` reverses it.
+- Backup: `coursecraft backup` (app container) writes the database
+  (`pg_dump` custom format, credentials via libpq environment), the `data`
+  volume and a manifest into one tar under `data/backups`.
+  `coursecraft restore <file>` runs in the on-demand `maintenance` service
+  (migrator role, data volume) while app and converter are stopped: it
+  checks every archive entry before extracting (no links, absolute paths or
+  `..`), refuses backups from newer versions, replays the dump in one
+  transaction, replaces the data volume and then runs the migrations, which
+  also re-assert the append-only audit log.
 - Memory budget, idle / peak: Postgres 150/250 MB, app 200/400 MB, converter
   60/900 MB (LibreOffice ≈ 400 MB, ffmpeg ≈ 300 MB, never at the same time
   with concurrency 1). Total peak ≈ 1.6 GB. Measured at the end of Phase 0

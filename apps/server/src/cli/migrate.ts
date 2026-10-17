@@ -2,7 +2,7 @@
 import { PGBOSS_SCHEMA, QUEUES } from '@coursecraft/shared';
 import { PgBoss } from 'pg-boss';
 import { createDatabase } from '../db/connection.js';
-import { createMigrator } from '../db/migrations/index.js';
+import { createMigrator, enforcePrivileges } from '../db/migrations/index.js';
 
 export interface MigrateResult {
   applied: string[];
@@ -19,6 +19,7 @@ export async function migrate(connectionString: string): Promise<MigrateResult> 
     const { error, results } = await createMigrator(db).migrateToLatest();
     if (error) throw error instanceof Error ? error : new Error('Migration failed', { cause: error });
     const applied = (results ?? []).filter((r) => r.status === 'Success').map((r) => r.migrationName);
+    await enforcePrivileges(db);
 
     const boss = new PgBoss({
       connectionString,

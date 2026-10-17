@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { readFileSync } from 'node:fs';
+import { backup, restore } from './cli/backup.js';
 import { initSecrets } from './cli/init-secrets.js';
 import { migrate } from './cli/migrate.js';
 import { createDatabase } from './db/connection.js';
@@ -18,6 +19,9 @@ Commands:
   migrate               Apply database migrations and create job queues
   init-secrets <dir>    Create missing secrets for all services (first start)
   setup-token           Create a new one-time setup token (invalidates the previous one)
+  backup                Write database and data volume to /data/backups (app container)
+  restore <file>        Replace database and data with a backup (maintenance container,
+                        app stopped), then apply newer migrations
 `;
 
 async function run(args: string[]): Promise<number> {
@@ -55,6 +59,31 @@ async function run(args: string[]): Promise<number> {
       } finally {
         await db.destroy();
       }
+      return 0;
+    }
+    case 'backup': {
+      const file = await backup({
+        databaseUrl: secretFromEnv('COURSECRAFT_DATABASE_URL'),
+        dataDir: process.env['COURSECRAFT_DATA_DIR'] ?? '/data',
+      });
+      console.log(`Backup written: ${file}`);
+      return 0;
+    }
+    case 'restore': {
+      const file = rest[0];
+      if (!file) {
+        console.error(USAGE);
+        return 2;
+      }
+      const url = secretFromEnv('COURSECRAFT_MIGRATOR_DATABASE_URL');
+      const manifest = await restore({
+        file,
+        databaseUrl: url,
+        dataDir: process.env['COURSECRAFT_DATA_DIR'] ?? '/data',
+      });
+      const { applied } = await migrate(url);
+      console.log(`Restored backup from ${manifest.createdAt} (${manifest.migration}).`);
+      if (applied.length) console.log(`Applied: ${applied.join(', ')}`);
       return 0;
     }
     default:
