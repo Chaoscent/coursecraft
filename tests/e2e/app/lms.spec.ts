@@ -131,6 +131,15 @@ test('learner completes an own course (cmi5) and a SCORM package; trainer sees t
   await page.getByRole('button', { name: 'Schließen' }).click();
   await expect(page.getByRole('row', { name: new RegExp(`SCORM ${tag}`) })).toContainText('Bestanden');
 
+  // A passed course offers a certificate as PDF.
+  const certificate = page.waitForEvent('download');
+  await page
+    .getByRole('row', { name: new RegExp(`SCORM ${tag}`) })
+    .getByRole('button', { name: 'Zertifikat' })
+    .click();
+  const pdf = await certificate;
+  expect(pdf.suggestedFilename()).toMatch(/^CC-[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}\.pdf$/);
+
   // Reopening resumes with the stored suspend data.
   await page
     .getByRole('row', { name: new RegExp(`SCORM ${tag}`) })

@@ -564,6 +564,17 @@ TOTP secrets, OIDC client secrets, and SMTP passwords. The API returns only
   hours, not completed) are claimed per assignment and learner in
   `assignment_notices`, so they go out once, also across app instances.
 
+## 12b. Certificates (Phase 8)
+
+- A learner whose attempt is passed (or completed without a failed result)
+  can issue a certificate for an assigned item: one per attempt, with a
+  snapshot of name, course title, result and completion date in
+  `certificates`, and a serial `CC-XXXX-XXXX-XXXX` (60 random bits).
+- The PDF is written by a small built-in writer (A4 landscape, standard
+  Helvetica, no embedded fonts, no compression, no dependency); text is
+  encoded as WinAnsi hex strings, other characters become "?". Owners and
+  people with `reports.read` may download it; everyone else gets "not found".
+
 ## 13. Privacy
 
 - Per-user export: ZIP with JSON and files (profile, sessions, registrations,

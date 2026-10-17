@@ -29,6 +29,14 @@ issue once the repository is published.
 - [ ] Trainers limited to their own groups (today: one organisation, all
       learners visible to `reports.read`).
 
+## Certificates
+
+- [ ] Public verification page for a serial number.
+- [ ] Course-specific templates (logo, signature) and embedded fonts for
+      names outside WinAnsi (needs a font-subsetting library with a
+      compatible license; `pdf-lib` was rejected because of its Zlib-licensed
+      `pako` dependency).
+
 ## AI adapter
 
 - [ ] Alt-text suggestions for images (vision-capable providers only).

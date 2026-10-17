@@ -109,3 +109,8 @@
   border-color: var(--color-focus);
   outline: var(--hairline) solid var(--color-focus);
 }
+
+.rowActions {
+  display: inline-flex;
+  gap: var(--space-1);
+}

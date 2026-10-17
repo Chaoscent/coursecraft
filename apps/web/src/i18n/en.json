@@ -124,7 +124,8 @@
     "action": "Action",
     "start": "Start",
     "continue": "Continue",
-    "review": "Review"
+    "review": "Review",
+    "certificate": "Certificate"
   },
   "account": {
     "title": "Account",

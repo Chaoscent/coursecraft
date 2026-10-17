@@ -23,6 +23,7 @@ import { libraryRoutes } from '../modules/library/routes.js';
 import { launchRoutes } from '../modules/lrs/routes.js';
 import { reportRoutes } from '../modules/reports/routes.js';
 import { aiRoutes } from '../modules/ai/routes.js';
+import { certificateRoutes } from '../modules/certificates/routes.js';
 import { mailRoutes } from '../modules/mail/routes.js';
 import { passwordResetRoutes } from '../modules/password-reset/routes.js';
 import { authRoutes } from '../modules/auth/routes.js';
@@ -168,6 +169,7 @@ export async function buildApp(deps: AppDeps): Promise<BuiltApp> {
     reportRoutes(app, ctx);
     aiRoutes(app, ctx);
     mailRoutes(app, ctx);
+    certificateRoutes(app, ctx);
     passwordResetRoutes(app, ctx);
     // Without a content origin, own courses play on the app origin.
     if (!config.contentUrl) await launchRoutes(app, ctx, { sameOrigin: true });

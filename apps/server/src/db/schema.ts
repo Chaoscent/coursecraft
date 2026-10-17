@@ -351,6 +351,19 @@ export interface AssignmentNoticesTable {
   sent_at: CreatedAt;
 }
 
+export interface CertificatesTable {
+  id: Generated<string>;
+  serial: string;
+  user_id: string;
+  registration_id: string;
+  library_item_id: string;
+  learner_name: string;
+  item_title: string;
+  score_scaled: number | null;
+  completed_at: Timestamp;
+  issued_at: CreatedAt;
+}
+
 export interface Database {
   settings: SettingsTable;
   kysely_migration: KyselyMigrationTable;
@@ -385,4 +398,5 @@ export interface Database {
   ai_usage: AiUsageTable;
   password_resets: PasswordResetsTable;
   assignment_notices: AssignmentNoticesTable;
+  certificates: CertificatesTable;
 }

@@ -1,14 +1,20 @@
 // SPDX-License-Identifier: Apache-2.0
-import { myItemsResponseSchema, type LearningStatus, type MyItem } from '@coursecraft/shared';
-import { useCallback } from 'react';
+import {
+  certificateSchema,
+  myItemsResponseSchema,
+  type LearningStatus,
+  type MyItem,
+} from '@coursecraft/shared';
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
-import { api } from '../api/client.js';
+import { api, download } from '../api/client.js';
 import { Badge } from '../components/Badge.js';
 import { Button } from '../components/Button.js';
 import { DataTable } from '../components/DataTable.js';
 import { Notice } from '../components/Notice.js';
 import { Page } from '../components/Page.js';
+import { errorMessage } from '../lib/errors.js';
 import { formatDateTime } from '../lib/format.js';
 import { useApi } from '../lib/useApi.js';
 import styles from './AdminPages.module.css';
@@ -29,11 +35,21 @@ export function HomePage() {
   const navigate = useNavigate();
   const fetcher = useCallback(() => api(myItemsResponseSchema, '/api/learn/items').then((r) => r.items), []);
   const { data = EMPTY, error } = useApi(fetcher);
+  const [certError, setCertError] = useState<string | null>(null);
+  const certificate = async (itemId: string) => {
+    setCertError(null);
+    try {
+      const cert = await api(certificateSchema, `/api/learn/items/${itemId}/certificate`, { method: 'POST' });
+      await download(`/api/certificates/${cert.id}/pdf`, `${cert.serial}.pdf`);
+    } catch (e) {
+      setCertError(errorMessage(e));
+    }
+  };
 
   return (
     <Page title={t('home.title')} meta={t('home.count', { count: data.length })}>
       <div className={styles.stack}>
-        {error ? <Notice tone="danger">{error}</Notice> : <span />}
+        {(error ?? certError) ? <Notice tone="danger">{error ?? certError}</Notice> : <span />}
         <DataTable
           label={t('home.title')}
           rows={data}
@@ -67,13 +83,20 @@ export function HomePage() {
               id: 'action',
               label: t('home.action'),
               render: (i) => (
-                <Button onPress={() => void navigate(`/learn/${i.id}`)}>
-                  {i.status === 'not_started'
-                    ? t('home.start')
-                    : i.status === 'in_progress'
-                      ? t('home.continue')
-                      : t('home.review')}
-                </Button>
+                <span className={styles.rowActions}>
+                  <Button onPress={() => void navigate(`/learn/${i.id}`)}>
+                    {i.status === 'not_started'
+                      ? t('home.start')
+                      : i.status === 'in_progress'
+                        ? t('home.continue')
+                        : t('home.review')}
+                  </Button>
+                  {i.status === 'passed' || i.status === 'completed' ? (
+                    <Button icon="award" onPress={() => void certificate(i.id)}>
+                      {t('home.certificate')}
+                    </Button>
+                  ) : null}
+                </span>
               ),
             },
           ]}
