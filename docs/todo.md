@@ -29,6 +29,13 @@ issue once the repository is published.
 - [ ] Trainers limited to their own groups (today: one organisation, all
       learners visible to `reports.read`).
 
+## Learning paths
+
+- [ ] E-mail notice when a path is assigned, and reminders for path due
+      dates.
+- [ ] Path overview in reports (progress per learner across steps).
+- [ ] Prerequisites that are not a plain sequence (several courses before one).
+
 ## Certificates
 
 - [ ] Public verification page for a serial number.

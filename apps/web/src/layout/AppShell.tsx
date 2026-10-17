@@ -108,6 +108,7 @@ export function AppShell() {
       group: t('nav.manage'),
       entries: [
         { to: '/library', icon: 'gallery-vertical-end', label: t('nav.library'), permission: 'library.view' },
+        { to: '/paths', icon: 'route', label: t('nav.paths'), permission: 'library.view' },
         { to: '/grading', icon: 'square-check', label: t('nav.grading'), permission: 'grading.perform' },
       ],
     },

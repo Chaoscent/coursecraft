@@ -19,6 +19,7 @@ import { SetupPage } from '../pages/SetupPage.js';
 import { UsersPage } from '../pages/UsersPage.js';
 import { GradingPage } from '../pages/GradingPage.js';
 import { LibraryPage } from '../pages/LibraryPage.js';
+import { PathsPage } from '../pages/PathsPage.js';
 import { PlayerPage } from '../pages/PlayerPage.js';
 import { ReportPage } from '../pages/ReportPage.js';
 
@@ -84,6 +85,14 @@ const router = createBrowserRouter([
         element: (
           <Allowed permission="library.view">
             <LibraryPage />
+          </Allowed>
+        ),
+      },
+      {
+        path: 'paths',
+        element: (
+          <Allowed permission="library.view">
+            <PathsPage />
           </Allowed>
         ),
       },

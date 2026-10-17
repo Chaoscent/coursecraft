@@ -114,3 +114,24 @@
   display: inline-flex;
   gap: var(--space-1);
 }
+
+.pathSteps {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pathSteps li,
+.pickRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.pathStepTitle,
+.pickRow > span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

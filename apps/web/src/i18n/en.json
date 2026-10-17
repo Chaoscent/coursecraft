@@ -43,7 +43,8 @@
     "library": "Library",
     "grading": "Grading",
     "ai": "AI",
-    "mail": "E-mail"
+    "mail": "E-mail",
+    "paths": "Learning paths"
   },
   "roles": {
     "admin": "Administrator",
@@ -125,7 +126,9 @@
     "start": "Start",
     "continue": "Continue",
     "review": "Review",
-    "certificate": "Certificate"
+    "certificate": "Certificate",
+    "pathStep": "Path “{{path}}”, step {{step}} of {{steps}}",
+    "locked": "Locked: finish the earlier steps first"
   },
   "account": {
     "title": "Account",
@@ -1100,5 +1103,31 @@
     "save": "Save password",
     "backToLogin": "Back to sign-in",
     "sent": "If an account exists for this address, a link is on its way. It is valid for 60 minutes."
+  },
+  "paths": {
+    "title": "Learning paths",
+    "count_one": "{{count}} path",
+    "count_other": "{{count}} paths",
+    "new": "New path …",
+    "edit": "Edit …",
+    "assign": "Assign …",
+    "delete": "Delete",
+    "deleteConfirm": "Delete path “{{name}}” with all assignments? The courses are kept.",
+    "empty": "No learning paths yet.",
+    "name": "Name",
+    "description": "Description",
+    "sequential": "Courses in order: later courses stay locked until the earlier ones are passed or completed",
+    "archived": "Archived (no longer visible to assigned learners)",
+    "steps": "Courses",
+    "noSteps": "No courses in the path yet.",
+    "addStep": "Add course",
+    "nothingToAdd": "No more courses in the library.",
+    "removeStep": "Remove “{{title}}”",
+    "addNamed": "Add “{{title}}”",
+    "mode": "Order",
+    "inOrder": "In order",
+    "anyOrder": "Any order",
+    "assignments": "Assignments",
+    "archivedBadge": "Archived"
   }
 }

@@ -4,8 +4,9 @@ import type { Kysely } from 'kysely';
 import { hashToken, randomToken } from '../../crypto/tokens.js';
 import type { Database } from '../../db/schema.js';
 import type { AppContext, AuthState } from '../../http/context.js';
-import { notFound } from '../../http/errors.js';
+import { forbidden, notFound } from '../../http/errors.js';
 import type { PackageManifest } from '../library/manifest.js';
+import { assignedPathSteps, lockedItems, pathOf } from './paths.js';
 import { applyOutcome, fromScorm, learningStatus } from './projection.js';
 
 /** A launch stays valid for 15 minutes after the last heartbeat, 12 hours at most. */
@@ -33,6 +34,7 @@ export async function groupsWithAncestors(db: Kysely<Database>, userId: string):
 /** Library items assigned to the user (directly or through groups), with the earliest due date. */
 async function assignedItems(db: Kysely<Database>, userId: string) {
   const groups = await groupsWithAncestors(db, userId);
+  const steps = await assignedPathSteps(db, userId, groups);
   const rows = await db
     .selectFrom('assignments')
     .innerJoin('library_items', 'library_items.id', 'assignments.library_item_id')
@@ -57,7 +59,27 @@ async function assignedItems(db: Kysely<Database>, userId: string) {
     const known = items.get(row.id);
     if (!known || (row.due_at && (!known.due_at || row.due_at < known.due_at))) items.set(row.id, row);
   }
-  return items;
+  const direct = new Set(items.keys());
+  // Courses of assigned paths: the path's due date counts like an assignment's.
+  const viaPath = [...new Set(steps.map((s) => s.itemId))];
+  if (viaPath.length) {
+    const extra = await db
+      .selectFrom('library_items')
+      .innerJoin('packages', 'packages.id', 'library_items.package_id')
+      .select(['library_items.id', 'library_items.title', 'library_items.description', 'packages.kind'])
+      .where('library_items.id', 'in', viaPath)
+      .where('library_items.status', '=', 'active')
+      .execute();
+    for (const e of extra) {
+      const due = steps
+        .filter((s) => s.itemId === e.id)
+        .reduce<Date | null>((min, s) => (s.dueAt && (!min || s.dueAt < min) ? s.dueAt : min), null);
+      const known = items.get(e.id);
+      if (!known) items.set(e.id, { ...e, due_at: due });
+      else if (due && (!known.due_at || due < known.due_at)) items.set(e.id, { ...known, due_at: due });
+    }
+  }
+  return { items, direct, steps };
 }
 
 async function latestRegistration(db: Kysely<Database>, userId: string, itemId: string) {
@@ -72,7 +94,8 @@ async function latestRegistration(db: Kysely<Database>, userId: string, itemId: 
 }
 
 export async function myItems(ctx: AppContext, auth: AuthState): Promise<MyItem[]> {
-  const items = await assignedItems(ctx.db, auth.userId);
+  const { items, direct, steps } = await assignedItems(ctx.db, auth.userId);
+  const locked = await lockedItems(ctx.db, auth.userId, steps, direct);
   const out: MyItem[] = [];
   for (const item of items.values()) {
     const reg = await latestRegistration(ctx.db, auth.userId, item.id);
@@ -89,6 +112,8 @@ export async function myItems(ctx: AppContext, auth: AuthState): Promise<MyItem[
       scoreScaled: reg?.score_scaled ?? null,
       attempt: reg?.attempt ?? 0,
       lastActivityAt: reg?.last_activity_at.toISOString() ?? null,
+      path: pathOf(steps, item.id),
+      locked: locked.has(item.id),
     });
   }
   return out.sort(
@@ -132,8 +157,11 @@ export async function launch(
   itemId: string,
   newAttempt: boolean,
 ): Promise<LaunchResponse> {
-  const item = (await assignedItems(ctx.db, auth.userId)).get(itemId);
+  const assigned = await assignedItems(ctx.db, auth.userId);
+  const item = assigned.items.get(itemId);
   if (!item) throw notFound('Item not found');
+  if ((await lockedItems(ctx.db, auth.userId, assigned.steps, assigned.direct)).has(itemId))
+    throw forbidden('Complete the earlier steps of the path first');
   const current = await ctx.db
     .selectFrom('library_items')
     .select('package_id')

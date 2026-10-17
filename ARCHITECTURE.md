@@ -575,6 +575,19 @@ TOTP secrets, OIDC client secrets, and SMTP passwords. The API returns only
   encoded as WinAnsi hex strings, other characters become "?". Owners and
   people with `reports.read` may download it; everyone else gets "not found".
 
+## 12c. Learning paths (Phase 8)
+
+- A path is an ordered list of library items (`learning_paths`, `path_steps`)
+  and is assigned to users and groups (`path_assignments`, subgroups
+  included), with a due date, like a single item. Assigned paths make their
+  courses visible in the learner portal; the path's due date counts like an
+  assignment's, and the earliest date wins.
+- Sequential paths lock later steps until every earlier step is passed or
+  completed (any attempt, not failed). A course that is also assigned
+  directly, or part of a non-sequential path, is never locked. The server
+  enforces the lock when the launch is requested (403), not only the UI.
+- Archived paths and archived courses disappear from learners' view.
+
 ## 13. Privacy
 
 - Per-user export: ZIP with JSON and files (profile, sessions, registrations,

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { z } from 'zod';
 import { uuidSchema } from './common.js';
+import { myPathSchema } from './paths.js';
 
 export const PACKAGE_KINDS = ['coursecraft', 'scorm12', 'scorm2004', 'xapi', 'cmi5'] as const;
 export const packageKindSchema = z.enum(PACKAGE_KINDS);
@@ -100,6 +101,10 @@ export const myItemSchema = z.object({
   scoreScaled: z.number().nullable(),
   attempt: z.number().int(),
   lastActivityAt: z.string().nullable(),
+  /** First path that contains the course, if it is part of one. */
+  path: myPathSchema.nullable(),
+  /** Earlier steps of a sequential path are not done yet. */
+  locked: z.boolean(),
 });
 export type MyItem = z.infer<typeof myItemSchema>;
 export const myItemsResponseSchema = z.object({ items: z.array(myItemSchema) });

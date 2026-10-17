@@ -56,7 +56,22 @@ export function HomePage() {
           onRowAction={(id) => void navigate(`/learn/${id}`)}
           empty={t('home.empty')}
           columns={[
-            { id: 'title', label: t('home.course'), isRowHeader: true, render: (i) => i.title },
+            {
+              id: 'title',
+              label: t('home.course'),
+              isRowHeader: true,
+              render: (i) => (
+                <>
+                  {i.title}
+                  {i.path ? (
+                    <span className={styles.muted}>
+                      {' '}
+                      · {t('home.pathStep', { path: i.path.title, step: i.path.step, steps: i.path.steps })}
+                    </span>
+                  ) : null}
+                </>
+              ),
+            },
             {
               id: 'status',
               label: t('home.status'),
@@ -84,13 +99,14 @@ export function HomePage() {
               label: t('home.action'),
               render: (i) => (
                 <span className={styles.rowActions}>
-                  <Button onPress={() => void navigate(`/learn/${i.id}`)}>
+                  <Button isDisabled={i.locked} onPress={() => void navigate(`/learn/${i.id}`)}>
                     {i.status === 'not_started'
                       ? t('home.start')
                       : i.status === 'in_progress'
                         ? t('home.continue')
                         : t('home.review')}
                   </Button>
+                  {i.locked ? <span className={styles.muted}>{t('home.locked')}</span> : null}
                   {i.status === 'passed' || i.status === 'completed' ? (
                     <Button icon="award" onPress={() => void certificate(i.id)}>
                       {t('home.certificate')}

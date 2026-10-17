@@ -43,7 +43,8 @@
     "library": "Bibliothek",
     "grading": "Bewertung",
     "ai": "KI",
-    "mail": "E-Mail"
+    "mail": "E-Mail",
+    "paths": "Lernpfade"
   },
   "roles": {
     "admin": "Administration",
@@ -125,7 +126,9 @@
     "start": "Starten",
     "continue": "Fortsetzen",
     "review": "Ansehen",
-    "certificate": "Zertifikat"
+    "certificate": "Zertifikat",
+    "pathStep": "Pfad „{{path}}“, Schritt {{step}} von {{steps}}",
+    "locked": "Gesperrt: vorherige Schritte zuerst"
   },
   "account": {
     "title": "Konto",
@@ -1100,5 +1103,31 @@
     "save": "Passwort speichern",
     "backToLogin": "Zur Anmeldung",
     "sent": "Wenn ein Konto zu dieser Adresse existiert, ist ein Link unterwegs. Er gilt 60 Minuten."
+  },
+  "paths": {
+    "title": "Lernpfade",
+    "count_one": "{{count}} Pfad",
+    "count_other": "{{count}} Pfade",
+    "new": "Neuer Pfad …",
+    "edit": "Bearbeiten …",
+    "assign": "Zuweisen …",
+    "delete": "Löschen",
+    "deleteConfirm": "Pfad „{{name}}“ mit allen Zuweisungen löschen? Die Kurse bleiben erhalten.",
+    "empty": "Noch keine Lernpfade.",
+    "name": "Name",
+    "description": "Beschreibung",
+    "sequential": "Kurse der Reihe nach: spätere Kurse bleiben gesperrt, bis die vorherigen bestanden oder abgeschlossen sind",
+    "archived": "Archiviert (nicht mehr zugewiesen sichtbar)",
+    "steps": "Kurse",
+    "noSteps": "Noch keine Kurse im Pfad.",
+    "addStep": "Kurs hinzufügen",
+    "nothingToAdd": "Keine weiteren Kurse in der Bibliothek.",
+    "removeStep": "„{{title}}“ entfernen",
+    "addNamed": "„{{title}}“ hinzufügen",
+    "mode": "Ablauf",
+    "inOrder": "Der Reihe nach",
+    "anyOrder": "Beliebig",
+    "assignments": "Zuweisungen",
+    "archivedBadge": "Archiviert"
   }
 }

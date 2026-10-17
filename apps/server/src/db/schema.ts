@@ -364,6 +364,33 @@ export interface CertificatesTable {
   issued_at: CreatedAt;
 }
 
+export interface LearningPathsTable {
+  id: Generated<string>;
+  title: string;
+  description: ColumnType<string, string | undefined, string>;
+  sequential: ColumnType<boolean, boolean | undefined, boolean>;
+  status: ColumnType<'active' | 'archived', 'active' | 'archived' | undefined, 'active' | 'archived'>;
+  created_by: string | null;
+  created_at: CreatedAt;
+  updated_at: DefaultedTimestamp;
+}
+
+export interface PathStepsTable {
+  path_id: string;
+  position: number;
+  library_item_id: string;
+}
+
+export interface PathAssignmentsTable {
+  id: Generated<string>;
+  path_id: string;
+  user_id: string | null;
+  group_id: string | null;
+  due_at: Date | null;
+  created_by: string | null;
+  created_at: CreatedAt;
+}
+
 export interface Database {
   settings: SettingsTable;
   kysely_migration: KyselyMigrationTable;
@@ -399,4 +426,7 @@ export interface Database {
   password_resets: PasswordResetsTable;
   assignment_notices: AssignmentNoticesTable;
   certificates: CertificatesTable;
+  learning_paths: LearningPathsTable;
+  path_steps: PathStepsTable;
+  path_assignments: PathAssignmentsTable;
 }

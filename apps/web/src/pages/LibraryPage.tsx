@@ -29,7 +29,16 @@ import styles from './AdminPages.module.css';
 
 const EMPTY: LibraryItem[] = [];
 
-function AssignDialog({ item, onClose }: { item: LibraryItem; onClose: () => void }) {
+/** Assignment dialog for library items and learning paths (`base` is the API prefix). */
+export function AssignDialog({
+  item,
+  onClose,
+  base = '/api/library',
+}: {
+  item: { id: string; title: string };
+  onClose: () => void;
+  base?: '/api/library' | '/api/paths';
+}) {
   const { t } = useTranslation();
   const [q, setQ] = useState('');
   const [users, setUsers] = useState<Set<string>>(new Set());
@@ -48,8 +57,8 @@ function AssignDialog({ item, onClose }: { item: LibraryItem; onClose: () => voi
   );
   const existing = useApi(
     useCallback(
-      () => api(assignmentsResponseSchema, `/api/library/${item.id}/assignments`).then((r) => r.items),
-      [item.id],
+      () => api(assignmentsResponseSchema, `${base}/${item.id}/assignments`).then((r) => r.items),
+      [base, item.id],
     ),
   );
   const toggle = (set: Set<string>, id: string, on: boolean) => {
@@ -60,13 +69,13 @@ function AssignDialog({ item, onClose }: { item: LibraryItem; onClose: () => voi
   };
   const save = async () => {
     try {
-      await api(z.object({ count: z.number() }), `/api/library/${item.id}/assignments`, {
+      await api(z.object({ count: z.number() }), `${base}/${item.id}/assignments`, {
         method: 'POST',
         body: {
           userIds: [...users],
           groupIds: [...groups],
           dueAt: due ? new Date(`${due}T23:59:00`).toISOString() : null,
-          notify,
+          notify: base === '/api/library' && notify,
         },
       });
       setUsers(new Set());
@@ -122,11 +131,13 @@ function AssignDialog({ item, onClose }: { item: LibraryItem; onClose: () => voi
           </div>
         </FormRow>
         <TextField label={t('library.dueDate')} type="date" value={due} onChange={setDue} />
-        <FormRow label="">
-          <Checkbox isSelected={notify} onChange={setNotify}>
-            {t('library.notify')}
-          </Checkbox>
-        </FormRow>
+        {base === '/api/library' ? (
+          <FormRow label="">
+            <Checkbox isSelected={notify} onChange={setNotify}>
+              {t('library.notify')}
+            </Checkbox>
+          </FormRow>
+        ) : null}
       </FormGrid>
       <h3 className={styles.sectionTitle}>{t('library.current')}</h3>
       <DataTable
@@ -144,7 +155,7 @@ function AssignDialog({ item, onClose }: { item: LibraryItem; onClose: () => voi
               <Button
                 icon="trash-2"
                 onPress={() =>
-                  void api(okSchema, `/api/library/${item.id}/assignments/${a.id}`, { method: 'DELETE' })
+                  void api(okSchema, `${base}/${item.id}/assignments/${a.id}`, { method: 'DELETE' })
                     .then(() => existing.reload())
                     .catch((e: unknown) => setError(errorMessage(e)))
                 }
