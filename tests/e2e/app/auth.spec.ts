@@ -70,7 +70,7 @@ test.describe('application', () => {
     await expect(dialog).toBeHidden();
     await expect(page.getByRole('rowheader', { name: `Learner ${browserName}` })).toBeVisible();
 
-    await page.getByRole('button', { name: 'Datei' }).click();
+    await page.getByRole('navigation', { name: 'Hauptmenü' }).getByRole('button').last().click();
     await page.getByRole('menuitem', { name: 'Abmelden' }).click();
     await expect(page).toHaveURL(/\/login$/);
 
@@ -99,7 +99,7 @@ test.describe('application', () => {
       await page.getByRole('link', { name: link }).click();
       await expect(page.getByRole('heading', { name: heading, exact: true })).toBeVisible();
     }
-    await page.getByRole('button', { name: 'Datei' }).click();
+    await page.getByRole('navigation', { name: 'Hauptmenü' }).getByRole('button').last().click();
     await page.getByRole('menuitem', { name: 'Konto …' }).click();
     await expect(page.getByRole('heading', { name: 'Konto' })).toBeVisible();
     await page.locator('body').press('?');

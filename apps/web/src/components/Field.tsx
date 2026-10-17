@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Checkbox as AriaCheckbox,
   FieldError,
@@ -40,12 +41,37 @@ interface TextProps {
   name?: string;
 }
 
-export function TextField({ label, description, errorMessage, multiline, ...props }: TextProps) {
+export function TextField({ label, description, errorMessage, multiline, type, ...props }: TextProps) {
+  const { t } = useTranslation();
+  const [revealed, setRevealed] = useState(false);
+  const secret = type === 'password';
   return (
-    <AriaTextField {...props} className={styles.field} isInvalid={!!errorMessage} validationBehavior="aria">
+    <AriaTextField
+      {...props}
+      {...(type ? { type: secret && revealed ? 'text' : type } : {})}
+      className={styles.field}
+      isInvalid={!!errorMessage}
+      validationBehavior="aria"
+    >
       <Label className={styles.label}>{label}</Label>
       <div className={styles.control}>
-        {multiline ? <TextArea className={styles.textarea} /> : <Input className={styles.input} />}
+        {multiline ? (
+          <TextArea className={styles.textarea} />
+        ) : secret ? (
+          <div className={styles.secret}>
+            <Input className={styles.input} />
+            <AriaButton
+              className={styles.reveal}
+              aria-pressed={revealed}
+              aria-label={revealed ? t('fields.hideSecret') : t('fields.showSecret')}
+              onPress={() => setRevealed(!revealed)}
+            >
+              <Icon name={revealed ? 'eye-off' : 'eye'} />
+            </AriaButton>
+          </div>
+        ) : (
+          <Input className={styles.input} />
+        )}
         {description ? (
           <Text slot="description" className={styles.description}>
             {description}

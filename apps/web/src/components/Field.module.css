@@ -134,3 +134,30 @@
 .checkbox[data-disabled] {
   color: var(--color-text-disabled);
 }
+
+.secret {
+  position: relative;
+}
+.secret .input {
+  padding-right: calc(var(--control-height) + var(--space-1));
+}
+.reveal {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: var(--control-height);
+  height: var(--control-height);
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: none;
+  color: var(--color-text-muted);
+  outline: none;
+}
+.reveal[data-hovered] {
+  color: var(--color-text);
+}
+.reveal[data-focus-visible] {
+  outline: var(--focus-width) solid var(--color-focus);
+  outline-offset: -2px;
+}

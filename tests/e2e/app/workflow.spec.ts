@@ -41,3 +41,13 @@ test('the ribbon offers quiz, survey, interaction and dialog; Ctrl+M adds a slid
   await expect(slides).toHaveCount(before + 1);
   expect(problems).toEqual([]);
 });
+
+test('password fields can be revealed with the eye button', async ({ page }) => {
+  await page.goto('/login');
+  const field = page.getByLabel('Passwort', { exact: true });
+  await expect(field).toHaveAttribute('type', 'password');
+  await page.getByRole('button', { name: 'Anzeigen' }).click();
+  await expect(field).toHaveAttribute('type', 'text');
+  await page.getByRole('button', { name: 'Verbergen' }).click();
+  await expect(field).toHaveAttribute('type', 'password');
+});

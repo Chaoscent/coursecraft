@@ -102,6 +102,8 @@
   },
   "fields": {
     "email": "E-Mail",
+    "showSecret": "Anzeigen",
+    "hideSecret": "Verbergen",
     "password": "Passwort",
     "displayName": "Name",
     "passwordRepeat": "Wiederholen",

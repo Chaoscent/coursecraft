@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { Permission } from '@coursecraft/shared';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
   Button as AriaButton,
   Menu,
@@ -34,11 +34,19 @@ interface MenuEntry {
   onAction: () => void;
 }
 
-function TopMenu({ label, items }: { label: string; items: (MenuEntry | 'separator')[] }) {
+function TopMenu({
+  label,
+  items,
+  align = 'bottom start',
+}: {
+  label: ReactNode;
+  items: (MenuEntry | 'separator')[];
+  align?: 'bottom start' | 'bottom end';
+}) {
   return (
     <MenuTrigger>
       <AriaButton className={styles.menuButton}>{label}</AriaButton>
-      <Popover className={styles.menuPopover} placement="bottom start" offset={0}>
+      <Popover className={styles.menuPopover} placement={align} offset={0}>
         <Menu
           className={styles.menu}
           onAction={(key: Key) =>
@@ -130,14 +138,6 @@ export function AppShell() {
       <nav className={styles.menubar} aria-label={t('shell.mainMenu')}>
         <span className={styles.brand}>{t('app.name')}</span>
         <TopMenu
-          label={t('menu.file')}
-          items={[
-            { id: 'account', label: t('menu.account'), onAction: () => void navigate('/account') },
-            'separator',
-            { id: 'logout', label: t('menu.logout'), onAction: () => void logout() },
-          ]}
-        />
-        <TopMenu
           label={t('menu.view')}
           items={[
             { id: 'light', label: t('menu.themeLight'), onAction: () => setTheme('light') },
@@ -152,10 +152,20 @@ export function AppShell() {
           ]}
         />
         <span className={styles.spacer} />
-        <span className={styles.user}>
-          <Icon name="user" />
-          {user.displayName}
-        </span>
+        <TopMenu
+          align="bottom end"
+          label={
+            <span className={styles.user}>
+              <Icon name="user" />
+              {user.displayName}
+            </span>
+          }
+          items={[
+            { id: 'account', label: t('menu.account'), onAction: () => void navigate('/account') },
+            'separator',
+            { id: 'logout', label: t('menu.logout'), onAction: () => void logout() },
+          ]}
+        />
       </nav>
 
       <div className={styles.body}>
