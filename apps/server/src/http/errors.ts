@@ -13,6 +13,8 @@ const STATUS: Record<ErrorCode, number> = {
   payload_too_large: 413,
   unsupported_media_type: 415,
   invalid_file: 422,
+  quota_exceeded: 429,
+  upstream_failed: 502,
   internal: 500,
 };
 

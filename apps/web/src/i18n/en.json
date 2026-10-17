@@ -41,7 +41,8 @@
     "courses": "Courses",
     "manage": "Learning management",
     "library": "Library",
-    "grading": "Grading"
+    "grading": "Grading",
+    "ai": "AI"
   },
   "roles": {
     "admin": "Administrator",
@@ -266,6 +267,8 @@
     "payload_too_large": "The file is too large.",
     "unsupported_media_type": "This format is not supported.",
     "invalid_file": "The file is damaged or cannot be read.",
+    "quota_exceeded": "The daily quota for AI requests is used up.",
+    "upstream_failed": "The AI service did not answer, or not usably.",
     "internal": "Unexpected error. Please try again.",
     "network": "Server not reachable."
   },
@@ -340,7 +343,8 @@
       "align": "Align",
       "view": "View",
       "output": "Output",
-      "insert": "Insert"
+      "insert": "Insert",
+      "ai": "AI"
     },
     "menu": {
       "edit": "Edit",
@@ -956,5 +960,90 @@
     "processingHint": "The video is being converted (MP4 and WebM). Depending on its length this can take a few minutes.",
     "failed": "The video could not be converted.",
     "recordFailed": "The recording failed. Please try again."
+  },
+  "ai": {
+    "title": "AI providers",
+    "count_one": "{{count}} provider",
+    "count_other": "{{count}} providers",
+    "providers": "Providers",
+    "newProvider": "New provider …",
+    "editProvider": "Edit …",
+    "deleteProvider": "Delete",
+    "deleteConfirm": "Delete provider “{{name}}” with all personal keys?",
+    "name": "Name",
+    "kind": "Interface",
+    "kinds": {
+      "anthropic": "Anthropic Messages API",
+      "openai": "OpenAI-compatible (also Ollama, llama.cpp, vLLM)"
+    },
+    "baseUrl": "Base URL",
+    "baseUrlAnthropic": "e.g. https://api.anthropic.com",
+    "baseUrlOpenai": "e.g. https://api.openai.com/v1 or http://ollama:11434/v1",
+    "model": "Model",
+    "key": "API key",
+    "keyHint": "Stored encrypted and never shown again.",
+    "keyStored": "Stored, ends in {{last4}}. Leave empty to keep it.",
+    "removeKey": "Remove key",
+    "dailyQuota": "Daily quota",
+    "dailyQuotaHint": "Requests per person and day; empty = unlimited.",
+    "allowUserKeys": "Allow personal keys",
+    "enabled": "Active",
+    "status": "Status",
+    "on": "Active",
+    "off": "Off",
+    "empty": "No providers set up. Without a provider there are no AI features and no outbound requests.",
+    "offByOperator": "The AI adapter is switched off. Operators can allow it with LERNWERK_AI_ENABLED=true.",
+    "privacyNote": "Course content goes to a provider only after an author has seen and confirmed the exact request. The audit log keeps metadata only.",
+    "userKeys": "AI keys",
+    "userKeysHint": "You can store your own API key for these providers. It is stored encrypted and used before the shared key.",
+    "userKeyFor": "Own key for {{name}}",
+    "userKeySaved": "Key saved.",
+    "userKeyRemoved": "Key removed.",
+    "assistant": "AI assistant",
+    "ribbon": "AI assistant",
+    "provider": "Provider",
+    "providerRemaining": "{{name}} ({{model}}), {{n}} left today",
+    "task": "Task",
+    "tasks": {
+      "rewrite": "Revise text",
+      "questions": "Create quiz questions from text"
+    },
+    "mode": "Kind",
+    "modes": {
+      "simplify": "Simplify",
+      "shorten": "Shorten",
+      "correct": "Fix spelling",
+      "formal": "More neutral tone",
+      "translate": "Translate"
+    },
+    "targetLang": "Target language",
+    "langs": {
+      "de": "German",
+      "en": "English",
+      "fr": "French",
+      "es": "Spanish",
+      "it": "Italian",
+      "nl": "Dutch",
+      "pl": "Polish",
+      "tr": "Turkish"
+    },
+    "selectTextHint": "Select a text box on the slide to apply the result directly.",
+    "count": "Number of questions",
+    "sourceText": "Source text",
+    "sourceHint": "{{n}} of at most {{max}} characters. Only this text is sent.",
+    "tooLong": "The text is too long.",
+    "showPreview": "Review request …",
+    "back": "Back",
+    "send": "Send",
+    "sending": "Sending …",
+    "previewNotice": "This request goes to {{provider}}. It leaves the server only when you press “Send”.",
+    "endpoint": "Target",
+    "requestBody": "Request (JSON)",
+    "result": "Result",
+    "draftNotice": "AI results are drafts. Check them before you use them.",
+    "replaceText": "Replace text",
+    "insertQuiz": "Insert as quiz",
+    "quizTitle": "Quiz (AI draft)",
+    "correct": "correct"
   }
 }

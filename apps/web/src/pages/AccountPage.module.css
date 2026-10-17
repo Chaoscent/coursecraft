@@ -24,3 +24,9 @@
   text-overflow: ellipsis;
   vertical-align: bottom;
 }
+.inlineForm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-2);
+}

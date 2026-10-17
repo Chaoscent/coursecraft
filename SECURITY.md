@@ -197,6 +197,34 @@ change:
   must be relative and exist; external launch URLs are refused. Files are
   served only after an `O_NOFOLLOW` check inside the package directory.
 
+## 5b. Optional AI adapter
+
+- Off unless the operator sets `LERNWERK_AI_ENABLED=true` and an
+  administrator configures an enabled provider. Without both there is no AI
+  UI and no AI request; configuration attempts are refused.
+- Only administrators (`settings.manage`) set base URLs; users can store a
+  personal key for a provider that allows it, never a URL. Base URLs carry no
+  credentials, query or fragment. Requests do not follow redirects
+  (`redirect: 'error'`), have a timeout and a 1 MB response cap.
+- Keys (shared and personal) are sealed with AES-256-GCM (AAD bound to the
+  provider, and to the user for personal keys); the API returns only `set`
+  and the last four characters; audit entries record only that a key
+  changed.
+- Two steps: `POST /api/ai/preview` builds the exact request body from a
+  fixed server-side prompt and the author's text, stores it (10 minutes,
+  bound to the user and course) and returns it for review; nothing leaves the
+  server. `POST /api/ai/run` sends exactly that stored body once and deletes
+  it. Authors need edit rights on the course for both steps.
+- Course text goes into the user message, marked as content; the prompt
+  tells the model to treat it as data. Responses are untrusted: Zod shapes,
+  length limits, invalid questions dropped; results are drafts the author
+  accepts or discards, rendered as text (no HTML).
+- Rate limit per user and minute, optional daily quota per user and
+  provider. Audit entry `ai.request` with metadata only (provider, model,
+  task, character counts, duration, outcome); never prompts or responses.
+- Tests run behind an egress guard (fetch and socket connects to anything
+  but loopback fail), and the AI tests talk to fake providers on loopback.
+
 ## 8. Known limitations
 
 - Third-party packages run arbitrary JavaScript on the content origin. They
@@ -213,6 +241,9 @@ change:
 - Report CSV files prefix cells starting with `= + - @` so spreadsheets do
   not evaluate them (CSV injection).
 - The converter role can read all job payloads in the `pgboss` schema.
+- AI base URLs may point to private addresses on purpose (local model
+  servers such as Ollama). This is an administrator decision; the app does
+  not resolve and block private ranges.
   Payloads therefore contain only ids, file names, and parameters.
 - Plain-HTTP deployments are not supported (`__Host-` cookies require HTTPS,
   except on `localhost`).

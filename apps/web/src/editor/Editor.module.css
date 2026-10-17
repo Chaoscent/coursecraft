@@ -1136,3 +1136,36 @@
   color: var(--color-danger);
   font-variant-numeric: tabular-nums;
 }
+.aiPreview {
+  display: grid;
+  gap: var(--space-2);
+}
+.aiMeta {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-1) var(--space-2);
+  margin: 0;
+}
+.aiMeta dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.aiBody {
+  width: 100%;
+  min-height: 260px;
+  padding: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  background: var(--color-panel);
+  border: var(--hairline) solid var(--color-border-strong);
+  resize: vertical;
+}
+.aiQuestions {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding-left: var(--space-4);
+}
+.aiCorrect {
+  font-weight: 600;
+}

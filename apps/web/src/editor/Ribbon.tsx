@@ -180,10 +180,13 @@ export function Ribbon({
   onPreview,
   onExport,
   onVideo,
+  onAi,
 }: {
   onPreview: () => void;
   onExport: () => void;
   onVideo: (mode: 'record' | 'file') => void;
+  /** Present only when an AI provider is ready for this user. */
+  onAi?: (() => void) | undefined;
 }) {
   const { t } = useTranslation();
   const store = useEditorStore();
@@ -210,6 +213,13 @@ export function Ribbon({
           {t('editor.preview')}
         </ToolButton>
       </Group>
+      {onAi ? (
+        <Group label={t('editor.groups.ai')}>
+          <ToolButton icon="message-square" large isDisabled={readOnly} onPress={onAi}>
+            {t('ai.ribbon')}
+          </ToolButton>
+        </Group>
+      ) : null}
       <Group label={t('editor.groups.output')}>
         <ToolButton icon="upload" large onPress={onExport}>
           {t('editor.export')}

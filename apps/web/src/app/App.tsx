@@ -5,6 +5,7 @@ import { createBrowserRouter, Navigate, RouterProvider } from 'react-router';
 import { SessionProvider, useSession } from '../api/session.js';
 import { AppShell } from '../layout/AppShell.js';
 import { AccountPage } from '../pages/AccountPage.js';
+import { AiPage } from '../pages/AiPage.js';
 import { AuditPage } from '../pages/AuditPage.js';
 import { EditorPage } from '../editor/EditorPage.js';
 import { ChangePasswordPage } from '../pages/ChangePasswordPage.js';
@@ -112,6 +113,14 @@ const router = createBrowserRouter([
         element: (
           <Allowed permission="groups.manage">
             <GroupsPage />
+          </Allowed>
+        ),
+      },
+      {
+        path: 'admin/ai',
+        element: (
+          <Allowed permission="settings.manage">
+            <AiPage />
           </Allowed>
         ),
       },

@@ -7,3 +7,4 @@ export * from './audit.js';
 export * from './courses.js';
 export * from './conversions.js';
 export * from './library.js';
+export * from './ai.js';

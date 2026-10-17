@@ -294,6 +294,49 @@ export interface QuizResponsesTable {
   answered_at: DefaultedTimestamp;
 }
 
+export interface AiProvidersTable {
+  id: Generated<string>;
+  name: string;
+  kind: 'anthropic' | 'openai';
+  base_url: string;
+  model: string;
+  enabled: Generated<boolean>;
+  allow_user_keys: Generated<boolean>;
+  daily_quota: number | null;
+  api_key: JSONColumnType<SealedJson | null, string | null | undefined, string | null>;
+  api_key_last4: string | null;
+  created_at: CreatedAt;
+  updated_at: DefaultedTimestamp;
+}
+
+export interface AiUserKeysTable {
+  user_id: string;
+  provider_id: string;
+  api_key: JSONColumnType<SealedJson, string, string>;
+  last4: string;
+  updated_at: DefaultedTimestamp;
+}
+
+export interface AiPreviewsTable {
+  id: Generated<string>;
+  user_id: string;
+  provider_id: string;
+  course_id: string;
+  task: 'rewrite' | 'questions';
+  body: string;
+  input_chars: number;
+  expires_at: Timestamp;
+  created_at: CreatedAt;
+}
+
+export interface AiUsageTable {
+  user_id: string;
+  provider_id: string;
+  /** Calendar day (UTC), `YYYY-MM-DD`. */
+  day: ColumnType<string, string, string>;
+  requests: Generated<number>;
+}
+
 export interface Database {
   settings: SettingsTable;
   kysely_migration: KyselyMigrationTable;
@@ -322,4 +365,8 @@ export interface Database {
   lrs_statements: LrsStatementsTable;
   lrs_documents: LrsDocumentsTable;
   quiz_responses: QuizResponsesTable;
+  ai_providers: AiProvidersTable;
+  ai_user_keys: AiUserKeysTable;
+  ai_previews: AiPreviewsTable;
+  ai_usage: AiUsageTable;
 }

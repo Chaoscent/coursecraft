@@ -116,6 +116,7 @@ export function AppShell() {
       entries: [
         { to: '/admin/users', icon: 'users', label: t('nav.users'), permission: 'users.manage' },
         { to: '/admin/groups', icon: 'folder', label: t('nav.groups'), permission: 'groups.manage' },
+        { to: '/admin/ai', icon: 'message-square', label: t('nav.ai'), permission: 'settings.manage' },
         { to: '/admin/audit', icon: 'history', label: t('nav.audit'), permission: 'audit.read' },
       ],
     },

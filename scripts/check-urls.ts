@@ -25,6 +25,10 @@ const ALLOWED = [
   /^https:\/\/bit\.ly\/3cXEKWf$/,
   // Placeholder text in the UI ("https://… or mailto:…").
   /^https:\/\/…$/,
+  // Example base URLs in the AI provider form hints; shown as text, never requested.
+  /^https:\/\/api\.anthropic\.com$/,
+  /^https:\/\/api\.openai\.com\/v1$/,
+  /^http:\/\/ollama:11434\/v1$/,
   /^https?:\/\/www\.w3\.org\//,
   // XML namespaces of presentation files (OOXML, Dublin Core); identifiers, never requested.
   /^http:\/\/schemas\.openxmlformats\.org\//,

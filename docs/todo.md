@@ -30,6 +30,12 @@ issue once the repository is published.
 - [ ] Trainers limited to their own groups (today: one organisation, all
       learners visible to `reports.read`).
 
+## AI adapter
+
+- [ ] Alt-text suggestions for images (vision-capable providers only).
+- [ ] Streaming responses for long rewrites.
+- [ ] Quotas per group in addition to per user.
+
 ## Interactions and media
 
 - [ ] Graph view for dialog scenes (positions are already stored).

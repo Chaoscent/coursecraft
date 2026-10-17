@@ -519,8 +519,18 @@ TOTP secrets, OIDC client secrets, and SMTP passwords. The API returns only
 
 ## 12. AI adapter (Phase 7)
 
-- Off unless a provider and key are configured. Without them, no AI UI and no
-  outbound request.
+- Two switches: the operator allows the adapter (`LERNWERK_AI_ENABLED`,
+  default `false`), administrators configure providers in the app. Without
+  both, no AI UI and no outbound request.
+- Tasks with fixed server-side prompts: revise text (simplify, shorten,
+  correct, neutral tone, translate) and draft multiple-choice questions from
+  text. Course text is sent as marked-up data in the user message.
+- `POST /api/ai/preview` stores the exact body (table `ai_previews`, 10
+  minutes, bound to user and course); `POST /api/ai/run` sends it once.
+  Keys go into headers only and never into the preview.
+- Keys sealed per provider and per user (`ai_user_keys`); a personal key
+  wins over the shared one. Rate limit per user and minute, optional daily
+  quota per user and provider (`ai_usage`).
 - Providers: Anthropic Messages API and OpenAI-compatible chat completions
   (also Ollama, llama.cpp server, vLLM), via `fetch` with Zod-validated
   responses. Model ids are configuration.

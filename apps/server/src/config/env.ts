@@ -72,6 +72,14 @@ const configSchema = z
       .min(1)
       .max(24 * 60)
       .default(20),
+    /** Operator switch for the AI adapter; off by default. */
+    aiEnabled: z
+      .enum(['true', 'false'])
+      .default('false')
+      .transform((value) => value === 'true'),
+    aiTimeoutSeconds: z.coerce.number().int().min(5).max(600).default(90),
+    /** AI requests per user and minute. */
+    aiRateLimit: z.coerce.number().int().min(1).max(1000).default(10),
   })
   .refine((c) => !c.contentUrl || c.contentUrl.origin !== c.publicUrl.origin, {
     message: 'Content origin must differ from the public origin (host or port)',
@@ -101,6 +109,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     uploadMaxMb: env['LERNWERK_UPLOAD_MAX_MB'],
     workDir: env['LERNWERK_WORK_DIR'],
     conversionTimeoutMinutes: env['LERNWERK_CONVERSION_TIMEOUT_MINUTES'],
+    aiEnabled: env['LERNWERK_AI_ENABLED'],
+    aiTimeoutSeconds: env['LERNWERK_AI_TIMEOUT_SECONDS'],
+    aiRateLimit: env['LERNWERK_AI_RATE_LIMIT'],
   });
   if (!result.success) {
     // Paths only: values may contain secrets.

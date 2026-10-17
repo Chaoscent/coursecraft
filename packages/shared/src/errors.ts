@@ -11,6 +11,8 @@ export const ERROR_CODES = [
   'payload_too_large',
   'unsupported_media_type',
   'invalid_file',
+  'quota_exceeded',
+  'upstream_failed',
   'internal',
 ] as const;
 

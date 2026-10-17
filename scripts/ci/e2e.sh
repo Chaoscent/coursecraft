@@ -8,7 +8,7 @@ cd "$(dirname "$0")/../.."
 PORT=3100
 CONTENT_PORT=3101
 # Content origin on a second port of the same host (same-site, other origin).
-export LERNWERK_PUBLIC_URL="http://localhost:$PORT" LERNWERK_HTTP_PORT="$PORT" LERNWERK_LOGIN_RATE_LIMIT=1000 \
+export LERNWERK_PUBLIC_URL="http://localhost:$PORT" LERNWERK_HTTP_PORT="$PORT" LERNWERK_LOGIN_RATE_LIMIT=1000 LERNWERK_AI_ENABLED=true \
   LERNWERK_CONTENT_URL="http://localhost:$CONTENT_PORT" LERNWERK_CONTENT_HTTP_PORT="$CONTENT_PORT"
 COMPOSE="docker compose -p lernwerk-e2e"
 

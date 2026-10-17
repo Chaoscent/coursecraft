@@ -41,7 +41,8 @@
     "courses": "Kurse",
     "manage": "Lernverwaltung",
     "library": "Bibliothek",
-    "grading": "Bewertung"
+    "grading": "Bewertung",
+    "ai": "KI"
   },
   "roles": {
     "admin": "Administration",
@@ -266,6 +267,8 @@
     "payload_too_large": "Die Datei ist zu groß.",
     "unsupported_media_type": "Dieses Format wird nicht unterstützt.",
     "invalid_file": "Die Datei ist beschädigt oder kann nicht gelesen werden.",
+    "quota_exceeded": "Das Tageskontingent für KI-Anfragen ist aufgebraucht.",
+    "upstream_failed": "Der KI-Dienst hat nicht oder nicht verwertbar geantwortet.",
     "internal": "Unerwarteter Fehler. Bitte erneut versuchen.",
     "network": "Server nicht erreichbar."
   },
@@ -340,7 +343,8 @@
       "align": "Ausrichten",
       "view": "Ansicht",
       "output": "Ausgabe",
-      "insert": "Einfügen"
+      "insert": "Einfügen",
+      "ai": "KI"
     },
     "menu": {
       "edit": "Bearbeiten",
@@ -956,5 +960,90 @@
     "processingHint": "Das Video wird umgewandelt (MP4 und WebM). Das kann je nach Länge einige Minuten dauern.",
     "failed": "Das Video konnte nicht umgewandelt werden.",
     "recordFailed": "Die Aufnahme ist fehlgeschlagen. Bitte erneut versuchen."
+  },
+  "ai": {
+    "title": "KI-Anbieter",
+    "count_one": "{{count}} Anbieter",
+    "count_other": "{{count}} Anbieter",
+    "providers": "Anbieter",
+    "newProvider": "Neuer Anbieter …",
+    "editProvider": "Bearbeiten …",
+    "deleteProvider": "Löschen",
+    "deleteConfirm": "Anbieter „{{name}}“ mit allen persönlichen Schlüsseln löschen?",
+    "name": "Name",
+    "kind": "Schnittstelle",
+    "kinds": {
+      "anthropic": "Anthropic Messages API",
+      "openai": "OpenAI-kompatibel (auch Ollama, llama.cpp, vLLM)"
+    },
+    "baseUrl": "Basis-URL",
+    "baseUrlAnthropic": "z. B. https://api.anthropic.com",
+    "baseUrlOpenai": "z. B. https://api.openai.com/v1 oder http://ollama:11434/v1",
+    "model": "Modell",
+    "key": "API-Schlüssel",
+    "keyHint": "Wird verschlüsselt gespeichert und nie wieder angezeigt.",
+    "keyStored": "Gespeichert, endet auf {{last4}}. Leer lassen, um ihn zu behalten.",
+    "removeKey": "Schlüssel entfernen",
+    "dailyQuota": "Tageskontingent",
+    "dailyQuotaHint": "Anfragen pro Person und Tag; leer = unbegrenzt.",
+    "allowUserKeys": "Persönliche Schlüssel erlauben",
+    "enabled": "Aktiv",
+    "status": "Status",
+    "on": "Aktiv",
+    "off": "Aus",
+    "empty": "Keine Anbieter eingerichtet. Ohne Anbieter gibt es keine KI-Funktionen und keine Anfragen nach außen.",
+    "offByOperator": "Die KI-Anbindung ist abgeschaltet. Der Betrieb kann sie mit LERNWERK_AI_ENABLED=true freigeben.",
+    "privacyNote": "Kursinhalte gehen nur an einen Anbieter, wenn eine Autorin oder ein Autor die genaue Anfrage gesehen und bestätigt hat. Das Audit-Log speichert nur Metadaten.",
+    "userKeys": "KI-Schlüssel",
+    "userKeysHint": "Für diese Anbieter können Sie einen eigenen API-Schlüssel hinterlegen. Er wird verschlüsselt gespeichert und vor dem gemeinsamen Schlüssel verwendet.",
+    "userKeyFor": "Eigener Schlüssel für {{name}}",
+    "userKeySaved": "Schlüssel gespeichert.",
+    "userKeyRemoved": "Schlüssel entfernt.",
+    "assistant": "KI-Assistent",
+    "ribbon": "KI-Assistent",
+    "provider": "Anbieter",
+    "providerRemaining": "{{name}} ({{model}}), heute noch {{n}}",
+    "task": "Aufgabe",
+    "tasks": {
+      "rewrite": "Text überarbeiten",
+      "questions": "Quizfragen aus Text erzeugen"
+    },
+    "mode": "Art",
+    "modes": {
+      "simplify": "Vereinfachen",
+      "shorten": "Kürzen",
+      "correct": "Rechtschreibung korrigieren",
+      "formal": "Sachlicher formulieren",
+      "translate": "Übersetzen"
+    },
+    "targetLang": "Zielsprache",
+    "langs": {
+      "de": "Deutsch",
+      "en": "Englisch",
+      "fr": "Französisch",
+      "es": "Spanisch",
+      "it": "Italienisch",
+      "nl": "Niederländisch",
+      "pl": "Polnisch",
+      "tr": "Türkisch"
+    },
+    "selectTextHint": "Wählen Sie ein Textfeld auf der Folie, um das Ergebnis direkt zu übernehmen.",
+    "count": "Anzahl Fragen",
+    "sourceText": "Ausgangstext",
+    "sourceHint": "{{n}} von höchstens {{max}} Zeichen. Nur dieser Text wird gesendet.",
+    "tooLong": "Der Text ist zu lang.",
+    "showPreview": "Anfrage ansehen …",
+    "back": "Zurück",
+    "send": "Senden",
+    "sending": "Wird gesendet …",
+    "previewNotice": "Diese Anfrage geht an {{provider}}. Erst mit „Senden“ verlässt sie den Server.",
+    "endpoint": "Ziel",
+    "requestBody": "Anfrage (JSON)",
+    "result": "Ergebnis",
+    "draftNotice": "KI-Ergebnisse sind Entwürfe. Prüfen Sie sie, bevor Sie sie übernehmen.",
+    "replaceText": "Text ersetzen",
+    "insertQuiz": "Als Quiz einfügen",
+    "quizTitle": "Quiz (KI-Entwurf)",
+    "correct": "richtig"
   }
 }

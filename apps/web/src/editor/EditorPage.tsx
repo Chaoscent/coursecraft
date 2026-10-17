@@ -37,6 +37,8 @@ import { Timeline } from './Timeline.js';
 import { EditorContext, useEditor, useEditorStore } from './context.js';
 import { ExportDialog, PreviewDialog, SettingsDialog, VersionsDialog } from './dialogs.js';
 import { Properties } from './Properties.js';
+import { useAiStatus } from '../lib/useAiStatus.js';
+import { AiDialog } from './AiDialog.js';
 import { DialogEditor } from './DialogEditor.js';
 import { InteractionEditor } from './InteractionEditor.js';
 import { QuizEditor, SurveyEditor } from './QuizEditor.js';
@@ -47,7 +49,8 @@ import { createEditorStore, type EditorStore } from './store.js';
 import { startSync } from './sync.js';
 import styles from './Editor.module.css';
 
-type DialogKind = 'export' | 'versions' | 'settings' | 'preview' | 'shortcuts' | 'video' | 'screen' | null;
+type DialogKind =
+  'export' | 'versions' | 'settings' | 'preview' | 'shortcuts' | 'video' | 'screen' | 'ai' | null;
 
 interface MenuEntry {
   id: string;
@@ -234,6 +237,7 @@ function EditorShell({ onReload }: { onReload: () => void }) {
   const [dialog, setDialog] = useState<DialogKind>(null);
   const [lockHolder, setLockHolder] = useState<string | null>(null);
   const open = useCallback((d: DialogKind) => setDialog(d), []);
+  const { status: ai } = useAiStatus();
   useEditorKeys(store, open);
   useEffect(() => startSync(store, (holder) => setLockHolder(holder ?? '?')), [store]);
 
@@ -361,6 +365,7 @@ function EditorShell({ onReload }: { onReload: () => void }) {
         onPreview={() => open('preview')}
         onExport={() => open('export')}
         onVideo={(mode) => open(mode === 'record' ? 'screen' : 'video')}
+        onAi={ai?.available ? () => open('ai') : undefined}
       />
       <div className={styles.bannerSlot}>
         {lockHolder !== null || save.kind === 'conflict' || readOnly ? (
@@ -400,6 +405,7 @@ function EditorShell({ onReload }: { onReload: () => void }) {
       ) : null}
       {dialog === 'settings' ? <SettingsDialog onClose={() => setDialog(null)} /> : null}
       {dialog === 'preview' ? <PreviewDialog onClose={() => setDialog(null)} /> : null}
+      {dialog === 'ai' && ai?.available ? <AiDialog status={ai} onClose={() => setDialog(null)} /> : null}
       {dialog === 'video' || dialog === 'screen' ? (
         <VideoDialog mode={dialog === 'screen' ? 'record' : 'file'} onClose={() => setDialog(null)} />
       ) : null}

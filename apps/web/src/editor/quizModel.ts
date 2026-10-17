@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { Question, QuizNode, RichText, SurveyNode } from '@lernwerk/course-model';
+import type { AiQuestion } from '@lernwerk/shared';
 import { newId } from './ids.js';
 import { paragraphDoc } from './model.js';
 
@@ -143,6 +144,28 @@ export function newHotspotQuestion(lang: string, prompt: string, sha256: string)
       },
     ],
     multiple: false,
+  };
+}
+
+/** An AI draft as an editable question: single choice with one correct answer, else multiple choice. */
+export function questionFromDraft(lang: string, draft: AiQuestion): Question {
+  const feedback = draft.feedback
+    ? {
+        correct: { [lang]: paragraphDoc(draft.feedback) },
+        incorrect: { [lang]: paragraphDoc(draft.feedback) },
+      }
+    : {};
+  const choices = draft.choices.map((c) => ({
+    id: newId('o'),
+    text: text(lang, c.text),
+    correct: c.correct,
+  }));
+  return {
+    ...graded(lang, draft.prompt),
+    feedback,
+    type: choices.filter((c) => c.correct).length === 1 ? 'singleChoice' : 'multipleChoice',
+    choices,
+    shuffle: true,
   };
 }
 

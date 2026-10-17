@@ -3,6 +3,45 @@
 Short summary per phase: what was built, how it was verified, and what is
 deliberately left open. Newest first.
 
+## Phase 7 — Optional AI adapter
+
+**Built**
+
+- Operator switch `LERNWERK_AI_ENABLED` (off by default) plus providers
+  managed by administrators: Anthropic Messages API or OpenAI-compatible
+  chat completions (OpenAI, Ollama, llama.cpp, vLLM), base URL, model,
+  enabled flag, daily quota, optional personal keys.
+- Keys sealed with AES-256-GCM; only "set" and the last four characters are
+  ever returned; audit entries record changes without the key.
+- Editor assistant: revise the selected text (simplify, shorten, correct,
+  neutral tone, translate) or draft quiz questions from slide text. The
+  author first sees the endpoint and the exact JSON body; only "Send" makes
+  the request. Results are validated drafts the author accepts (replace text,
+  insert quiz) or discards.
+- Per-user rate limit and daily quota, single-use previews, no redirects,
+  timeout and response size cap, audit entry `ai.request` with metadata only.
+- Egress guard for all server tests: fetch and socket connects to anything
+  but loopback fail.
+
+**Verified**
+
+- Unit tests: request building (key never in body, text as data), header
+  placement, response extraction, question and rewrite parsing, draft to
+  question conversion.
+- Integration against fake providers on loopback: sealed keys, preview
+  without sending, byte-identical sending, single use, private previews,
+  course rights, quota, personal keys, upstream errors (status, redirect,
+  garbage, oversized), egress guard, operator switch off.
+- Route-registry permission tests cover the new routes; E2E: an
+  administrator sets up a provider, an author reviews the exact request and
+  sees the error from the unreachable provider; the audit log shows the
+  attempt.
+
+**Open / later**
+
+- Image alt-text suggestions (needs vision models), streaming responses,
+  per-group quotas (docs/todo.md).
+
 ## Phase 6 — Interactions, dialog simulation, screen recording
 
 **Built**

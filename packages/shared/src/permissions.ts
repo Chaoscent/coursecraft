@@ -19,6 +19,7 @@ export const PERMISSIONS = [
   'reports.read',
   'grading.perform',
   'learning.participate',
+  'ai.use',
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
@@ -28,7 +29,7 @@ export type RoutePermission = Permission | 'public';
 
 export const ROLE_PERMISSIONS: Readonly<Record<Role, readonly Permission[]>> = {
   admin: PERMISSIONS,
-  author: ['session.self', 'courses.author', 'library.view', 'learning.participate'],
+  author: ['session.self', 'courses.author', 'library.view', 'learning.participate', 'ai.use'],
   trainer: [
     'session.self',
     'library.view',

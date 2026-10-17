@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import {
   accountSessionsResponseSchema,
+  okSchema,
   PASSWORD_MIN_LENGTH,
   sessionResponseSchema,
   totpSetupResponseSchema,
@@ -20,6 +21,7 @@ import { Notice } from '../components/Notice.js';
 import { Page, PageBody, Section } from '../components/Page.js';
 import { errorMessage } from '../lib/errors.js';
 import { formatDateTime } from '../lib/format.js';
+import { useAiStatus } from '../lib/useAiStatus.js';
 import { useApi } from '../lib/useApi.js';
 import styles from './AccountPage.module.css';
 
@@ -291,6 +293,58 @@ function SessionList({ reloadKey }: { reloadKey: number }) {
   );
 }
 
+/** Personal API keys for providers that allow them (the user pays for their own use). */
+function AiKeys() {
+  const { t } = useTranslation();
+  const { status, reload } = useAiStatus();
+  const [keys, setKeys] = useState<Record<string, string>>({});
+  const [message, setMessage] = useState<{ tone: 'success' | 'danger'; text: string } | null>(null);
+  const providers = status?.providers.filter((p) => p.allowUserKeys) ?? [];
+  if (!providers.length) return null;
+  const save = async (providerId: string, key: string | null) => {
+    try {
+      await api(okSchema, `/api/ai/providers/${providerId}/key`, { method: 'PUT', body: { key } });
+      setKeys((k) => ({ ...k, [providerId]: '' }));
+      setMessage({ tone: 'success', text: key ? t('ai.userKeySaved') : t('ai.userKeyRemoved') });
+      reload();
+    } catch (e) {
+      setMessage({ tone: 'danger', text: errorMessage(e) });
+    }
+  };
+  return (
+    <Section title={t('ai.userKeys')}>
+      <p>{t('ai.userKeysHint')}</p>
+      {message ? <Notice tone={message.tone}>{message.text}</Notice> : null}
+      <FormGrid>
+        {providers.map((p) => (
+          <FormRow key={p.id} label={p.name}>
+            <div className={styles.inlineForm}>
+              <TextField
+                label={t('ai.userKeyFor', { name: p.name })}
+                type="password"
+                autoComplete="off"
+                value={keys[p.id] ?? ''}
+                onChange={(v) => setKeys((k) => ({ ...k, [p.id]: v }))}
+                {...(p.userKey.set
+                  ? { description: t('ai.keyStored', { last4: p.userKey.last4 ?? '' }) }
+                  : {})}
+              />
+              <Button isDisabled={!keys[p.id]} onPress={() => void save(p.id, keys[p.id] ?? null)}>
+                {t('common.save')}
+              </Button>
+              {p.userKey.set ? (
+                <Button icon="trash-2" onPress={() => void save(p.id, null)}>
+                  {t('ai.removeKey')}
+                </Button>
+              ) : null}
+            </div>
+          </FormRow>
+        ))}
+      </FormGrid>
+    </Section>
+  );
+}
+
 function DataExport() {
   const { t } = useTranslation();
   return (
@@ -318,6 +372,7 @@ export function AccountPage() {
         <PasswordChange onChanged={() => setReloadKey((k) => k + 1)} />
         <TwoFactor />
         <SessionList reloadKey={reloadKey} />
+        <AiKeys />
         <DataExport />
       </PageBody>
     </Page>
