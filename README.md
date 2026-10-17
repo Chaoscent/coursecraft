@@ -1,4 +1,4 @@
-# Coursecraft
+# Chardsoft Coursecraft
 
 Self-hosted e-learning authoring suite and LMS. Create courses in the
 browser (slides, quizzes, interactions, dialog simulations), export them as
@@ -6,9 +6,9 @@ SCORM 1.2/2004, xAPI, cmi5 or HTML5, and run them in the built-in LMS. Runs
 entirely on your own server: no telemetry, no external requests, no
 third-party services.
 
-> **Status: Phase 0 (foundation).** Architecture, security model, course
-> format, design system and infrastructure are in place. Login, editor and
-> LMS follow in the next phases (see [ARCHITECTURE.md](ARCHITECTURE.md) §17).
+> **Status:** feature-complete through Phase 8 (editor, LMS, exports,
+> AI adapter, mail, certificates, learning paths, SSO, backup/restore). See
+> [docs/phases.md](docs/phases.md) and [docs/todo.md](docs/todo.md).
 
 ## Quick start
 

@@ -6,7 +6,7 @@ Please do not open a public issue for security problems.
 
 - Preferred: **Private Vulnerability Reporting** of the repository
   ("Security" tab → "Report a vulnerability").
-- Alternative: email **security@[OPEN: domain]**.
+- Alternative: email **contact@chardsoft.com**.
 - Include affected version, steps to reproduce, and impact.
 - We acknowledge within 5 working days and aim to ship a fix for high or
   critical issues within 30 days. We credit reporters unless they prefer
