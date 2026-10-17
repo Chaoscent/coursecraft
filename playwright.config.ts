@@ -14,6 +14,10 @@ const appUrl = process.env['E2E_BASE_URL'];
 export default defineConfig({
   testDir: 'tests/e2e',
   forbidOnly: !!process.env['CI'],
+  // Three browser engines times many specs overload a laptop: slow clicks are not bugs.
+  // A retry in CI is reported as "flaky" and never hides a real failure.
+  workers: Number(process.env['E2E_WORKERS'] ?? 4),
+  retries: process.env['CI'] ? 1 : 0,
   reporter: [['list']],
   use: { locale: 'de-DE', trace: 'retain-on-failure' },
   projects: [

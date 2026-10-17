@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 import { z } from 'zod';
 
-// Zod would probe `new Function` for faster parsing; the CSP forbids eval.
+// Also set by the packages themselves before their first schema; kept for schemas of the app.
 z.config({ jitless: true });

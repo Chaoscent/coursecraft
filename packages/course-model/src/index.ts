@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import './zod-runtime.js';
 export * from './primitives.js';
 export * from './assets.js';
 export * from './scoring.js';

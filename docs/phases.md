@@ -3,6 +3,55 @@
 Short summary per phase: what was built, how it was verified, and what is
 deliberately left open. Newest first.
 
+## Phase 8 — Operations and integration
+
+**Built**
+
+- Backup and restore: `coursecraft backup` writes database, data volume and
+  manifest to one tar; `coursecraft restore` (on-demand `maintenance` service
+  with the migrator role) checks every archive entry, replays the dump in one
+  transaction, replaces the data volume and re-runs the migrations, which also
+  re-assert the append-only audit log.
+- E-mail: SMTP settings in the app (password sealed), queued plain-text mails
+  in the user's language, password reset by e-mail (single-use token in the
+  URL fragment, no account enumeration), optional notice when assigning,
+  due-date reminders once per learner.
+- Certificates: PDF per passed attempt with a serial number, written by a
+  small built-in PDF writer (no library with a non-listed license needed).
+- Learning paths: ordered courses assigned like single items; sequential
+  paths lock later steps, enforced by the server at launch.
+- Single sign-on: OpenID Connect (code flow with PKCE, state and nonce) and
+  SAML 2.0 (signed assertions, pinned issuer and certificate); pending logins
+  are single use and bound to the starting browser; accounts are linked by
+  verified e-mail, created only when allowed, with domain restrictions.
+- XLIFF 2.1 and 1.2 export and import of all translations, keeping marks,
+  links and list structure.
+- Accessibility audit with axe-core (WCAG 2.1 A/AA, light and dark theme) over
+  the sign-in, administration, editor, dialog and player screens; the audit is
+  itself tested to detect missing labels, contrast and alternatives.
+- Performance: on-demand loading of editor and administration pages (first
+  load 496 → 267 KB gzip), size budgets, database-side report aggregation,
+  chunked id queries, load tests with thousands of learners.
+
+**Verified**
+
+- Unit and integration tests for every item above, including attacks:
+  archive entries with links and `..`, forged/unsigned/expired/replayed SAML
+  assertions, wrong nonce and replayed or foreign login state, reset-token
+  reuse, other people's certificates, locked path steps.
+- Docker-level backup test (`scripts/ci/test-backup.sh`): marker data in
+  database and volume, backup, changes, restore, audit-log restriction intact,
+  tampered archive refused.
+- E2E in Chromium and Firefox for the reset page and SMTP settings, SSO
+  setup and error path, paths from administrator to the learner's locked
+  course, certificate download, XLIFF round trip, accessibility audit.
+
+**Open / later**
+
+- Verification of certificates by serial number, templates, embedded fonts;
+  group/claim mapping and single logout for SSO; e-mail notices for paths;
+  XLSX export; see docs/todo.md.
+
 ## Phase 7 — Optional AI adapter
 
 **Built**

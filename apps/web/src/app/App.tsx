@@ -1,28 +1,44 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { Permission } from '@coursecraft/shared';
-import type { ReactNode } from 'react';
+import { lazy, Suspense, type ComponentType, type ReactNode } from 'react';
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router';
 import { SessionProvider, useSession } from '../api/session.js';
 import { AppShell } from '../layout/AppShell.js';
-import { AccountPage } from '../pages/AccountPage.js';
-import { AiPage } from '../pages/AiPage.js';
-import { AuditPage } from '../pages/AuditPage.js';
-import { EditorPage } from '../editor/EditorPage.js';
 import { ChangePasswordPage } from '../pages/ChangePasswordPage.js';
-import { CoursesPage } from '../pages/CoursesPage.js';
-import { GroupsPage } from '../pages/GroupsPage.js';
 import { HomePage } from '../pages/HomePage.js';
 import { LoginPage } from '../pages/LoginPage.js';
-import { MailPage } from '../pages/MailPage.js';
 import { ResetPasswordPage } from '../pages/ResetPasswordPage.js';
-import { SsoPage } from '../pages/SsoPage.js';
 import { SetupPage } from '../pages/SetupPage.js';
-import { UsersPage } from '../pages/UsersPage.js';
-import { GradingPage } from '../pages/GradingPage.js';
-import { LibraryPage } from '../pages/LibraryPage.js';
-import { PathsPage } from '../pages/PathsPage.js';
 import { PlayerPage } from '../pages/PlayerPage.js';
-import { ReportPage } from '../pages/ReportPage.js';
+
+/**
+ * Pages that not everybody needs load on demand, so learners do not download the editor
+ * and the administration. The shell stays on screen while a chunk arrives.
+ */
+function lazyPage<K extends string>(load: () => Promise<Record<K, ComponentType>>, name: K): ComponentType {
+  return lazy(async () => {
+    const loaded = await load();
+    const component: ComponentType = loaded[name];
+    return { default: component };
+  });
+}
+const AccountPage = lazyPage(() => import('../pages/AccountPage.js'), 'AccountPage');
+const AiPage = lazyPage(() => import('../pages/AiPage.js'), 'AiPage');
+const AuditPage = lazyPage(() => import('../pages/AuditPage.js'), 'AuditPage');
+const EditorPage = lazyPage(() => import('../editor/EditorPage.js'), 'EditorPage');
+const CoursesPage = lazyPage(() => import('../pages/CoursesPage.js'), 'CoursesPage');
+const GroupsPage = lazyPage(() => import('../pages/GroupsPage.js'), 'GroupsPage');
+const MailPage = lazyPage(() => import('../pages/MailPage.js'), 'MailPage');
+const SsoPage = lazyPage(() => import('../pages/SsoPage.js'), 'SsoPage');
+const UsersPage = lazyPage(() => import('../pages/UsersPage.js'), 'UsersPage');
+const GradingPage = lazyPage(() => import('../pages/GradingPage.js'), 'GradingPage');
+const LibraryPage = lazyPage(() => import('../pages/LibraryPage.js'), 'LibraryPage');
+const PathsPage = lazyPage(() => import('../pages/PathsPage.js'), 'PathsPage');
+const ReportPage = lazyPage(() => import('../pages/ReportPage.js'), 'ReportPage');
+
+function Later({ children }: { children: ReactNode }) {
+  return <Suspense fallback={null}>{children}</Suspense>;
+}
 
 /** Full-window pages (editor) outside the application shell. */
 function RequireStandalone({ permission, children }: { permission: Permission; children: ReactNode }) {
@@ -55,7 +71,9 @@ const router = createBrowserRouter([
     path: '/author/courses/:id',
     element: (
       <RequireStandalone permission="courses.author">
-        <EditorPage />
+        <Later>
+          <EditorPage />
+        </Later>
       </RequireStandalone>
     ),
   },
@@ -72,12 +90,21 @@ const router = createBrowserRouter([
     element: <RequireSession />,
     children: [
       { index: true, element: <HomePage /> },
-      { path: 'account', element: <AccountPage /> },
+      {
+        path: 'account',
+        element: (
+          <Later>
+            <AccountPage />
+          </Later>
+        ),
+      },
       {
         path: 'author',
         element: (
           <Allowed permission="courses.author">
-            <CoursesPage />
+            <Later>
+              <CoursesPage />
+            </Later>
           </Allowed>
         ),
       },
@@ -85,7 +112,9 @@ const router = createBrowserRouter([
         path: 'library',
         element: (
           <Allowed permission="library.view">
-            <LibraryPage />
+            <Later>
+              <LibraryPage />
+            </Later>
           </Allowed>
         ),
       },
@@ -93,7 +122,9 @@ const router = createBrowserRouter([
         path: 'paths',
         element: (
           <Allowed permission="library.view">
-            <PathsPage />
+            <Later>
+              <PathsPage />
+            </Later>
           </Allowed>
         ),
       },
@@ -101,7 +132,9 @@ const router = createBrowserRouter([
         path: 'library/:id/report',
         element: (
           <Allowed permission="reports.read">
-            <ReportPage />
+            <Later>
+              <ReportPage />
+            </Later>
           </Allowed>
         ),
       },
@@ -109,7 +142,9 @@ const router = createBrowserRouter([
         path: 'grading',
         element: (
           <Allowed permission="grading.perform">
-            <GradingPage />
+            <Later>
+              <GradingPage />
+            </Later>
           </Allowed>
         ),
       },
@@ -117,7 +152,9 @@ const router = createBrowserRouter([
         path: 'admin/users',
         element: (
           <Allowed permission="users.manage">
-            <UsersPage />
+            <Later>
+              <UsersPage />
+            </Later>
           </Allowed>
         ),
       },
@@ -125,7 +162,9 @@ const router = createBrowserRouter([
         path: 'admin/groups',
         element: (
           <Allowed permission="groups.manage">
-            <GroupsPage />
+            <Later>
+              <GroupsPage />
+            </Later>
           </Allowed>
         ),
       },
@@ -133,7 +172,9 @@ const router = createBrowserRouter([
         path: 'admin/sso',
         element: (
           <Allowed permission="settings.manage">
-            <SsoPage />
+            <Later>
+              <SsoPage />
+            </Later>
           </Allowed>
         ),
       },
@@ -141,7 +182,9 @@ const router = createBrowserRouter([
         path: 'admin/mail',
         element: (
           <Allowed permission="settings.manage">
-            <MailPage />
+            <Later>
+              <MailPage />
+            </Later>
           </Allowed>
         ),
       },
@@ -149,7 +192,9 @@ const router = createBrowserRouter([
         path: 'admin/ai',
         element: (
           <Allowed permission="settings.manage">
-            <AiPage />
+            <Later>
+              <AiPage />
+            </Later>
           </Allowed>
         ),
       },
@@ -157,7 +202,9 @@ const router = createBrowserRouter([
         path: 'admin/audit',
         element: (
           <Allowed permission="audit.read">
-            <AuditPage />
+            <Later>
+              <AuditPage />
+            </Later>
           </Allowed>
         ),
       },

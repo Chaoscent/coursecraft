@@ -6,22 +6,11 @@ import type { PackageManifest } from '../library/manifest.js';
 import { assertItem } from '../library/assignments.js';
 import { learningStatus } from '../learning/projection.js';
 
-/** Groups and all their descendants. */
-async function withDescendants(ctx: AppContext, ids: string[]): Promise<string[]> {
-  if (!ids.length) return [];
-  const groups = await ctx.db.selectFrom('groups').select(['id', 'parent_id']).execute();
-  const out = new Set(ids);
-  let grew = true;
-  while (grew) {
-    grew = false;
-    for (const g of groups)
-      if (g.parent_id && out.has(g.parent_id) && !out.has(g.id)) {
-        out.add(g.id);
-        grew = true;
-      }
-  }
-  return [...out];
-}
+/** Rows per query for id lists: PostgreSQL allows at most 65,535 parameters per statement. */
+const CHUNK = 5000;
+
+const chunks = <T>(list: T[]): T[][] =>
+  Array.from({ length: Math.ceil(list.length / CHUNK) }, (_, i) => list.slice(i * CHUNK, (i + 1) * CHUNK));
 
 /** Every learner with an assignment (direct or via group) or an attempt, with their latest state. */
 export async function itemReport(ctx: AppContext, itemId: string) {
@@ -37,34 +26,61 @@ export async function itemReport(ctx: AppContext, itemId: string) {
     if (known === undefined || (d && (!known || d < known))) due.set(userId, d);
   };
   for (const a of assignments) if (a.user_id) setDue(a.user_id, a.due_at);
-  for (const a of assignments) {
-    if (!a.group_id) continue;
-    const groups = await withDescendants(ctx, [a.group_id]);
-    const members = await ctx.db
-      .selectFrom('group_members')
-      .select('user_id')
-      .where('group_id', 'in', groups)
-      .execute();
-    for (const m of members) setDue(m.user_id, a.due_at);
+
+  const groupAssignments = assignments.filter((a) => a.group_id);
+  if (groupAssignments.length) {
+    // One read of the group tree; each assignment then reaches its group and all subgroups.
+    const tree = await ctx.db.selectFrom('groups').select(['id', 'parent_id']).execute();
+    const children = new Map<string, string[]>();
+    for (const g of tree)
+      if (g.parent_id) children.set(g.parent_id, [...(children.get(g.parent_id) ?? []), g.id]);
+    const descendants = (root: string): string[] => {
+      const out = new Set([root]);
+      const queue = [root];
+      for (let id = queue.pop(); id !== undefined; id = queue.pop())
+        for (const child of children.get(id) ?? []) {
+          if (out.has(child)) continue;
+          out.add(child);
+          queue.push(child);
+        }
+      return [...out];
+    };
+    for (const a of groupAssignments) {
+      const groupIds = descendants(a.group_id ?? '');
+      const members = await ctx.db
+        .selectFrom('group_members')
+        .select('user_id')
+        .where('group_id', 'in', groupIds)
+        .execute();
+      for (const m of members) setDue(m.user_id, a.due_at);
+    }
   }
+
   const regs = await ctx.db
     .selectFrom('registrations')
     .selectAll()
     .where('library_item_id', '=', itemId)
     .orderBy('attempt', 'desc')
     .execute();
-  const userIds = [...new Set([...due.keys(), ...regs.map((r) => r.user_id)])];
-  const users = userIds.length
-    ? await ctx.db
-        .selectFrom('users')
-        .select(['id', 'display_name', 'email'])
-        .where('id', 'in', userIds)
-        .where('deleted_at', 'is', null)
-        .execute()
-    : [];
+  const byUser = new Map<string, typeof regs>();
+  for (const r of regs) byUser.set(r.user_id, [...(byUser.get(r.user_id) ?? []), r]);
+
+  const userIds = [...new Set([...due.keys(), ...byUser.keys()])];
+  const users = (
+    await Promise.all(
+      chunks(userIds).map((ids) =>
+        ctx.db
+          .selectFrom('users')
+          .select(['id', 'display_name', 'email'])
+          .where('id', 'in', ids)
+          .where('deleted_at', 'is', null)
+          .execute(),
+      ),
+    )
+  ).flat();
   const now = Date.now();
   const rows: ReportRow[] = users.map((u) => {
-    const mine = regs.filter((r) => r.user_id === u.id);
+    const mine = byUser.get(u.id) ?? [];
     const latest = mine[0];
     const status = learningStatus(latest);
     const dueAt = due.get(u.id) ?? null;
@@ -85,49 +101,49 @@ export async function itemReport(ctx: AppContext, itemId: string) {
   });
   rows.sort((a, b) => a.displayName.localeCompare(b.displayName));
 
-  const responses = await ctx.db
+  // Counted in the database: a popular course has hundreds of thousands of responses.
+  const stats = await ctx.db
     .selectFrom('quiz_responses')
     .innerJoin('registrations', 'registrations.id', 'quiz_responses.registration_id')
-    .select([
+    .select((eb) => [
       'quiz_responses.question_id',
-      'quiz_responses.description',
-      'quiz_responses.interaction_type',
-      'quiz_responses.success',
-      'quiz_responses.needs_manual_grading',
-      'quiz_responses.manual_score',
+      eb.fn.max('quiz_responses.description').as('description'),
+      eb.fn.min('quiz_responses.interaction_type').as('interaction_type'),
+      eb.fn.countAll<string>().as('answers'),
+      eb.fn
+        .sum<string>(eb.case().when('quiz_responses.success', '=', true).then(1).else(0).end())
+        .as('correct'),
+      eb.fn
+        .sum<string>(
+          eb
+            .case()
+            .when(
+              eb.and([
+                eb('quiz_responses.needs_manual_grading', '=', true),
+                eb('quiz_responses.manual_score', 'is', null),
+              ]),
+            )
+            .then(1)
+            .else(0)
+            .end(),
+        )
+        .as('pending'),
     ])
     .where('registrations.library_item_id', '=', itemId)
+    .groupBy('quiz_responses.question_id')
+    .orderBy('quiz_responses.question_id')
     .execute();
-  const stats = new Map<
-    string,
-    {
-      questionId: string;
-      description: string;
-      interactionType: string;
-      answers: number;
-      correct: number;
-      pendingGrading: number;
-    }
-  >();
-  for (const r of responses) {
-    const s = stats.get(r.question_id) ?? {
-      questionId: r.question_id,
-      description: r.description,
-      interactionType: r.interaction_type,
-      answers: 0,
-      correct: 0,
-      pendingGrading: 0,
-    };
-    s.answers += 1;
-    if (r.success) s.correct += 1;
-    if (r.needs_manual_grading && r.manual_score === null) s.pendingGrading += 1;
-    if (!s.description && r.description) s.description = r.description;
-    stats.set(r.question_id, s);
-  }
   return {
     item,
     rows,
-    questions: [...stats.values()].sort((a, b) => a.questionId.localeCompare(b.questionId)),
+    questions: stats.map((q) => ({
+      questionId: q.question_id,
+      description: q.description ?? '',
+      interactionType: q.interaction_type ?? '',
+      answers: Number(q.answers),
+      correct: Number(q.correct),
+      pendingGrading: Number(q.pending),
+    })),
   };
 }
 

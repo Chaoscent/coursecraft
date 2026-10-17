@@ -602,6 +602,22 @@ TOTP secrets, OIDC client secrets, and SMTP passwords. The API returns only
   version). The fake provider in `tests/support/oidc-idp.ts` drives the
   integration tests on loopback.
 
+## 12e. Performance (Phase 8)
+
+- Pages for authors and administrators are loaded on demand (route-level code
+  splitting); learners download the portal, the player host and shared
+  components only (about 270 KB gzip; the editor chunk of about 205 KB comes
+  when an author opens a course). Budgets: first load 330 KB, any chunk
+  260 KB, player 80 KB (`pnpm check:bundles`).
+- Reports are aggregated in the database (question statistics by `GROUP BY`),
+  id lists are queried in chunks of 5,000 (PostgreSQL's parameter limit is
+  65,535), group trees are read once per request.
+- `tests/integration/performance.test.ts` seeds 6,000 learners with 48,000
+  responses, 300 assigned courses and a 300-slide course and holds
+  the reports, the learner portal, saving, loading and exporting to limits of
+  roughly ten times the measured time (measured on a laptop: report 130 ms,
+  CSV 95 ms, portal 185 ms, saving 300 slides 190 ms).
+
 ## 13. Privacy
 
 - Per-user export: ZIP with JSON and files (profile, sessions, registrations,
@@ -671,8 +687,10 @@ Workflows stay portable between GitHub Actions and Forgejo Actions: only
 
 Steps: lint (incl. security rules) → typecheck → unit tests → SPDX check →
 forbidden-term check → license check → `pnpm audit` + osv-scanner → build →
-URL check → E2E and security suites against compose → offline suite → image
-builds (amd64, arm64) → Trivy.
+URL check → bundle budgets (`pnpm check:bundles`) → E2E (including the axe
+accessibility audit) and security suites against compose → offline suite →
+backup/restore test (`scripts/ci/test-backup.sh`) → image builds (amd64,
+arm64) → Trivy.
 
 ## 17. Phases
 

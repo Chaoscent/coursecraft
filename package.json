@@ -19,11 +19,13 @@
     "check:headers": "tsx scripts/check-spdx.ts",
     "check:terms": "tsx scripts/check-terms.ts",
     "check:urls": "tsx scripts/check-urls.ts",
+    "check:bundles": "tsx scripts/check-bundles.ts",
     "check": "pnpm check:headers && pnpm check:terms && pnpm check:licenses && pnpm check:install-scripts",
     "check:install-scripts": "tsx scripts/check-install-scripts.ts",
     "test:e2e": "scripts/ci/playwright.sh"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@coursecraft/eslint-config": "workspace:*",
     "@coursecraft/shared": "workspace:*",
     "@eslint/js": "^10.0.1",
