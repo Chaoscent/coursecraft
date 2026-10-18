@@ -36,10 +36,13 @@ docker run --rm --network "$NET" \
   -e COURSECRAFT_MIGRATOR_DATABASE_URL="postgres://coursecraft_migrator:migrator-pass-0123456789@$DB:5432/coursecraft" \
   "$IMAGE" coursecraft migrate >/dev/null
 
-as() { docker exec -e PGPASSWORD="$2" "$DB" psql -qtA -h 127.0.0.1 -U "$1" -d coursecraft -c "$3" 2>&1; }
+as() { docker exec -e PGPASSWORD="$2" -e PGOPTIONS='-c app.tenant_id=00000000-0000-4000-8000-000000000001' "$DB" psql -qtA -h 127.0.0.1 -U "$1" -d coursecraft -c "$3" 2>&1; }
 [ "$(as coursecraft_app app-pass-0123456789abcdef "select count(*) from settings")" = 0 ] || fail "app cannot read tables"
 [ "$(as coursecraft_app app-pass-0123456789abcdef "insert into settings (key, value) values ('probe', '{}') returning key")" = probe ] || fail "app cannot write"
 out=$(as coursecraft_app app-pass-0123456789abcdef "create table evil (id int)" || true); echo "$out" | grep -q "permission denied" || fail "app can change the schema: $out"
 out=$(as coursecraft_converter converter-pass-0123456789 "select count(*) from public.settings" || true); echo "$out" | grep -q "permission denied" || fail "converter reads application tables: $out"
 out=$(as coursecraft_app app-pass-0123456789abcdef "update audit_log set action = 'x'" || true); echo "$out" | grep -q "permission denied" || fail "audit log is not append-only: $out"
+other() { docker exec -e PGPASSWORD=app-pass-0123456789abcdef -e PGOPTIONS='-c app.tenant_id=11111111-1111-4111-8111-111111111111' "$DB" psql -qtA -h 127.0.0.1 -U coursecraft_app -d coursecraft -c "$1" 2>&1; }
+[ "$(other "select count(*) from settings")" = 0 ] || fail "another tenant sees the default tenant's rows"
+out=$(as coursecraft_app app-pass-0123456789abcdef "insert into tenants (name) values ('evil')" || true); echo "$out" | grep -q "permission denied" || fail "the app can create tenants: $out"
 echo "Bootstrap test passed."

@@ -59,6 +59,8 @@ const configSchema = z
       .max(24 * 30)
       .default(12),
     /** Sign-in, setup and 2FA attempts per client address and minute. */
+    /** `multi`: one installation serves several organisations, told apart by their addresses. */
+    tenancy: z.enum(['single', 'multi']).default('single'),
     /** `if-missing`: with several replicas, only the first start prints a setup token. */
     setupTokenOnStart: z.enum(['always', 'if-missing']).default('always'),
     /** Port of the separate metrics listener (Prometheus); off when unset. */
@@ -142,6 +144,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     webDir: env['COURSECRAFT_WEB_DIR'] || undefined,
     sessionIdleMinutes: env['COURSECRAFT_SESSION_IDLE_MINUTES'],
     sessionAbsoluteHours: env['COURSECRAFT_SESSION_ABSOLUTE_HOURS'],
+    tenancy: env['COURSECRAFT_TENANCY'],
     setupTokenOnStart: env['COURSECRAFT_SETUP_TOKEN_ON_START'],
     metricsPort: env['COURSECRAFT_METRICS_PORT'] || undefined,
     rateLimitStore: env['COURSECRAFT_RATE_LIMIT_STORE'],

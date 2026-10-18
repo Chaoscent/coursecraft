@@ -32,7 +32,7 @@ export async function issueSetupToken(
     .insertInto('setup_state')
     .values({ id: 1, ...values })
     .onConflict((oc) => {
-      const update = oc.column('id').doUpdateSet(values);
+      const update = oc.constraint('setup_state_pkey').doUpdateSet(values);
       // Several replicas start together: only the first one hands out a token, the
       // others must not invalidate it (the database holds nothing but its hash).
       return options.onlyIfMissing

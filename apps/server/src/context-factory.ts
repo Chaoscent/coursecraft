@@ -7,10 +7,11 @@ import type { AppContext } from './http/context.js';
 import { RecordingQueue, type JobQueue } from './jobs/queue.js';
 import { AssetStore } from './modules/assets/store.js';
 import { AuditService } from './modules/audit/service.js';
+import { TenantDirectory } from './tenancy/directory.js';
 import { createBlobStore, createWorkExchange } from './storage.js';
 
 export function createContext(config: AppConfig, jobs: JobQueue = new RecordingQueue()): AppContext {
-  const db = createDatabase(config.databaseUrl);
+  const db = createDatabase(config.databaseUrl, { tenancy: config.tenancy });
   const blobs = createBlobStore(config);
   return {
     config,
@@ -24,6 +25,7 @@ export function createContext(config: AppConfig, jobs: JobQueue = new RecordingQ
     audit: new AuditService(db),
     assets: new AssetStore(blobs),
     blobs,
+    tenants: new TenantDirectory(db),
     jobs,
     work: createWorkExchange(config, blobs),
     log: { info: () => undefined, warn: () => undefined, error: () => undefined },

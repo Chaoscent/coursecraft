@@ -19,6 +19,9 @@ spec:
       secretName: {{ .Values.ingress.tls.app }}
     - hosts: [{{ $content | quote }}]
       secretName: {{ .Values.ingress.tls.content }}
+    {{- with .Values.ingress.extraTls }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
   rules:
     - host: {{ $app | quote }}
       http:
@@ -32,4 +35,21 @@ spec:
           - path: /
             pathType: Prefix
             backend: { service: { name: {{ include "coursecraft.fullname" . }}-app, port: { name: content } } }
+    {{- $root := . }}
+    {{- range $host := .Values.ingress.extraHosts.app }}
+    - host: {{ $host | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend: { service: { name: {{ include "coursecraft.fullname" $root }}-app, port: { name: http } } }
+    {{- end }}
+    {{- range $host := .Values.ingress.extraHosts.content }}
+    - host: {{ $host | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend: { service: { name: {{ include "coursecraft.fullname" $root }}-app, port: { name: content } } }
+    {{- end }}
 {{- end }}

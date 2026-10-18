@@ -36,10 +36,12 @@ spec:
               imagePullPolicy: {{ .Values.image.pullPolicy }}
               command: [coursecraft, backup]
               env:
-                - name: COURSECRAFT_APP_PASSWORD
-                  valueFrom: { secretKeyRef: { name: {{ $secret }}, key: appPassword } }
-                - name: COURSECRAFT_DATABASE_URL
-                  value: {{ include "coursecraft.dbUrl" (list "coursecraft_app" "COURSECRAFT_APP_PASSWORD" .) | quote }}
+                # The table owner dumps every tenant (the app role sees only one).
+                - name: COURSECRAFT_MIGRATOR_PASSWORD
+                  valueFrom: { secretKeyRef: { name: {{ $secret }}, key: migratorPassword } }
+                - name: COURSECRAFT_MIGRATOR_DATABASE_URL
+                  value: {{ include "coursecraft.dbUrl" (list "coursecraft_migrator" "COURSECRAFT_MIGRATOR_PASSWORD" .) | quote }}
+                - { name: COURSECRAFT_TENANCY, value: {{ .Values.tenancy | quote }} }
                 {{- if $fs }}
                 - { name: COURSECRAFT_DATA_DIR, value: /data }
                 {{- end }}

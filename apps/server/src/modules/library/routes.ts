@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { contentUrl } from '../../tenancy/origins.js';
 import {
   assignmentParamsSchema,
   assignmentsResponseSchema,
@@ -34,7 +35,7 @@ export function libraryRoutes(app: FastifyInstance, ctx: AppContext): void {
     },
     async (request) => ({
       items: await listItems(ctx, request.query),
-      foreignPackagesEnabled: !!ctx.config.contentUrl,
+      foreignPackagesEnabled: !!contentUrl(ctx.config),
     }),
   );
 

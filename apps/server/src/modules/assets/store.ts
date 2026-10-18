@@ -2,6 +2,7 @@
 import { createHash } from 'node:crypto';
 import type { Readable } from 'node:stream';
 import type { BlobRange, BlobStore } from '@coursecraft/storage';
+import { storagePrefix } from '../../tenancy/origins.js';
 
 export { ASSET_EXTENSIONS as EXTENSIONS } from '@coursecraft/course-model';
 
@@ -18,7 +19,7 @@ export class AssetStore {
 
   #key(sha256: string): string {
     if (!/^[a-f0-9]{64}$/.test(sha256)) throw new Error('Invalid asset hash');
-    return `assets/${sha256.slice(0, 2)}/${sha256}`;
+    return `${storagePrefix()}assets/${sha256.slice(0, 2)}/${sha256}`;
   }
 
   async has(sha256: string): Promise<boolean> {

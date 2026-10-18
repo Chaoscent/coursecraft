@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { publicUrl } from '../tenancy/origins.js';
 import { PERMISSIONS, rolesGrant, type Permission } from '@coursecraft/shared';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { hmac, safeEqual } from '../crypto/tokens.js';
@@ -53,7 +54,6 @@ function sameOrigin(request: FastifyRequest, expected: string): boolean {
  * state-changing requests, and the permission declared by the route.
  */
 export function registerAuth(app: FastifyInstance, ctx: AppContext): void {
-  const expectedOrigin = ctx.config.publicUrl.origin;
   app.decorateRequest('auth', null);
   app.decorateRequest('ipHmac', '');
 
@@ -77,7 +77,7 @@ export function registerAuth(app: FastifyInstance, ctx: AppContext): void {
     }
 
     if (UNSAFE.has(request.method) && !request.routeOptions.config.crossSite) {
-      if (!sameOrigin(request, expectedOrigin))
+      if (!sameOrigin(request, publicUrl(ctx.config).origin))
         throw new AppError('forbidden', 'Cross-origin request rejected');
       const type = request.headers['content-type'] ?? '';
       if (type.startsWith('multipart/') && !request.routeOptions.config.allowMultipart) {

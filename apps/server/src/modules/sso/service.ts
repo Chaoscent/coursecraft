@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { publicUrl } from '../../tenancy/origins.js';
 import type { SsoProvider, SsoProviderInput } from '@coursecraft/shared';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { SAML, type Profile as SamlProfile } from '@node-saml/node-saml';
@@ -18,10 +19,11 @@ export type SsoError = 'failed' | 'denied' | 'domain' | 'no_account' | 'disabled
 export const secretAad = (id: string) => `sso-secret:${id}`;
 const verifierAad = (stateHash: string) => `sso-verifier:${stateHash}`;
 export const callbackUrl = (ctx: AppContext) =>
-  new URL('/api/auth/sso/callback', ctx.config.publicUrl).toString();
-export const acsUrl = (ctx: AppContext) => new URL('/api/auth/sso/saml/acs', ctx.config.publicUrl).toString();
+  new URL('/api/auth/sso/callback', publicUrl(ctx.config)).toString();
+export const acsUrl = (ctx: AppContext) =>
+  new URL('/api/auth/sso/saml/acs', publicUrl(ctx.config)).toString();
 export const metadataUrl = (ctx: AppContext, id: string) =>
-  new URL(`/api/auth/sso/${id}/metadata`, ctx.config.publicUrl).toString();
+  new URL(`/api/auth/sso/${id}/metadata`, publicUrl(ctx.config)).toString();
 
 export type Row = {
   id: string;
@@ -53,7 +55,7 @@ const toProvider = (ctx: AppContext, r: Row): SsoProvider => ({
     r.kind === 'saml'
       ? acsUrl(ctx)
       : r.kind === 'proxy'
-        ? new URL(`/api/auth/proxy/${r.id}/login`, ctx.config.publicUrl).toString()
+        ? new URL(`/api/auth/proxy/${r.id}/login`, publicUrl(ctx.config)).toString()
         : r.kind === 'ldap'
           ? ''
           : callbackUrl(ctx),
@@ -355,7 +357,7 @@ export async function finishOidc(
   try {
     const row = await enabledProvider(ctx, pending.providerId, 'oidc');
     const config = await oidcConfiguration(ctx, row);
-    const current = new URL(`/api/auth/sso/callback${queryOf(request.url)}`, ctx.config.publicUrl);
+    const current = new URL(`/api/auth/sso/callback${queryOf(request.url)}`, publicUrl(ctx.config));
     const tokens = await client.authorizationCodeGrant(config, current, {
       pkceCodeVerifier: pending.verifier ?? '',
       expectedState: query['state'] ?? '',

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { publicUrl } from '../../tenancy/origins.js';
 import type { PackageKind } from '@coursecraft/shared';
 import { createHash, randomUUID } from 'node:crypto';
 import { hashToken, randomToken } from '../../crypto/tokens.js';
@@ -58,7 +59,7 @@ export async function resolveLaunch(ctx: AppContext, token: string): Promise<Lau
     manifest: row.manifest as unknown as PackageManifest,
     mode: row.mode,
     fetchUsed: row.fetch_used,
-    actorKey: `account:${ctx.config.publicUrl.origin}|${row.user_id}`,
+    actorKey: `account:${publicUrl(ctx.config).origin}|${row.user_id}`,
   };
 }
 
@@ -105,7 +106,7 @@ function checkStatement(launch: Launch, input: unknown, ctx: AppContext): Json {
     authority: {
       objectType: 'Agent',
       name: 'Coursecraft',
-      account: { homePage: ctx.config.publicUrl.origin, name: 'launch' },
+      account: { homePage: publicUrl(ctx.config).origin, name: 'launch' },
     },
   };
 }
@@ -299,7 +300,7 @@ export async function writeDocument(
     .values({ ...k, content, content_type: type.slice(0, 200), etag })
     .onConflict((oc) =>
       oc
-        .columns(['kind', 'activity_id', 'agent_key', 'registration', 'doc_id'])
+        .constraint('lrs_documents_key')
         .doUpdateSet({ content, content_type: type.slice(0, 200), etag, updated_at: new Date() }),
     )
     .execute();

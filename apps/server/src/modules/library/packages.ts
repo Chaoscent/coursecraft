@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { Readable } from 'node:stream';
 import type { BlobRange, BlobStore } from '@coursecraft/storage';
+import { storagePrefix } from '../../tenancy/origins.js';
 import { safeEntryPath, type ZipArchive, type ZipLimits } from '../../lib/zip.js';
 
 export const PACKAGE_LIMITS: ZipLimits = {
@@ -69,7 +70,7 @@ export class PackageStore {
 
   #prefix(id: string): string {
     if (!ID.test(id)) throw new Error('Invalid package id');
-    return `packages/${id}`;
+    return `${storagePrefix()}packages/${id}`;
   }
 
   async extract(id: string, zip: ZipArchive): Promise<number> {

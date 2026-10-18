@@ -34,7 +34,7 @@ export async function storeAsset(
   await db
     .insertInto('assets')
     .values({ sha256, mime: clean.mime, size: clean.bytes.length, created_by: userId })
-    .onConflict((oc) => oc.column('sha256').doNothing())
+    .onConflict((oc) => oc.constraint('assets_pkey').doNothing())
     .execute();
   return { sha256, mime: clean.mime, size: clean.bytes.length, name };
 }

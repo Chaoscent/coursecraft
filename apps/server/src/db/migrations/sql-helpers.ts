@@ -5,7 +5,7 @@
  * which can be created from string literals in code but never from runtime
  * strings.
  */
-import { sql, type Kysely, type RawBuilder } from 'kysely';
+import { CompiledQuery, sql, type Kysely, type RawBuilder } from 'kysely';
 
 declare const trusted: unique symbol;
 export type TrustedIdentifier = string & { readonly [trusted]: true };
@@ -57,5 +57,51 @@ export async function revokeWrites<DB>(
   }>`select count(*)::int as n from pg_roles where rolname = ${role}`.execute(db);
   if (result.rows[0]?.n) {
     await sql`revoke update, delete, truncate on ${sql.table(table)} from ${sql.id(role)}`.execute(db);
+  }
+}
+
+/* ---------- Tenancy (row-level security) ---------- */
+
+/** The tenant every installation has; single-tenant installations use only this one. */
+export const DEFAULT_TENANT_ID = '00000000-0000-4000-8000-000000000001';
+
+/** The tenant of the current connection, set by the database driver (see db/connection.ts). */
+export const currentTenant = (): RawBuilder<string> => sql<string>`current_setting('app.tenant_id')::uuid`;
+
+/**
+ * Restricts every row of a table to the connection's tenant, for reading and
+ * writing. An unset or empty tenant makes queries fail instead of returning
+ * rows of any tenant. The table owner (the migrator) is not affected.
+ */
+export async function isolateTenants<DB>(db: Kysely<DB>, table: TrustedIdentifier): Promise<void> {
+  await sql`alter table ${sql.table(table)} enable row level security`.execute(db);
+  await sql`create policy tenant_isolation on ${sql.table(table)}
+    using (tenant_id = current_setting('app.tenant_id')::uuid)
+    with check (tenant_id = current_setting('app.tenant_id')::uuid)`.execute(db);
+}
+
+export async function dropTenantIsolation<DB>(db: Kysely<DB>, table: TrustedIdentifier): Promise<void> {
+  await sql`drop policy if exists tenant_isolation on ${sql.table(table)}`.execute(db);
+  await sql`alter table ${sql.table(table)} disable row level security`.execute(db);
+}
+
+/** Statement the driver sends when a pooled connection switches tenants. */
+export function setTenantQuery(tenantId: string): CompiledQuery {
+  return CompiledQuery.raw("select set_config('app.tenant_id', $1, false)", [tenantId]);
+}
+
+/** Read access only for a role (platform tables the app must not change). Skipped when the role is missing. */
+export async function readOnlyFor<DB>(
+  db: Kysely<DB>,
+  table: TrustedIdentifier,
+  role: TrustedIdentifier,
+): Promise<void> {
+  const result = await sql<{
+    n: number;
+  }>`select count(*)::int as n from pg_roles where rolname = ${role}`.execute(db);
+  if (result.rows[0]?.n) {
+    await sql`revoke insert, update, delete, truncate on ${sql.table(table)} from ${sql.id(role)}`.execute(
+      db,
+    );
   }
 }

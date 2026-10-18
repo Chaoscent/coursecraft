@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { contentUrl } from '../../tenancy/origins.js';
 import type { LibraryItem, PackageKind } from '@coursecraft/shared';
 import { randomUUID } from 'node:crypto';
 import type { AppContext, AuthState } from '../../http/context.js';
@@ -52,7 +53,7 @@ async function storePackage(
 
 /** Imports a SCORM 1.2/2004, xAPI or cmi5 package as a new library item. */
 export async function importPackage(ctx: AppContext, auth: AuthState, bytes: Buffer) {
-  if (!ctx.config.contentUrl)
+  if (!contentUrl(ctx.config))
     throw new AppError('forbidden', 'Third-party packages need a content origin (COURSECRAFT_CONTENT_URL)');
   const { id: packageId, manifest } = await storePackage(ctx, bytes, { userId: auth.userId });
   const item = await ctx.db

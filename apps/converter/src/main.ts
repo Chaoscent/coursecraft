@@ -52,11 +52,18 @@ await boss.work(QUEUES.pptxRender, options, async ([job]) => {
       outputs: await renderPresentation(root, parsed.data),
     }));
     console.log(`rendered ${outputs.length} slides in ${Date.now() - started} ms`);
-    await report({ jobId: parsed.data.jobId, queue: QUEUES.pptxRender, ok: true, outputs });
+    await report({
+      jobId: parsed.data.jobId,
+      tenantId: parsed.data.tenantId,
+      queue: QUEUES.pptxRender,
+      ok: true,
+      outputs,
+    });
   } catch (error) {
     console.error('render failed', error instanceof Error ? error.message : error);
     await report({
       jobId: parsed.data.jobId,
+      tenantId: parsed.data.tenantId,
       queue: QUEUES.pptxRender,
       ok: false,
       error: errorCode(error),
@@ -70,11 +77,18 @@ await boss.work(QUEUES.media, options, async ([job]) => {
   if (!parsed.success) return console.error('invalid media job dropped');
   try {
     const result = await withJobFiles(config, parsed.data.jobId, (root) => convertMedia(root, parsed.data));
-    await report({ jobId: parsed.data.jobId, queue: QUEUES.media, ok: true, ...result });
+    await report({
+      jobId: parsed.data.jobId,
+      tenantId: parsed.data.tenantId,
+      queue: QUEUES.media,
+      ok: true,
+      ...result,
+    });
   } catch (error) {
     console.error('media conversion failed', error instanceof Error ? error.message : error);
     await report({
       jobId: parsed.data.jobId,
+      tenantId: parsed.data.tenantId,
       queue: QUEUES.media,
       ok: false,
       error: errorCode(error),

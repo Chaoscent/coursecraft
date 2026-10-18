@@ -104,6 +104,12 @@ export async function backup(options: {
   databaseUrl: string;
   dataDir: string | null;
   outDir?: string;
+  /**
+   * Set when dumping with the app role: it sees only this tenant's rows
+   * (row-level security), which in a single installation are all rows. The
+   * migrator role owns the tables and dumps every tenant.
+   */
+  tenantId?: string;
 }): Promise<string> {
   const outDir = options.outDir ?? join(options.dataDir ?? tmpdir(), 'backups');
   mkdirSync(outDir, { recursive: true, mode: 0o750 });
@@ -112,8 +118,15 @@ export async function backup(options: {
   try {
     await run(
       'pg_dump',
-      ['--format=custom', '--no-owner', `--file=${join(work, 'database.dump')}`],
-      pgEnv(options.databaseUrl),
+      [
+        '--format=custom',
+        '--no-owner',
+        ...(options.tenantId ? ['--enable-row-security'] : []),
+        `--file=${join(work, 'database.dump')}`,
+      ],
+      options.tenantId
+        ? { ...pgEnv(options.databaseUrl), PGOPTIONS: `-c app.tenant_id=${options.tenantId}` }
+        : pgEnv(options.databaseUrl),
     );
     const manifest: BackupManifest = {
       format: FORMAT,

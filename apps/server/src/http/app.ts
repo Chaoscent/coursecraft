@@ -13,6 +13,7 @@ import fastifyCookie from '@fastify/cookie';
 import fastifyMultipart from '@fastify/multipart';
 import fastifyRateLimit from '@fastify/rate-limit';
 import { Metrics } from './metrics.js';
+import { tenantHook } from '../tenancy/directory.js';
 import { databaseRateLimitStore } from './rate-limit-store.js';
 import { registerAuth } from '../auth/plugin.js';
 import type { AppConfig } from '../config/env.js';
@@ -115,6 +116,8 @@ export async function buildApp(deps: AppDeps): Promise<BuiltApp> {
 
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
+  // Before everything else: every later hook and query runs in the request's tenant.
+  if (deps.ctx) app.addHook('onRequest', tenantHook(config, deps.ctx.tenants));
   const routes = enforceRouteDeclarations(app);
   await registerSecurityHeaders(app, config);
 
@@ -184,7 +187,7 @@ export async function buildApp(deps: AppDeps): Promise<BuiltApp> {
     passwordResetRoutes(app, ctx);
     ssoRoutes(app, ctx);
     // Without a content origin, own courses play on the app origin.
-    if (!config.contentUrl) await launchRoutes(app, ctx, { sameOrigin: true });
+    if (!config.contentUrl && config.tenancy === 'single') await launchRoutes(app, ctx, { sameOrigin: true });
     if (config.webDir) await registerWebApp(app, config.webDir, config);
   }
 

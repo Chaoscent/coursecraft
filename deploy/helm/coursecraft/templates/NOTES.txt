@@ -5,7 +5,7 @@ Chardsoft Coursecraft is being installed.
 
 The first start prints a one-time setup token in the log of ONE of the app pods:
 
-  kubectl logs -l app.kubernetes.io/component=app -c app --prefix | grep "Setup token"
+  kubectl logs -l app.kubernetes.io/component=app -c app --prefix --tail=-1 | grep "Setup token"
 
 To get a fresh token (this invalidates the previous one):
 

@@ -3,13 +3,20 @@ import { createReadStream, createWriteStream, readFileSync, rmSync, statSync } f
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 import { pipeline } from 'node:stream/promises';
-import { S3BlobStore } from '@coursecraft/storage';
+import { FsBlobStore, S3BlobStore, type BlobStore } from '@coursecraft/storage';
 import { backup, restore } from './cli/backup.js';
 import { bootstrapDatabase } from './cli/db-bootstrap.js';
+import { DEFAULT_TENANT_ID } from './tenancy/context.js';
+import { createTenant, deleteTenant, listTenants, newSetupToken, setTenantStatus } from './cli/tenants.js';
 import { initSecrets } from './cli/init-secrets.js';
 import { migrate } from './cli/migrate.js';
 import { createDatabase } from './db/connection.js';
 import { issueSetupToken } from './modules/setup/service.js';
+
+function optionalSecret(name: string): string | undefined {
+  const file = process.env[`${name}_FILE`];
+  return (file ? readFileSync(file, 'utf8').trim() : process.env[name]) || undefined;
+}
 
 function secretFromEnv(name: string): string {
   const file = process.env[`${name}_FILE`];
@@ -40,6 +47,49 @@ function objectStore(): S3BlobStore | null {
 const dataDir = (): string | null =>
   objectStore() ? null : (process.env['COURSECRAFT_DATA_DIR'] ?? '/data');
 
+const blobStore = (): BlobStore =>
+  objectStore() ?? new FsBlobStore(process.env['COURSECRAFT_DATA_DIR'] ?? '/data');
+
+async function tenantCommand(args: string[]): Promise<number> {
+  const [action, ...params] = args;
+  const migrator = createDatabase(secretFromEnv('COURSECRAFT_MIGRATOR_DATABASE_URL'), { max: 1 });
+  const app =
+    action === 'create' ? createDatabase(secretFromEnv('COURSECRAFT_DATABASE_URL'), { max: 1 }) : null;
+  try {
+    switch (action) {
+      case 'list':
+        for (const t of await listTenants(migrator))
+          console.log([t.id, t.status, t.name, t.publicOrigin ?? '-', t.contentOrigin ?? '-'].join('\t'));
+        return 0;
+      case 'create': {
+        const [name, publicOrigin, contentOrigin] = params;
+        if (!name || !publicOrigin || !contentOrigin || !app) break;
+        const created = await createTenant(migrator, app, { name, publicOrigin, contentOrigin });
+        console.log(`Tenant: ${created.id}`);
+        console.log(`Setup token: ${created.token}\nValid until: ${created.expiresAt.toISOString()}`);
+        console.log(`Open ${publicOrigin}/setup to create the first administrator.`);
+        return 0;
+      }
+      case 'disable':
+      case 'enable':
+        if (!params[0]) break;
+        await setTenantStatus(migrator, params[0], action === 'disable' ? 'disabled' : 'active');
+        console.log(`Tenant ${params[0]} ${action}d (takes effect within 30 seconds).`);
+        return 0;
+      case 'delete':
+        if (!params[0]) break;
+        await deleteTenant(migrator, blobStore(), params[0]);
+        console.log(`Tenant ${params[0]} deleted with all its data.`);
+        return 0;
+    }
+    console.error(USAGE);
+    return 2;
+  } finally {
+    await migrator.destroy();
+    await app?.destroy();
+  }
+}
+
 const USAGE = `Usage: coursecraft <command>
 
 Commands:
@@ -47,7 +97,12 @@ Commands:
   init-secrets <dir>    Create missing secrets for all services (first start)
   db-bootstrap          Create the service roles in an existing database (managed PostgreSQL);
                         needs COURSECRAFT_ADMIN_DATABASE_URL and the three role passwords
-  setup-token           Create a new one-time setup token (invalidates the previous one)
+  setup-token [tenant]  Create a new one-time setup token (invalidates the previous one)
+  tenant list           Organisations of this installation (COURSECRAFT_TENANCY=multi)
+  tenant create <name> <public-origin> <content-origin>
+                        Add an organisation; prints its setup token
+  tenant disable|enable <id>
+  tenant delete <id>    Remove an organisation with all its data and files
   backup                Write database and data volume to /data/backups (app container);
                         with object storage: database only, uploaded to backups/ in the bucket
   restore <file>        Replace database and data with a backup (maintenance container,
@@ -90,7 +145,7 @@ async function run(args: string[]): Promise<number> {
     case 'setup-token': {
       const db = createDatabase(secretFromEnv('COURSECRAFT_DATABASE_URL'), { max: 1 });
       try {
-        const setup = await issueSetupToken(db);
+        const setup = rest[0] ? await newSetupToken(db, rest[0]) : await issueSetupToken(db);
         console.log(
           setup
             ? `Setup token: ${setup.token}\nValid until: ${setup.expiresAt.toISOString()}`
@@ -101,10 +156,17 @@ async function run(args: string[]): Promise<number> {
       }
       return 0;
     }
+    case 'tenant':
+      return tenantCommand(rest);
     case 'backup': {
+      // The migrator (owner) dumps every tenant; the app role only the default tenant.
+      const migratorUrl = optionalSecret('COURSECRAFT_MIGRATOR_DATABASE_URL');
+      if (!migratorUrl && process.env['COURSECRAFT_TENANCY'] === 'multi')
+        throw new Error('With several tenants the backup needs COURSECRAFT_MIGRATOR_DATABASE_URL');
       const file = await backup({
-        databaseUrl: secretFromEnv('COURSECRAFT_DATABASE_URL'),
+        databaseUrl: migratorUrl ?? secretFromEnv('COURSECRAFT_DATABASE_URL'),
         dataDir: dataDir(),
+        ...(migratorUrl ? {} : { tenantId: DEFAULT_TENANT_ID }),
       });
       const store = objectStore();
       if (store) {

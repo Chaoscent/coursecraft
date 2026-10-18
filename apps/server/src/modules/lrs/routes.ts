@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { publicUrl } from '../../tenancy/origins.js';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { createReadStream } from 'node:fs';
@@ -84,8 +85,9 @@ const WRAPPER_CSS =
  * content origin is configured) and never read cookies.
  */
 export async function launchRoutes(app: FastifyInstance, ctx: AppContext, options: { sameOrigin: boolean }) {
-  const appOrigin = ctx.config.publicUrl.origin;
-  const frameAncestor = options.sameOrigin ? "'self'" : appOrigin;
+  // Per request: with several tenants each has its own app address.
+  const appOrigin = () => publicUrl(ctx.config).origin;
+  const frameAncestor = () => (options.sameOrigin ? "'self'" : appOrigin());
   const packages = new PackageStore(ctx.blobs);
 
   await app.register((scope) => {
@@ -132,11 +134,11 @@ export async function launchRoutes(app: FastifyInstance, ctx: AppContext, option
         if (launch.kind !== 'scorm12' && launch.kind !== 'scorm2004') throw notFound('Not found');
         common(reply).header(
           'Content-Security-Policy',
-          `default-src 'self'; script-src 'self'; style-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors ${frameAncestor}`,
+          `default-src 'self'; script-src 'self'; style-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors ${frameAncestor()}`,
         );
         const file = request.params.file;
         if (file === 'wrapper.html')
-          return reply.type('text/html; charset=utf-8').send(wrapperHtml(appOrigin));
+          return reply.type('text/html; charset=utf-8').send(wrapperHtml(appOrigin()));
         if (file === 'wrapper.css') return reply.type('text/css; charset=utf-8').send(WRAPPER_CSS);
         if ((file === 'scorm-again.min.js' || file === 'scorm-wrapper.js') && ctx.config.playerDir)
           return reply
@@ -249,7 +251,7 @@ export async function launchRoutes(app: FastifyInstance, ctx: AppContext, option
         // Package pages may also sit in the SCORM wrapper's frame (same origin).
         .header(
           'Content-Security-Policy',
-          playbackCsp(launch.kind, options.sameOrigin ? "'self'" : `'self' ${appOrigin}`),
+          playbackCsp(launch.kind, options.sameOrigin ? "'self'" : `'self' ${appOrigin()}`),
         )
         .header('Cache-Control', 'private, max-age=300')
         .header('Accept-Ranges', 'bytes')

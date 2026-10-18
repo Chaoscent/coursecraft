@@ -659,6 +659,15 @@ test:db` starts an S3 server container (Scality CloudServer) besides
   managed database via `coursecraft db-bootstrap`. Helm chart and tests:
   `docs/kubernetes.md`.
 
+## 12g. Tenancy
+
+- `COURSECRAFT_TENANCY=single|multi`; migration 0015 adds `tenants`,
+  `tenant_id` on every organisation table and row-level security policies.
+  `tenancy/` holds the request scope (AsyncLocalStorage), the tenant
+  directory (by origin, cached 30 s), origins per tenant and the storage
+  prefix; `db/connection.ts` sets `app.tenant_id` per pooled connection.
+  Details and operation: `docs/multi-tenancy.md`.
+
 ## 12e. Performance (Phase 8)
 
 - Pages for authors and administrators are loaded on demand (route-level code

@@ -1,0 +1,65 @@
+{{- /* SPDX-License-Identifier: Apache-2.0 */ -}}
+{{- if eq .Values.tenancy "multi" }}
+{{- $secret := include "coursecraft.secretName" . }}
+{{- $fs := eq .Values.storage.kind "fs" }}
+{{- /* Pod template for deploy/helm/coursecraft-tenant.sh: one-off runs of
+       `coursecraft tenant ...` with the migrator role. __NAME__ and __ARGS__
+       are filled in by the script. */}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "coursecraft.fullname" . }}-tenant-admin
+  labels: {{- include "coursecraft.labels" . | nindent 4 }}
+data:
+  pod.json: |
+    {{- $env := list
+      (dict "name" "COURSECRAFT_MIGRATOR_PASSWORD" "valueFrom" (dict "secretKeyRef" (dict "name" $secret "key" "migratorPassword")))
+      (dict "name" "COURSECRAFT_APP_PASSWORD" "valueFrom" (dict "secretKeyRef" (dict "name" $secret "key" "appPassword")))
+      (dict "name" "COURSECRAFT_MIGRATOR_DATABASE_URL" "value" (include "coursecraft.dbUrl" (list "coursecraft_migrator" "COURSECRAFT_MIGRATOR_PASSWORD" .)))
+      (dict "name" "COURSECRAFT_DATABASE_URL" "value" (include "coursecraft.dbUrl" (list "coursecraft_app" "COURSECRAFT_APP_PASSWORD" .)))
+      (dict "name" "COURSECRAFT_TENANCY" "value" "multi")
+    }}
+    {{- if eq .Values.storage.kind "s3" }}
+    {{- $env = concat $env (list
+      (dict "name" "COURSECRAFT_STORAGE" "value" "s3")
+      (dict "name" "COURSECRAFT_S3_ENDPOINT" "value" .Values.storage.s3.endpoint)
+      (dict "name" "COURSECRAFT_S3_REGION" "value" .Values.storage.s3.region)
+      (dict "name" "COURSECRAFT_S3_BUCKET" "value" .Values.storage.s3.bucket)
+      (dict "name" "COURSECRAFT_S3_KEY_PREFIX" "value" .Values.storage.s3.keyPrefix)
+      (dict "name" "COURSECRAFT_S3_VIRTUAL_HOSTED_STYLE" "value" (toString .Values.storage.s3.virtualHostedStyle))
+      (dict "name" "COURSECRAFT_S3_ACCESS_KEY_ID" "valueFrom" (dict "secretKeyRef" (dict "name" .Values.storage.s3.secret "key" "accessKeyId")))
+      (dict "name" "COURSECRAFT_S3_SECRET_ACCESS_KEY" "valueFrom" (dict "secretKeyRef" (dict "name" .Values.storage.s3.secret "key" "secretAccessKey")))
+    ) }}
+    {{- else }}
+    {{- $env = append $env (dict "name" "COURSECRAFT_DATA_DIR" "value" "/data") }}
+    {{- end }}
+    {{- $mounts := list (dict "name" "tmp" "mountPath" "/tmp") }}
+    {{- $volumes := list (dict "name" "tmp" "emptyDir" (dict)) }}
+    {{- if $fs }}
+    {{- $mounts = append $mounts (dict "name" "data" "mountPath" "/data") }}
+    {{- $volumes = append $volumes (dict "name" "data" "persistentVolumeClaim" (dict "claimName" (default (printf "%s-data" (include "coursecraft.fullname" .)) .Values.storage.fs.existingDataClaim))) }}
+    {{- end }}
+    {{- $container := dict
+      "name" "tenant"
+      "image" (printf "%s:%s" .Values.image.app .Values.image.tag)
+      "imagePullPolicy" .Values.image.pullPolicy
+      "command" (list "coursecraft" "tenant")
+      "args" (list "__ARGS__")
+      "env" $env
+      "volumeMounts" $mounts
+      "securityContext" (dict "allowPrivilegeEscalation" false "readOnlyRootFilesystem" true "capabilities" (dict "drop" (list "ALL")))
+    }}
+    {{- $pod := dict
+      "apiVersion" "v1"
+      "kind" "Pod"
+      "metadata" (dict "name" "__NAME__" "labels" (dict "app.kubernetes.io/instance" .Release.Name "app.kubernetes.io/component" "tenant-admin"))
+      "spec" (dict
+        "restartPolicy" "Never"
+        "automountServiceAccountToken" false
+        "securityContext" (dict "runAsNonRoot" true "runAsUser" 10001 "runAsGroup" 10000 "fsGroup" 10000 "seccompProfile" (dict "type" "RuntimeDefault"))
+        "containers" (list $container)
+        "volumes" $volumes
+        "imagePullSecrets" .Values.imagePullSecrets)
+    }}
+    {{- $pod | toJson | nindent 4 }}
+{{- end }}

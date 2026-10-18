@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { PGBOSS_SCHEMA, type QueueName } from '@coursecraft/shared';
 import { PgBoss } from 'pg-boss';
+import { currentScope, DEFAULT_TENANT_ID } from '../tenancy/context.js';
 
 export interface SendOptions {
   /** The job fails (and is not retried) when not finished in time. */
@@ -25,10 +26,16 @@ export function createBoss(databaseUrl: string): PgBoss {
   });
 }
 
+/** Adds the tenant of the current scope, so the worker handles the job for the same organisation. */
+export function withTenant(data: object): object {
+  const id = currentScope()?.id;
+  return id && id !== DEFAULT_TENANT_ID ? { ...data, tenantId: id } : data;
+}
+
 export function bossQueue(boss: PgBoss): JobQueue {
   return {
     async send(queue, data, options = {}) {
-      await boss.send(queue, data, { retryLimit: 0, ...options });
+      await boss.send(queue, withTenant(data), { retryLimit: 0, ...options });
     },
   };
 }
@@ -38,7 +45,7 @@ export class RecordingQueue implements JobQueue {
   readonly sent: { queue: QueueName; data: object; options: SendOptions }[] = [];
 
   send(queue: QueueName, data: object, options: SendOptions = {}): Promise<void> {
-    this.sent.push({ queue, data, options });
+    this.sent.push({ queue, data: withTenant(data), options });
     return Promise.resolve();
   }
 }

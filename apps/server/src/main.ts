@@ -10,6 +10,8 @@ import { expireStale, handleConvertDone } from './modules/conversions/service.js
 import { handleMailJob, sendDueReminders } from './modules/mail/service.js';
 import { issueSetupToken } from './modules/setup/service.js';
 import { serveMetrics } from './http/metrics.js';
+import { currentScope, DEFAULT_SCOPE, DEFAULT_TENANT_ID, runAsTenant } from './tenancy/context.js';
+import { forEachTenant } from './tenancy/directory.js';
 import { claimRun } from './jobs/lease.js';
 import { purgeRateLimits } from './http/rate-limit-store.js';
 import { syncAllDirectories } from './modules/sso/sync.js';
@@ -23,25 +25,40 @@ const config = loadConfig();
 const boss = createBoss(config.databaseUrl);
 const ctx = createContext(config, bossQueue(boss));
 const { app, metrics } = await buildApp({ config, ctx, checkReadiness: () => checkReadiness(ctx.db) });
-const contentApp = config.contentUrl ? await buildContentApp(config, ctx) : null;
+const contentApp =
+  config.contentUrl || config.tenancy === 'multi' ? await buildContentApp(config, ctx) : null;
 ctx.log = app.log;
 boss.on('error', (error: Error) => app.log.error({ err: error }, 'job queue error'));
 await boss.start();
+/** Runs a job for the tenant it was queued for; jobs of removed tenants are dropped. */
+async function inTenantOf(tenantId: string | undefined, work: () => Promise<void>): Promise<void> {
+  const scope = tenantId ? await ctx.tenants.byId(tenantId) : DEFAULT_SCOPE;
+  if (!scope) {
+    app.log.warn({ tenantId }, 'job for an unknown tenant dropped');
+    return;
+  }
+  await runAsTenant(scope, work);
+}
+
 await boss.work(QUEUES.convertDone, { batchSize: 1 }, async ([job]) => {
   if (!job) return;
   const parsed = convertDoneJobSchema.safeParse(job.data);
   if (!parsed.success) return app.log.warn({ jobId: job.id }, 'invalid converter message dropped');
-  await handleConvertDone(ctx, parsed.data);
+  await inTenantOf(parsed.data.tenantId, () => handleConvertDone(ctx, parsed.data));
 });
 await boss.work(QUEUES.mail, { batchSize: 1 }, async ([job]) => {
   if (!job) return;
   const parsed = mailJobSchema.safeParse(job.data);
   if (!parsed.success) return app.log.warn({ jobId: job.id }, 'invalid mail job dropped');
   // Errors propagate so the job is marked failed; the log never contains addresses or texts.
-  await handleMailJob(ctx, parsed.data);
+  await inTenantOf(parsed.data.tenantId, () => handleMailJob(ctx, parsed.data));
 });
 
-const setup = await issueSetupToken(ctx.db, { onlyIfMissing: config.setupTokenOnStart === 'if-missing' });
+// With several tenants each one gets its token when the operator creates it (coursecraft tenant create).
+const setup =
+  config.tenancy === 'single'
+    ? await issueSetupToken(ctx.db, { onlyIfMissing: config.setupTokenOnStart === 'if-missing' })
+    : null;
 if (setup) {
   // Printed only to the container log; the database stores the hash.
   app.log.warn(
@@ -51,34 +68,52 @@ if (setup) {
 }
 
 metrics.addGauges(async () => {
-  const [sessions, conversions] = await Promise.all([
-    ctx.db
-      .selectFrom('sessions')
-      .select((eb) => eb.fn.countAll<string>().as('n'))
-      .where('absolute_expires_at', '>', new Date())
-      .executeTakeFirstOrThrow(),
-    ctx.db
-      .selectFrom('conversions')
-      .select((eb) => eb.fn.countAll<string>().as('n'))
-      .where('status', '=', 'pending')
-      .executeTakeFirstOrThrow(),
-  ]);
+  let activeSessions = 0;
+  let pendingConversions = 0;
+  await forEachTenant(
+    config,
+    ctx.tenants,
+    async () => {
+      const [sessions, conversions] = await Promise.all([
+        ctx.db
+          .selectFrom('sessions')
+          .select((eb) => eb.fn.countAll<string>().as('n'))
+          .where('absolute_expires_at', '>', new Date())
+          .executeTakeFirstOrThrow(),
+        ctx.db
+          .selectFrom('conversions')
+          .select((eb) => eb.fn.countAll<string>().as('n'))
+          .where('status', '=', 'pending')
+          .executeTakeFirstOrThrow(),
+      ]);
+      activeSessions += Number(sessions.n);
+      pendingConversions += Number(conversions.n);
+    },
+    () => undefined,
+  );
   return {
-    coursecraft_active_sessions: Number(sessions.n),
-    coursecraft_pending_conversions: Number(conversions.n),
+    coursecraft_active_sessions: activeSessions,
+    coursecraft_pending_conversions: pendingConversions,
+    coursecraft_tenants: config.tenancy === 'single' ? 1 : (await ctx.tenants.active()).length,
   };
 });
 const metricsServer = config.metricsPort ? serveMetrics(metrics, config.host, config.metricsPort) : null;
 
 const timers: NodeJS.Timeout[] = [];
 
-/** Runs `task` every `ms`; with several replicas only one of them does it per round. */
+/**
+ * Runs `task` every `ms` for every tenant; with several replicas only one of
+ * them does it per round.
+ */
 function every(name: string, ms: number, task: () => Promise<void>): void {
   timers.push(
     setInterval(() => {
       claimRun(ctx.db, name, Math.floor(ms * 0.9))
         .then(async (mine) => {
-          if (mine) await task();
+          if (!mine) return;
+          await forEachTenant(config, ctx.tenants, task, (scope, error) =>
+            app.log.error({ err: error, job: name, tenant: scope.id }, 'periodic job failed for a tenant'),
+          );
         })
         .catch((error: unknown) => app.log.error({ err: error, job: name }, 'periodic job failed'));
     }, ms),
@@ -89,7 +124,10 @@ every('cleanup', CLEANUP_INTERVAL_MS, async () => {
   const deleted = await ctx.sessions.deleteExpired();
   if (deleted) app.log.info({ deleted }, 'expired sessions removed');
   await purgeOldAttempts(ctx);
-  await purgeRateLimits(ctx.db);
+});
+every('rate-limit-purge', CLEANUP_INTERVAL_MS, async () => {
+  // Shared by all tenants; one run is enough (the default tenant's round).
+  if ((currentScope()?.id ?? DEFAULT_TENANT_ID) === DEFAULT_TENANT_ID) await purgeRateLimits(ctx.db);
 });
 every('conversion-sweep', CONVERSION_SWEEP_MS, async () => {
   const expired = await expireStale(ctx);

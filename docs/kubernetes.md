@@ -92,5 +92,5 @@ kubectl -n coursecraft scale deploy/coursecraft-converter --replicas=1
 
 - Objects up to 5 GB (single PUT); uploads are limited far below that.
 - Exports are built in memory (see `docs/todo.md`).
-- One installation per namespace and database; several customers need one
-  release each (SaaS step 1 in the roadmap).
+- Several organisations: either one release per customer, or one release
+  with `tenancy=multi` (see docs/multi-tenancy.md).

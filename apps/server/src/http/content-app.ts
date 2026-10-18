@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { tenantHook } from '../tenancy/directory.js';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { serializerCompiler, validatorCompiler, type ZodTypeProvider } from 'fastify-type-provider-zod';
 import { randomUUID } from 'node:crypto';
@@ -21,6 +22,7 @@ export async function buildContentApp(config: AppConfig, ctx: AppContext): Promi
   }).withTypeProvider<ZodTypeProvider>();
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
+  app.addHook('onRequest', tenantHook(config, ctx.tenants));
   enforceRouteDeclarations(app);
   installErrorHandling(app);
   app.get(

@@ -33,6 +33,8 @@ export interface Actor {
 export interface TestApp {
   app: FastifyInstance;
   ctx: AppContext;
+  /** Connection URL of the migrator role (owner of the tables; tenants). */
+  migratorUrl: string;
   routes: RegisteredRoute[];
   close(): Promise<void>;
   createUser(
@@ -57,7 +59,7 @@ export function sessionCookie(res: LightMyRequestResponse): string | undefined {
 export async function createTestApp(env: Record<string, string> = {}): Promise<TestApp> {
   const pg = inject('pg');
   const s3 = inject('s3');
-  const { url, drop } = await createTestDatabase(pg);
+  const { url, migratorUrl, drop } = await createTestDatabase(pg);
   const config = loadConfig({
     COURSECRAFT_PUBLIC_URL: ORIGIN,
     COURSECRAFT_DATABASE_URL: url,
@@ -145,6 +147,7 @@ export async function createTestApp(env: Record<string, string> = {}): Promise<T
   return {
     app,
     ctx,
+    migratorUrl,
     routes,
     request,
     createUser,

@@ -14,6 +14,10 @@ imagePullSecrets: []
 publicUrl: https://courses.example.com
 contentUrl: https://courses-content.example.com
 
+# "single": one organisation (the default). "multi": several organisations,
+# each under its own addresses; add them with deploy/helm/coursecraft-tenant.sh.
+tenancy: single
+
 replicas:
   app: 2
   converter: 1
@@ -81,6 +85,13 @@ ingress:
   tls:
     app: courses-tls
     content: courses-content-tls
+  # More addresses for tenants (tenancy: multi), for example wildcards:
+  #   app: ['*.courses.example.com'], content: ['*.content.example.com']
+  extraHosts:
+    app: []
+    content: []
+  # TLS for those hosts: [{ secretName: wildcard-tls, hosts: ['*.courses.example.com'] }]
+  extraTls: []
 
 resources:
   app:

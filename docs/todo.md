@@ -5,6 +5,11 @@ issue once the repository is published.
 
 ## Kubernetes and SaaS
 
+- [ ] Quotas and usage per tenant; operator web interface; moving or
+      restoring a single tenant (see docs/multi-tenancy.md).
+- [ ] Self-service sign-up and payment (optional; the operator creates
+      tenants today).
+
 - [ ] Multipart upload for objects above 5 GB (single PUT limit); today the
       upload limit (`COURSECRAFT_UPLOAD_MAX_MB`, package limits) stays below it.
 - [ ] Build exports as streams or background jobs instead of one buffer in

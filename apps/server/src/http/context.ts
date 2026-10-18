@@ -8,6 +8,7 @@ import type { Database } from '../db/schema.js';
 import type { JobQueue } from '../jobs/queue.js';
 import type { WorkExchange } from '../jobs/work-dir.js';
 import type { BlobStore } from '@coursecraft/storage';
+import type { TenantDirectory } from '../tenancy/directory.js';
 import type { AssetStore } from '../modules/assets/store.js';
 import type { AuditService } from '../modules/audit/service.js';
 
@@ -21,6 +22,8 @@ export interface AppContext {
   assets: AssetStore;
   /** All stored files (assets, extracted packages, converter exchange) behind one interface. */
   blobs: BlobStore;
+  /** Tenants by address (several organisations in one installation). */
+  tenants: TenantDirectory;
   jobs: JobQueue;
   work: WorkExchange;
   /** Replaced by the HTTP server's logger once it exists. */

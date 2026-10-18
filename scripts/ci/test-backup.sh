@@ -11,7 +11,7 @@ export COURSECRAFT_PUBLIC_URL=http://localhost:3300 COURSECRAFT_HTTP_PORT=3300 C
 cleanup() { $COMPOSE --profile maintenance down -v --remove-orphans >/dev/null 2>&1 || true; }
 trap cleanup EXIT
 
-sql() { $COMPOSE exec -T app sh -c "psql -qtA \"\$(cat /run/coursecraft/database_url)\" -c \"$1\""; }
+sql() { $COMPOSE exec -T -e PGOPTIONS='-c app.tenant_id=00000000-0000-4000-8000-000000000001' app sh -c "psql -qtA \"\$(cat /run/coursecraft/database_url)\" -c \"$1\""; }
 fail() { echo "FAIL: $1" >&2; exit 1; }
 
 $COMPOSE up -d --no-build --pull never --wait --wait-timeout 180

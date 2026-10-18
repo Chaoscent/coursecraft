@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { contentUrl, publicUrl } from '../../tenancy/origins.js';
 import type { LaunchResponse, MyItem, PackageKind } from '@coursecraft/shared';
 import type { Kysely } from 'kysely';
 import { hashToken, randomToken } from '../../crypto/tokens.js';
@@ -125,7 +126,7 @@ function actorFor(ctx: AppContext, auth: AuthState) {
   return {
     objectType: 'Agent',
     name: auth.displayName,
-    account: { homePage: ctx.config.publicUrl.origin, name: auth.userId },
+    account: { homePage: publicUrl(ctx.config).origin, name: auth.userId },
   };
 }
 
@@ -144,7 +145,7 @@ export function agentKey(agent: unknown): string {
 }
 
 function contentBase(ctx: AppContext): string {
-  return (ctx.config.contentUrl ?? ctx.config.publicUrl).origin;
+  return (contentUrl(ctx.config) ?? publicUrl(ctx.config)).origin;
 }
 
 /**
@@ -303,7 +304,7 @@ async function writeLaunchData(
     })
     .onConflict((oc) =>
       oc
-        .columns(['kind', 'activity_id', 'agent_key', 'registration', 'doc_id'])
+        .constraint('lrs_documents_key')
         .doUpdateSet({ content, updated_at: new Date(), etag: hashToken(content.toString('base64')) }),
     )
     .execute();

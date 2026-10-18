@@ -16,6 +16,9 @@ third-party services.
 - **Kubernetes:** Helm chart in `deploy/helm/coursecraft`, several app
   replicas, files in S3-compatible object storage. See
   [docs/kubernetes.md](docs/kubernetes.md).
+- **Several organisations:** one installation serves many customers, kept
+  apart by the database itself (row-level security). See
+  [docs/multi-tenancy.md](docs/multi-tenancy.md).
 - **Company network:** sign-in with Active Directory / LDAP and automatic
   Windows sign-in through a Kerberos reverse proxy. See
   [docs/windows-sso.md](docs/windows-sso.md).

@@ -15,7 +15,7 @@ export async function saveSsoPolicy(ctx: AppContext, auth: AuthState, input: Sso
     .insertInto('settings')
     .values({ key: KEY, value: JSON.stringify(input) })
     .onConflict((oc) =>
-      oc.column('key').doUpdateSet({ value: JSON.stringify(input), updated_at: new Date() }),
+      oc.constraint('settings_pkey').doUpdateSet({ value: JSON.stringify(input), updated_at: new Date() }),
     )
     .execute();
   await ctx.audit.record({

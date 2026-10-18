@@ -430,6 +430,15 @@ export interface PeriodicJobsTable {
   locked_until: Timestamp;
 }
 
+export interface TenantsTable {
+  id: Generated<string>;
+  name: string;
+  public_origin: string | null;
+  content_origin: string | null;
+  status: ColumnType<'active' | 'disabled', 'active' | 'disabled' | undefined, 'active' | 'disabled'>;
+  created_at: CreatedAt;
+}
+
 export interface SsoStatesTable {
   state_hash: string;
   provider_id: string;
@@ -489,5 +498,6 @@ export interface Database {
   directory_attempts: DirectoryAttemptsTable;
   rate_limits: RateLimitsTable;
   periodic_jobs: PeriodicJobsTable;
+  tenants: TenantsTable;
   user_identities: UserIdentitiesTable;
 }

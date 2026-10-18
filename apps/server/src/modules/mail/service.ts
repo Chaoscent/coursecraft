@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { publicUrl } from '../../tenancy/origins.js';
 import { QUEUES, type MailJob, type SmtpSettings, type SmtpSettingsInput } from '@coursecraft/shared';
 import nodemailer from 'nodemailer';
 import { z } from 'zod';
@@ -76,7 +77,7 @@ export async function saveSmtpSettings(
     .insertInto('settings')
     .values({ key: SETTINGS_KEY, value: JSON.stringify(value) })
     .onConflict((oc) =>
-      oc.column('key').doUpdateSet({ value: JSON.stringify(value), updated_at: new Date() }),
+      oc.constraint('settings_pkey').doUpdateSet({ value: JSON.stringify(value), updated_at: new Date() }),
     )
     .execute();
   await ctx.audit.record({
@@ -153,7 +154,7 @@ export async function handleMailJob(ctx: AppContext, job: MailJob): Promise<void
     const sealed = JSON.parse(job.params['token'] ?? 'null') as SealedJson | null;
     if (!sealed) return;
     const token = ctx.box.open(sealed, `password-reset:${job.userId}`);
-    params['link'] = new URL(`/reset-password#${token}`, ctx.config.publicUrl).toString();
+    params['link'] = new URL(`/reset-password#${token}`, publicUrl(ctx.config)).toString();
     delete params['token'];
   }
   if (params['dueAt']) params['due'] = formatDue(new Date(params['dueAt']), user.locale, ctx.config.timeZone);
@@ -203,7 +204,7 @@ async function claimNotice(
   return !!row;
 }
 
-const learnLink = (ctx: AppContext) => new URL('/', ctx.config.publicUrl).toString();
+const learnLink = (ctx: AppContext) => new URL('/', publicUrl(ctx.config)).toString();
 
 /** "You have a new course" for every learner of the given assignments, once each. */
 export async function notifyAssigned(ctx: AppContext, assignmentIds: string[]): Promise<number> {
