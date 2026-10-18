@@ -26,6 +26,9 @@ interface Clip {
   durationMs: number | null;
 }
 
+/** The screen was shared, but the microphone was not (so the message can say which one). */
+class MicrophoneError extends Error {}
+
 /** Screen (and optionally tab or system) video plus an optional microphone, mixed to one audio track. */
 async function captureScreen(withMic: boolean, withSystemAudio: boolean) {
   const display = await navigator.mediaDevices.getDisplayMedia({
@@ -37,7 +40,7 @@ async function captureScreen(withMic: boolean, withSystemAudio: boolean) {
         .getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } })
         .catch((e: unknown) => {
           display.getTracks().forEach((t) => t.stop());
-          throw e;
+          throw new MicrophoneError(e instanceof Error ? e.message : String(e), { cause: e });
         })
     : null;
   const audio = [...display.getAudioTracks(), ...(mic?.getAudioTracks() ?? [])];
@@ -58,6 +61,10 @@ async function captureScreen(withMic: boolean, withSystemAudio: boolean) {
     },
   };
 }
+
+/** Screen recording needs both; phones and tablets (and some test browsers) lack them. */
+const canRecordScreen = () =>
+  typeof MediaRecorder !== 'undefined' && typeof navigator.mediaDevices?.getDisplayMedia === 'function';
 
 function useScreenRecorder(onDone: (clip: Clip) => void, onError: () => void) {
   const recorder = useRef<{ rec: MediaRecorder; stop: () => void } | null>(null);
@@ -168,7 +175,11 @@ export function VideoDialog({ mode, onClose }: { mode: 'record' | 'file'; onClos
       await recorder.start(withMic, withSystemAudio, t('video.recordingName'));
     } catch (e) {
       setError(
-        e instanceof DOMException && e.name === 'NotAllowedError' ? t('video.denied') : describeMediaError(e),
+        e instanceof MicrophoneError
+          ? t('video.micDenied')
+          : e instanceof DOMException && e.name === 'NotAllowedError'
+            ? t('video.denied')
+            : describeMediaError(e),
       );
     }
   };
@@ -251,7 +262,17 @@ export function VideoDialog({ mode, onClose }: { mode: 'record' | 'file'; onClos
       {error ? <Notice tone="danger">{error}</Notice> : null}
       {busy ? <Notice tone="info">{t('video.processingHint')}</Notice> : null}
       <div className={styles.videoDialog}>
-        {mode === 'record' ? (
+        {mode === 'record' && !canRecordScreen() ? (
+          <>
+            <Notice tone="info">{t('video.cannotRecord')}</Notice>
+            <div className={styles.inline}>
+              <Button icon="file-up" isDisabled={busy} onPress={() => void pick()}>
+                {clip ? t('video.otherFile') : t('video.chooseFile')}
+              </Button>
+              {clip ? <span className={styles.ellipsis}>{clip.name}</span> : null}
+            </div>
+          </>
+        ) : mode === 'record' ? (
           <div className={styles.inline}>
             <Checkbox isSelected={withMic} onChange={setWithMic} isDisabled={recorder.recording}>
               {t('video.microphone')}

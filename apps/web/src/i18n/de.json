@@ -1001,7 +1001,9 @@
     "processing": "Wird verarbeitet …",
     "processingHint": "Das Video wird umgewandelt (MP4 und WebM). Das kann je nach Länge einige Minuten dauern.",
     "failed": "Das Video konnte nicht umgewandelt werden.",
-    "recordFailed": "Die Aufnahme ist fehlgeschlagen. Bitte erneut versuchen."
+    "recordFailed": "Die Aufnahme ist fehlgeschlagen. Bitte erneut versuchen.",
+    "micDenied": "Kein Zugriff auf das Mikrofon. Im Browser erlauben oder ohne Mikrofon aufnehmen.",
+    "cannotRecord": "Dieser Browser kann den Bildschirm nicht aufnehmen (z. B. auf Smartphone und Tablet). Ein vorhandenes Video lässt sich stattdessen einfügen."
   },
   "ai": {
     "title": "KI-Anbieter",

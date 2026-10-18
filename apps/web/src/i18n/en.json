@@ -1001,7 +1001,9 @@
     "processing": "Processing …",
     "processingHint": "The video is being converted (MP4 and WebM). Depending on its length this can take a few minutes.",
     "failed": "The video could not be converted.",
-    "recordFailed": "The recording failed. Please try again."
+    "recordFailed": "The recording failed. Please try again.",
+    "micDenied": "No access to the microphone. Allow it in the browser or record without the microphone.",
+    "cannotRecord": "This browser cannot record the screen (for example on phones and tablets). You can insert an existing video instead."
   },
   "ai": {
     "title": "AI providers",
