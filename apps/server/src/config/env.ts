@@ -59,6 +59,8 @@ const configSchema = z
       .max(24 * 30)
       .default(12),
     /** Sign-in, setup and 2FA attempts per client address and minute. */
+    /** Stripe webhook signing secret (optional billing; see docs/billing.md). */
+    stripeWebhookSecret: z.string().min(10).optional(),
     /** `multi`: one installation serves several organisations, told apart by their addresses. */
     tenancy: z.enum(['single', 'multi']).default('single'),
     /** `if-missing`: with several replicas, only the first start prints a setup token. */
@@ -145,6 +147,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     sessionIdleMinutes: env['COURSECRAFT_SESSION_IDLE_MINUTES'],
     sessionAbsoluteHours: env['COURSECRAFT_SESSION_ABSOLUTE_HOURS'],
     tenancy: env['COURSECRAFT_TENANCY'],
+    stripeWebhookSecret: readSecret(env, 'COURSECRAFT_STRIPE_WEBHOOK_SECRET') || undefined,
     setupTokenOnStart: env['COURSECRAFT_SETUP_TOKEN_ON_START'],
     metricsPort: env['COURSECRAFT_METRICS_PORT'] || undefined,
     rateLimitStore: env['COURSECRAFT_RATE_LIMIT_STORE'],

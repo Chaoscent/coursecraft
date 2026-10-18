@@ -352,6 +352,24 @@ change:
 - Rules live in `policy/learners.ts`; `tests/security/trainer-scope.test.ts`
   covers every endpoint above.
 
+## 5i. Billing webhook (optional, Stripe)
+
+- Registered only with `COURSECRAFT_STRIPE_WEBHOOK_SECRET`. No session, no
+  origin check (Stripe posts server to server): the only trust is the
+  `Stripe-Signature` HMAC-SHA256 over the raw body, compared in constant
+  time, with a five-minute tolerance against replays. Rate-limited, 1 MB
+  body limit.
+- Each event id is applied once (`billing_events`, insert-only for the app
+  role). The app role may update only the billing and limit columns of
+  `tenants` and only read `billing_plans`. Billing never switches off the
+  default organisation and never deletes data.
+- The Stripe API key lives only in the operator console, which is not
+  published. The app makes no request to Stripe. Plans and links are
+  recorded in the operator log (names only, no keys or URLs).
+- Tests: `tests/integration/billing.test.ts` (signatures, replay, duplicates,
+  unknown tenants, default organisation, anonymous access to the console's
+  billing routes).
+
 ## 8. Known limitations
 
 - Third-party packages run arbitrary JavaScript on the content origin. They

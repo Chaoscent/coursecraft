@@ -107,3 +107,19 @@ export async function readOnlyFor<DB>(
     );
   }
 }
+
+/** Lets a role change only these columns of a table (on top of read access). Skipped when the role is missing. */
+export async function grantColumnUpdate<DB>(
+  db: Kysely<DB>,
+  table: TrustedIdentifier,
+  columns: readonly TrustedIdentifier[],
+  role: TrustedIdentifier,
+): Promise<void> {
+  const result = await sql<{
+    n: number;
+  }>`select count(*)::int as n from pg_roles where rolname = ${role}`.execute(db);
+  if (result.rows[0]?.n)
+    await sql`grant update (${sql.join(columns.map((c) => sql.id(c)))}) on ${sql.table(table)} to ${sql.id(role)}`.execute(
+      db,
+    );
+}

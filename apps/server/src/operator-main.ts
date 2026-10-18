@@ -3,6 +3,7 @@ import { createDatabase } from './db/connection.js';
 import { buildOperatorApp } from './operator/app.js';
 import { loadOperatorConfig } from './operator/config.js';
 import { blobStoreFromEnv } from './storage.js';
+import { StripeClient } from './modules/billing/stripe.js';
 
 const config = loadOperatorConfig();
 const migrator = createDatabase(config.migratorDatabaseUrl, { max: 2 });
@@ -16,6 +17,7 @@ const app = await buildOperatorApp(config, {
   release: config.release,
   tenancy: config.tenancy,
   storage: config.storage,
+  stripe: config.stripeSecretKey ? new StripeClient(config.stripeSecretKey, config.stripeApiBase) : undefined,
 });
 
 const shutdown = async () => {

@@ -103,7 +103,8 @@ export function tenantHook(config: AppConfig, directory: TenantDirectory) {
     }
     // Probes call the pod by its IP address; they touch no tenant data.
     const path = request.url.split('?')[0];
-    if (path === '/healthz' || path === '/readyz') {
+    // Stripe's webhook concerns the organisations themselves, not one of them.
+    if (path === '/healthz' || path === '/readyz' || path === '/api/billing/stripe/webhook') {
       done();
       return;
     }

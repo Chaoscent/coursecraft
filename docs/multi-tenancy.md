@@ -117,8 +117,8 @@ The id of the default tenant (single installations) is
 
 ## Not covered yet
 
-- Self-service sign-up and payment (the operator creates tenants; billing
-  happens outside Coursecraft).
+- Self-service sign-up (the operator creates tenants). Payment by Stripe
+  subscription is optional: [billing.md](billing.md).
 - Usage figures per tenant in the Prometheus metrics (the console shows them).
 - Moving one tenant to its own installation, and restoring a single tenant
   from a backup.

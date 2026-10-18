@@ -13,6 +13,7 @@ import fastifyCookie from '@fastify/cookie';
 import fastifyMultipart from '@fastify/multipart';
 import fastifyRateLimit from '@fastify/rate-limit';
 import { Metrics } from './metrics.js';
+import { billingRoutes } from '../modules/billing/routes.js';
 import { tenantHook } from '../tenancy/directory.js';
 import { databaseRateLimitStore } from './rate-limit-store.js';
 import { registerAuth } from '../auth/plugin.js';
@@ -186,6 +187,7 @@ export async function buildApp(deps: AppDeps): Promise<BuiltApp> {
     pathRoutes(app, ctx);
     passwordResetRoutes(app, ctx);
     ssoRoutes(app, ctx);
+    billingRoutes(app, ctx);
     // Without a content origin, own courses play on the app origin.
     if (!config.contentUrl && config.tenancy === 'single') await launchRoutes(app, ctx, { sameOrigin: true });
     if (config.webDir) await registerWebApp(app, config.webDir, config);

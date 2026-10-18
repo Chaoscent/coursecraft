@@ -659,6 +659,21 @@ test:db` starts an S3 server container (Scality CloudServer) besides
   managed database via `coursecraft db-bootstrap`. Helm chart and tests:
   `docs/kubernetes.md`.
 
+## 12l. Billing (optional, Stripe)
+
+- Off unless configured. `modules/billing/stripe.ts` is a small REST client
+  (form-encoded, no SDK) used by the operator console only
+  (`COURSECRAFT_STRIPE_SECRET_KEY`) for customers, Checkout sessions and
+  portal sessions. The app only receives events:
+  `POST /api/billing/stripe/webhook` (registered with
+  `COURSECRAFT_STRIPE_WEBHOOK_SECRET`, raw body, signature check, outside the
+  tenant resolution).
+- Migration 0022: `billing_plans` (Stripe price → limits, owned by the
+  console), billing columns on `tenants` (column-level UPDATE for the app
+  role), `billing_events` (insert-only, one row per event id).
+  `modules/billing/webhook.ts` maps events to plan, limits, payment state and
+  on/off. Guide: `docs/billing.md`.
+
 ## 12k. Provider groups and single logout
 
 - `sso/roles.ts` maps provider groups to roles for LDAP, OIDC (`groupClaim`)

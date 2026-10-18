@@ -9,6 +9,7 @@ import type { Database } from '../db/schema.js';
 import { AppError } from '../http/errors.js';
 import { DEFAULT_TENANT_ID, runAsTenant } from '../tenancy/context.js';
 import { usage } from '../tenancy/quotas.js';
+import { StripeError, type StripeClient } from '../modules/billing/stripe.js';
 
 export interface OperatorDeps {
   /** Owner of the tables (tenants, operator log). */
@@ -21,6 +22,8 @@ export interface OperatorDeps {
   release?: string | undefined;
   tenancy?: 'single' | 'multi' | undefined;
   storage?: 'fs' | 's3' | undefined;
+  /** Stripe (optional billing); absent: no payment links. */
+  stripe?: StripeClient | undefined;
 }
 
 const RESET_MINUTES = 60;
@@ -66,6 +69,9 @@ export async function listTenants(deps: OperatorDeps): Promise<OperatorTenant[]>
       contactEmail: row.contact_email,
       plan: row.plan,
       notes: row.notes,
+      planId: row.plan_id,
+      billingState: row.billing_state,
+      stripeCustomerId: row.stripe_customer_id,
       users: used.users,
       storageBytes: used.storageBytes,
       createdAt: row.created_at.toISOString(),
@@ -299,6 +305,7 @@ export async function installation(deps: OperatorDeps) {
     activeOrganisations: tenants.filter((x) => x.status === 'active').length,
     users: tenants.reduce((n, x) => n + x.users, 0),
     storageBytes: tenants.reduce((n, x) => n + x.storageBytes, 0),
+    billing: !!deps.stripe,
   };
 }
 
@@ -318,4 +325,139 @@ export async function operatorLog(deps: OperatorDeps) {
       details: r.details,
     })),
   };
+}
+
+/* ---------- Billing (optional, Stripe) ---------- */
+
+const planOf = (r: {
+  id: string;
+  name: string;
+  stripe_price_id: string;
+  max_users: number | null;
+  max_storage_mb: number | null;
+}) => ({
+  id: r.id,
+  name: r.name,
+  stripePriceId: r.stripe_price_id,
+  maxUsers: r.max_users,
+  maxStorageMb: r.max_storage_mb,
+});
+
+export async function listPlans(deps: OperatorDeps) {
+  const rows = await deps.migrator.selectFrom('billing_plans').selectAll().orderBy('name').execute();
+  return { items: rows.map(planOf) };
+}
+
+export async function savePlan(
+  deps: OperatorDeps,
+  id: string | null,
+  input: { name: string; stripePriceId: string; maxUsers: number | null; maxStorageMb: number | null },
+) {
+  const values = {
+    name: input.name,
+    stripe_price_id: input.stripePriceId,
+    max_users: input.maxUsers,
+    max_storage_mb: input.maxStorageMb,
+  };
+  try {
+    const row = id
+      ? await deps.migrator
+          .updateTable('billing_plans')
+          .set(values)
+          .where('id', '=', id)
+          .returningAll()
+          .executeTakeFirst()
+      : await deps.migrator.insertInto('billing_plans').values(values).returningAll().executeTakeFirst();
+    if (!row) throw new AppError('not_found', 'Plan not found');
+    await log(deps, id ? 'plan.updated' : 'plan.created', null, { plan: input.name });
+    return planOf(row);
+  } catch (error) {
+    if (error instanceof Error && /duplicate key/.test(error.message))
+      throw new AppError('conflict', 'Another plan already uses this Stripe price');
+    throw error;
+  }
+}
+
+export async function deletePlan(deps: OperatorDeps, id: string): Promise<void> {
+  const row = await deps.migrator
+    .deleteFrom('billing_plans')
+    .where('id', '=', id)
+    .returning('name')
+    .executeTakeFirst();
+  if (!row) throw new AppError('not_found', 'Plan not found');
+  await log(deps, 'plan.deleted', null, { plan: row.name });
+}
+
+function stripeOf(deps: OperatorDeps): StripeClient {
+  if (!deps.stripe)
+    throw new AppError('bad_request', 'Stripe is not configured (COURSECRAFT_STRIPE_SECRET_KEY)');
+  return deps.stripe;
+}
+
+const stripeFailure = (error: unknown): never => {
+  if (error instanceof StripeError)
+    throw new AppError('upstream_failed', `Stripe: ${error.message}`.slice(0, 300));
+  throw error;
+};
+
+/**
+ * A Stripe payment page for one organisation and plan, to send to the
+ * customer. The Stripe customer is created on first use and kept. The
+ * organisation is switched on and gets the plan's limits by the webhook once
+ * Stripe reports the payment, not here.
+ */
+export async function paymentLink(deps: OperatorDeps, tenantId: string, planId: string) {
+  const stripe = stripeOf(deps);
+  const tenant = await assertTenant(deps, tenantId);
+  const plan = await deps.migrator
+    .selectFrom('billing_plans')
+    .selectAll()
+    .where('id', '=', planId)
+    .executeTakeFirst();
+  if (!plan) throw new AppError('not_found', 'Plan not found');
+  const base = tenant.public_origin ?? deps.publicUrl;
+  if (!base) throw new AppError('bad_request', 'The organisation has no address to return to');
+  try {
+    let customer = tenant.stripe_customer_id;
+    if (!customer) {
+      customer = await stripe.createCustomer({ name: tenant.name, email: tenant.contact_email, tenantId });
+      await deps.migrator
+        .updateTable('tenants')
+        .set({ stripe_customer_id: customer })
+        .where('id', '=', tenantId)
+        .execute();
+    }
+    const url = await stripe.createCheckout({
+      customer,
+      priceId: plan.stripe_price_id,
+      tenantId,
+      planId,
+      successUrl: new URL('/?billing=success', base).toString(),
+      cancelUrl: new URL('/?billing=canceled', base).toString(),
+    });
+    await log(deps, 'tenant.payment_link', tenantId, { plan: plan.name });
+    return { url };
+  } catch (error) {
+    return stripeFailure(error);
+  }
+}
+
+/** Stripe's customer portal for an organisation that already pays (payment method, invoices, cancel). */
+export async function portalLink(deps: OperatorDeps, tenantId: string) {
+  const stripe = stripeOf(deps);
+  const tenant = await assertTenant(deps, tenantId);
+  if (!tenant.stripe_customer_id)
+    throw new AppError('bad_request', 'The organisation has no Stripe customer yet');
+  const base = tenant.public_origin ?? deps.publicUrl;
+  if (!base) throw new AppError('bad_request', 'The organisation has no address to return to');
+  try {
+    const url = await stripe.createPortal({
+      customer: tenant.stripe_customer_id,
+      returnUrl: new URL('/', base).toString(),
+    });
+    await log(deps, 'tenant.portal_link', tenantId);
+    return { url };
+  } catch (error) {
+    return stripeFailure(error);
+  }
 }

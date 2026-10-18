@@ -51,6 +51,10 @@ spec:
               valueFrom: { secretKeyRef: { name: {{ $secret }}, key: operatorPassword } }
             - { name: COURSECRAFT_PUBLIC_URL, value: {{ .Values.publicUrl | quote }} }
             - { name: COURSECRAFT_TENANCY, value: {{ .Values.tenancy | quote }} }
+            {{- with .Values.billing.stripeSecret }}
+            - name: COURSECRAFT_STRIPE_SECRET_KEY
+              valueFrom: { secretKeyRef: { name: {{ . }}, key: secretKey } }
+            {{- end }}
             {{- if $fs }}
             - { name: COURSECRAFT_DATA_DIR, value: /data }
             {{- end }}

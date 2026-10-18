@@ -3,8 +3,13 @@ import fastifyCookie from '@fastify/cookie';
 import fastifyRateLimit from '@fastify/rate-limit';
 import fastifyStatic from '@fastify/static';
 import {
+  billingPlanInputSchema,
+  billingPlanSchema,
+  billingPlansSchema,
   idParamSchema,
   okSchema,
+  operatorPaymentLinkRequestSchema,
+  operatorUrlSchema,
   operatorCreatedSchema,
   operatorDeleteSchema,
   operatorInstallationSchema,
@@ -29,10 +34,15 @@ import type { OperatorConfig } from './config.js';
 import {
   addTenant,
   adminResetLink,
+  deletePlan,
   installation,
+  listPlans,
   listTenants,
   operatorLog,
+  paymentLink,
+  portalLink,
   removeTenant,
+  savePlan,
   setupToken,
   tenantDetail,
   updateTenant,
@@ -124,7 +134,7 @@ export async function buildOperatorApp(config: OperatorConfig, deps: OperatorDep
 
   r.post(
     '/api/operator/logout',
-    { preHandler: guard, schema: { response: { 200: okSchema } } },
+    { preValidation: guard, schema: { response: { 200: okSchema } } },
     (request, reply) => {
       const token = request.cookies[COOKIE];
       if (token) sessions.delete(digest(token).toString('hex'));
@@ -135,14 +145,14 @@ export async function buildOperatorApp(config: OperatorConfig, deps: OperatorDep
 
   r.get(
     '/api/operator/tenants',
-    { preHandler: guard, schema: { response: { 200: operatorTenantsSchema } } },
+    { preValidation: guard, schema: { response: { 200: operatorTenantsSchema } } },
     async () => ({ items: await listTenants(deps) }),
   );
 
   r.post(
     '/api/operator/tenants',
     {
-      preHandler: guard,
+      preValidation: guard,
       schema: { body: operatorNewTenantSchema, response: { 200: operatorCreatedSchema } },
     },
     async (request) => {
@@ -155,7 +165,7 @@ export async function buildOperatorApp(config: OperatorConfig, deps: OperatorDep
   r.patch(
     '/api/operator/tenants/:id',
     {
-      preHandler: guard,
+      preValidation: guard,
       schema: { params: idParamSchema, body: operatorUpdateTenantSchema, response: { 200: okSchema } },
     },
     async (request) => {
@@ -170,14 +180,17 @@ export async function buildOperatorApp(config: OperatorConfig, deps: OperatorDep
 
   r.get(
     '/api/operator/tenants/:id/detail',
-    { preHandler: guard, schema: { params: idParamSchema, response: { 200: operatorTenantDetailSchema } } },
+    {
+      preValidation: guard,
+      schema: { params: idParamSchema, response: { 200: operatorTenantDetailSchema } },
+    },
     async (request) => tenantDetail(deps, request.params.id),
   );
 
   r.post(
     '/api/operator/tenants/:id/admins/:userId/reset-link',
     {
-      preHandler: guard,
+      preValidation: guard,
       schema: {
         params: z.object({ id: z.uuid(), userId: z.uuid() }),
         response: { 200: operatorResetLinkSchema },
@@ -191,27 +204,76 @@ export async function buildOperatorApp(config: OperatorConfig, deps: OperatorDep
   );
 
   r.get(
+    '/api/operator/plans',
+    { preValidation: guard, schema: { response: { 200: billingPlansSchema } } },
+    async () => listPlans(deps),
+  );
+
+  r.post(
+    '/api/operator/plans',
+    { preValidation: guard, schema: { body: billingPlanInputSchema, response: { 200: billingPlanSchema } } },
+    async (request) => savePlan(deps, null, request.body),
+  );
+
+  r.put(
+    '/api/operator/plans/:id',
+    {
+      preValidation: guard,
+      schema: { params: idParamSchema, body: billingPlanInputSchema, response: { 200: billingPlanSchema } },
+    },
+    async (request) => savePlan(deps, request.params.id, request.body),
+  );
+
+  r.post(
+    '/api/operator/plans/:id/delete',
+    { preValidation: guard, schema: { params: idParamSchema, response: { 200: okSchema } } },
+    async (request) => {
+      await deletePlan(deps, request.params.id);
+      return { ok: true as const };
+    },
+  );
+
+  r.post(
+    '/api/operator/tenants/:id/payment-link',
+    {
+      preValidation: guard,
+      schema: {
+        params: idParamSchema,
+        body: operatorPaymentLinkRequestSchema,
+        response: { 200: operatorUrlSchema },
+      },
+    },
+    async (request) => paymentLink(deps, request.params.id, request.body.planId),
+  );
+
+  r.post(
+    '/api/operator/tenants/:id/portal-link',
+    { preValidation: guard, schema: { params: idParamSchema, response: { 200: operatorUrlSchema } } },
+    async (request) => portalLink(deps, request.params.id),
+  );
+
+  r.get(
     '/api/operator/installation',
-    { preHandler: guard, schema: { response: { 200: operatorInstallationSchema } } },
+    { preValidation: guard, schema: { response: { 200: operatorInstallationSchema } } },
     async () => installation(deps),
   );
 
   r.get(
     '/api/operator/log',
-    { preHandler: guard, schema: { response: { 200: operatorLogSchema } } },
+    { preValidation: guard, schema: { response: { 200: operatorLogSchema } } },
     async () => operatorLog(deps),
   );
 
   r.post(
     '/api/operator/tenants/:id/setup-token',
-    { preHandler: guard, schema: { params: idParamSchema, response: { 200: operatorSetupTokenSchema } } },
+    { preValidation: guard, schema: { params: idParamSchema, response: { 200: operatorSetupTokenSchema } } },
     async (request) => setupToken(deps, request.params.id),
   );
 
   r.post(
     '/api/operator/tenants/:id/delete',
     {
-      preHandler: guard,
+      preValidation: guard,
       schema: { params: idParamSchema, body: operatorDeleteSchema, response: { 200: okSchema } },
     },
     async (request) => {

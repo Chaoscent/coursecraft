@@ -47,6 +47,8 @@ const ALLOWED = [
   /^http:\/\/schemas\.xmlsoap\.org\/ws\/2005\/05\/identity\/claims\//,
   /^http:\/\/schemas\.microsoft\.com\/ws\/2008\/06\/identity\/claims\//,
   /^http:\/\/purl\.imsglobal\.org\//,
+  // Stripe's API (only with COURSECRAFT_STRIPE_SECRET_KEY, operator console).
+  /^https:\/\/api\.stripe\.com$/,
   /^http:\/\/projecttincan\.com\/tincan\.xsd$/,
   /^urn:/,
 ];

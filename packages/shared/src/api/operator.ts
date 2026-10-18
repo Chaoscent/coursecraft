@@ -23,6 +23,9 @@ export const operatorTenantSchema = z.object({
   contactEmail: z.string().nullable(),
   plan: z.string().nullable(),
   notes: z.string().nullable(),
+  planId: uuidSchema.nullable(),
+  billingState: z.enum(['active', 'past_due', 'canceled']).nullable(),
+  stripeCustomerId: z.string().nullable(),
   users: z.number().int(),
   storageBytes: z.number(),
   createdAt: z.string(),
@@ -89,6 +92,8 @@ export const operatorInstallationSchema = z.object({
   activeOrganisations: z.number().int(),
   users: z.number().int(),
   storageBytes: z.number(),
+  /** Stripe is configured for the operator (secret key present). */
+  billing: z.boolean(),
 });
 
 export const operatorLogSchema = z.object({
@@ -108,3 +113,29 @@ export const operatorCreatedSchema = operatorSetupTokenSchema.extend({ id: uuidS
 
 /** Deleting asks for the organisation's name, typed again. */
 export const operatorDeleteSchema = z.object({ confirmName: z.string().max(200) }).strict();
+
+/** A plan: one Stripe price and the limits that come with it. */
+export const billingPlanSchema = z.object({
+  id: uuidSchema,
+  name: z.string(),
+  stripePriceId: z.string(),
+  maxUsers: limit,
+  maxStorageMb: limit,
+});
+export const billingPlansSchema = z.object({ items: z.array(billingPlanSchema) });
+export type BillingPlan = z.infer<typeof billingPlanSchema>;
+export const billingPlanInputSchema = z
+  .object({
+    name: z.string().trim().min(1).max(100),
+    stripePriceId: z
+      .string()
+      .trim()
+      .regex(/^price_[A-Za-z0-9]+$/)
+      .max(255),
+    maxUsers: limit,
+    maxStorageMb: limit,
+  })
+  .strict();
+
+export const operatorPaymentLinkRequestSchema = z.object({ planId: uuidSchema }).strict();
+export const operatorUrlSchema = z.object({ url: z.string() });

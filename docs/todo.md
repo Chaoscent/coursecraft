@@ -35,8 +35,12 @@ issue once the repository is published.
 
 - [ ] Moving or restoring a single tenant; usage per tenant in the metrics
       (see docs/multi-tenancy.md).
-- [ ] Self-service sign-up and payment (optional; the operator creates
-      tenants today).
+- [x] Payment by Stripe subscription (optional, docs/billing.md).
+- [ ] Self-service sign-up (optional; the operator creates tenants and sends
+      the payment link today).
+- [ ] S3 object storage with Docker Compose: pass the S3 settings to app,
+      converter and operator (the converter has no outside network there);
+      today S3 is set up through Helm.
 
 - [ ] Multipart upload for objects above 5 GB (single PUT limit); today the
       upload limit (`COURSECRAFT_UPLOAD_MAX_MB`, package limits) stays below it.

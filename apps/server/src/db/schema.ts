@@ -452,6 +452,23 @@ export interface CourseExportsTable {
   finished_at: Timestamp | null;
 }
 
+export interface BillingPlansTable {
+  id: Generated<string>;
+  name: string;
+  stripe_price_id: string;
+  max_users: number | null;
+  max_storage_mb: number | null;
+  created_at: CreatedAt;
+}
+
+export interface BillingEventsTable {
+  id: string;
+  type: string;
+  tenant_id: string | null;
+  outcome: string;
+  received_at: CreatedAt;
+}
+
 export interface OperatorLogTable {
   id: Generated<string>;
   at: CreatedAt;
@@ -477,6 +494,14 @@ export interface TenantsTable {
   contact_email: ColumnType<string | null, string | null | undefined, string | null>;
   plan: ColumnType<string | null, string | null | undefined, string | null>;
   notes: ColumnType<string | null, string | null | undefined, string | null>;
+  plan_id: ColumnType<string | null, string | null | undefined, string | null>;
+  stripe_customer_id: ColumnType<string | null, string | null | undefined, string | null>;
+  stripe_subscription_id: ColumnType<string | null, string | null | undefined, string | null>;
+  billing_state: ColumnType<
+    'active' | 'past_due' | 'canceled' | null,
+    'active' | 'past_due' | 'canceled' | null | undefined,
+    'active' | 'past_due' | 'canceled' | null
+  >;
   status: ColumnType<'active' | 'disabled', 'active' | 'disabled' | undefined, 'active' | 'disabled'>;
   created_at: CreatedAt;
 }
@@ -543,6 +568,8 @@ export interface Database {
   tenants: TenantsTable;
   group_managers: GroupManagersTable;
   operator_log: OperatorLogTable;
+  billing_plans: BillingPlansTable;
+  billing_events: BillingEventsTable;
   course_exports: CourseExportsTable;
   path_notices: PathNoticesTable;
   user_identities: UserIdentitiesTable;

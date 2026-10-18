@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import {
+  billingPlanSchema,
+  billingPlansSchema,
   okSchema,
   operatorCreatedSchema,
   operatorInstallationSchema,
@@ -9,6 +11,8 @@ import {
   operatorSetupTokenSchema,
   operatorTenantDetailSchema,
   operatorTenantsSchema,
+  operatorUrlSchema,
+  type BillingPlan,
   type OperatorTenant,
 } from '@coursecraft/shared';
 import { useCallback, useMemo, useState } from 'react';
@@ -18,7 +22,7 @@ import { Badge } from '../components/Badge.js';
 import { Button, ToolButton } from '../components/Button.js';
 import { DataTable, type Selection } from '../components/DataTable.js';
 import { Dialog } from '../components/Dialog.js';
-import { FormGrid, TextField } from '../components/Field.js';
+import { FormGrid, SelectField, TextField } from '../components/Field.js';
 import { Icon } from '../components/Icon.js';
 import { Notice } from '../components/Notice.js';
 import { Page, ToolbarSeparator } from '../components/Page.js';
@@ -304,8 +308,158 @@ function DeleteDialog({
 
 const limited = (used: string, max: string | null) => (max ? `${used} / ${max}` : used);
 
+const fetchPlans = () => api(billingPlansSchema, '/api/operator/plans').then((r) => r.items);
+const fetchInstallation = () => api(operatorInstallationSchema, '/api/operator/installation');
+
+function PlanDialog({
+  plan,
+  onClose,
+  onSaved,
+}: {
+  plan: BillingPlan | null;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const { t } = useTranslation();
+  const [name, setName] = useState(plan?.name ?? '');
+  const [priceId, setPriceId] = useState(plan?.stripePriceId ?? 'price_');
+  const [maxUsers, setMaxUsers] = useState(plan?.maxUsers ? String(plan.maxUsers) : '');
+  const [maxStorage, setMaxStorage] = useState(plan?.maxStorageMb ? String(plan.maxStorageMb) : '');
+  const [error, setError] = useState<string | null>(null);
+  const save = async () => {
+    try {
+      await api(billingPlanSchema, plan ? `/api/operator/plans/${plan.id}` : '/api/operator/plans', {
+        method: plan ? 'PUT' : 'POST',
+        body: {
+          name,
+          stripePriceId: priceId,
+          maxUsers: limitOf(maxUsers),
+          maxStorageMb: limitOf(maxStorage),
+        },
+      });
+      onSaved();
+    } catch (e) {
+      setError(errorMessage(e));
+    }
+  };
+  return (
+    <Dialog
+      title={plan ? t('operator.editPlan') : t('operator.newPlan')}
+      isOpen
+      width="md"
+      onClose={onClose}
+      onSubmit={() => void save()}
+      footer={
+        <>
+          <Button onPress={onClose}>{t('common.cancel')}</Button>
+          <Button type="submit" variant="primary">
+            {t('common.save')}
+          </Button>
+        </>
+      }
+    >
+      {error ? <Notice tone="danger">{error}</Notice> : null}
+      <FormGrid>
+        <TextField label={t('operator.planName')} value={name} onChange={setName} isRequired autoFocus />
+        <TextField
+          label={t('operator.priceId')}
+          value={priceId}
+          onChange={setPriceId}
+          isRequired
+          description={t('operator.priceIdHint')}
+        />
+        <TextField
+          label={t('operator.maxUsers')}
+          value={maxUsers}
+          onChange={setMaxUsers}
+          description={t('operator.unlimitedHint')}
+        />
+        <TextField
+          label={t('operator.maxStorage')}
+          value={maxStorage}
+          onChange={setMaxStorage}
+          description={t('operator.unlimitedHint')}
+        />
+      </FormGrid>
+    </Dialog>
+  );
+}
+
+function PaymentDialog({
+  tenant,
+  onClose,
+  onCreated,
+}: {
+  tenant: OperatorTenant;
+  onClose: () => void;
+  onCreated: (secret: Secret) => void;
+}) {
+  const { t } = useTranslation();
+  const { data: plans, error: loadError } = useApi(fetchPlans);
+  const [planId, setPlanId] = useState(tenant.planId ?? '');
+  const [error, setError] = useState<string | null>(null);
+  const chosen = planId || plans?.[0]?.id || '';
+  const create = async () => {
+    try {
+      const r = await api(operatorUrlSchema, `/api/operator/tenants/${tenant.id}/payment-link`, {
+        method: 'POST',
+        body: { planId: chosen },
+      });
+      onCreated({ title: t('operator.paymentTitle'), hint: t('operator.paymentHint'), value: r.url });
+    } catch (e) {
+      setError(errorMessage(e));
+    }
+  };
+  return (
+    <Dialog
+      title={t('operator.paymentTitle')}
+      isOpen
+      width="sm"
+      onClose={onClose}
+      onSubmit={() => void create()}
+      footer={
+        <>
+          <Button onPress={onClose}>{t('common.cancel')}</Button>
+          <Button type="submit" variant="primary" isDisabled={!chosen}>
+            {t('operator.paymentCreate')}
+          </Button>
+        </>
+      }
+    >
+      {(error ?? loadError) ? <Notice tone="danger">{error ?? loadError}</Notice> : null}
+      {plans && plans.length === 0 ? <Notice tone="info">{t('operator.noPlans')}</Notice> : null}
+      {plans && plans.length > 0 ? (
+        <FormGrid>
+          <SelectField
+            label={t('operator.paymentPick')}
+            value={chosen}
+            onChange={setPlanId}
+            options={plans.map((p) => ({ id: p.id, label: p.name }))}
+          />
+        </FormGrid>
+      ) : null}
+    </Dialog>
+  );
+}
+
+function BillingBadge({ state }: { state: OperatorTenant['billingState'] }) {
+  const { t } = useTranslation();
+  if (state === 'active') return <Badge tone="success">{t('operator.billingActive')}</Badge>;
+  if (state === 'past_due') return <Badge tone="warning">{t('operator.billingPastDue')}</Badge>;
+  if (state === 'canceled') return <Badge tone="neutral">{t('operator.billingCanceled')}</Badge>;
+  return <>{t('operator.billingNone')}</>;
+}
+
 /** Details of one organisation: contact, addresses, usage, administrators, notes. */
-function TenantSide({ tenant, onSecret }: { tenant: OperatorTenant; onSecret: (secret: Secret) => void }) {
+function TenantSide({
+  tenant,
+  billing,
+  onSecret,
+}: {
+  tenant: OperatorTenant;
+  billing: boolean;
+  onSecret: (secret: Secret) => void;
+}) {
   const { t, i18n } = useTranslation();
   const fetcher = useCallback(
     () => api(operatorTenantDetailSchema, `/api/operator/tenants/${tenant.id}/detail`),
@@ -323,6 +477,13 @@ function TenantSide({ tenant, onSecret }: { tenant: OperatorTenant; onSecret: (s
           hint: t('operator.resetHint', { until: new Date(r.expiresAt).toLocaleString(i18n.language) }),
           value: r.link,
         }),
+      )
+      .catch((e: unknown) => setActionError(errorMessage(e)));
+  const [paying, setPaying] = useState(false);
+  const portal = () =>
+    void api(operatorUrlSchema, `/api/operator/tenants/${tenant.id}/portal-link`, { method: 'POST' })
+      .then((r) =>
+        onSecret({ title: t('operator.portalTitle'), hint: t('operator.portalHint'), value: r.url }),
       )
       .catch((e: unknown) => setActionError(errorMessage(e)));
   return (
@@ -371,6 +532,37 @@ function TenantSide({ tenant, onSecret }: { tenant: OperatorTenant; onSecret: (s
           <dd>{detail.lastSignInAt ? formatDateTime(detail.lastSignInAt) : '–'}</dd>
         </dl>
       ) : null}
+      <h3>{t('operator.billing')}</h3>
+      <dl className={styles.facts}>
+        <dt>{t('operator.billingState')}</dt>
+        <dd>
+          <BillingBadge state={tenant.billingState} />
+        </dd>
+        <dt>{t('operator.stripeCustomer')}</dt>
+        <dd>{tenant.stripeCustomerId ?? '–'}</dd>
+      </dl>
+      {billing ? (
+        <div className={styles.actions}>
+          <ToolButton icon="link" onPress={() => setPaying(true)}>
+            {t('operator.paymentLink')}
+          </ToolButton>
+          <ToolButton icon="external-link" isDisabled={!tenant.stripeCustomerId} onPress={portal}>
+            {t('operator.portalLink')}
+          </ToolButton>
+        </div>
+      ) : (
+        <p className={styles.muted}>{t('operator.billingOff')}</p>
+      )}
+      {paying ? (
+        <PaymentDialog
+          tenant={tenant}
+          onClose={() => setPaying(false)}
+          onCreated={(secret) => {
+            setPaying(false);
+            onSecret(secret);
+          }}
+        />
+      ) : null}
       <h3>{t('operator.admins')}</h3>
       {detail && detail.admins.length === 0 ? <p className={styles.muted}>{t('operator.noAdmins')}</p> : null}
       {detail?.admins.map((a) => (
@@ -402,6 +594,7 @@ function TenantsView() {
     [],
   );
   const { data, reload, error: loadError } = useApi(fetcher);
+  const { data: installation } = useApi(fetchInstallation);
   const tenants = useMemo(() => data ?? [], [data]);
   const current = useMemo(() => {
     if (selected === 'all' || selected.size !== 1) return null;
@@ -482,6 +675,11 @@ function TenantsView() {
                 render: (x) => (x.isDefault ? `${x.name} (${t('operator.default')})` : x.name),
               },
               { id: 'plan', label: t('operator.plan'), render: (x) => x.plan ?? '–' },
+              {
+                id: 'billing',
+                label: t('operator.billingState'),
+                render: (x) => <BillingBadge state={x.billingState} />,
+              },
               { id: 'origin', label: t('operator.publicOrigin'), render: (x) => x.publicOrigin ?? '–' },
               {
                 id: 'status',
@@ -511,7 +709,14 @@ function TenantsView() {
             ]}
           />
         </div>
-        {current ? <TenantSide key={current.id} tenant={current} onSecret={setSecret} /> : null}
+        {current ? (
+          <TenantSide
+            key={current.id}
+            tenant={current}
+            billing={installation?.billing ?? false}
+            onSecret={setSecret}
+          />
+        ) : null}
       </div>
       {dialog === 'new' ? (
         <TenantDialog
@@ -552,8 +757,7 @@ function TenantsView() {
 
 function InstallationView() {
   const { t, i18n } = useTranslation();
-  const fetcher = useCallback(() => api(operatorInstallationSchema, '/api/operator/installation'), []);
-  const { data, error } = useApi(fetcher);
+  const { data, error } = useApi(fetchInstallation);
   return (
     <Page title={t('operator.installation')}>
       <div className={styles.stack}>
@@ -566,6 +770,8 @@ function InstallationView() {
             <dd>{data.tenancy === 'multi' ? t('operator.modeMulti') : t('operator.modeSingle')}</dd>
             <dt>{t('operator.storageKind')}</dt>
             <dd>{data.storage === 's3' ? t('operator.storageS3') : t('operator.storageFs')}</dd>
+            <dt>{t('operator.billing')}</dt>
+            <dd>{data.billing ? 'Stripe' : t('operator.billingNone')}</dd>
             <dt>{t('operator.schema')}</dt>
             <dd>{data.migration}</dd>
             <dt>{t('operator.title')}</dt>
@@ -580,6 +786,94 @@ function InstallationView() {
         ) : null}
         <Notice tone="info">{t('operator.installationHint')}</Notice>
       </div>
+    </Page>
+  );
+}
+
+function PlansView() {
+  const { t, i18n } = useTranslation();
+  const { data, reload, error: loadError } = useApi(fetchPlans);
+  const { data: installation } = useApi(fetchInstallation);
+  const [selected, setSelected] = useState<Selection>(new Set());
+  const [dialog, setDialog] = useState<null | 'new' | 'edit'>(null);
+  const [error, setError] = useState<string | null>(null);
+  const plans = useMemo(() => data ?? [], [data]);
+  const current = useMemo(() => {
+    if (selected === 'all' || selected.size !== 1) return null;
+    const [id] = [...selected];
+    return plans.find((x) => x.id === id) ?? null;
+  }, [selected, plans]);
+  const remove = () => {
+    if (!current) return;
+    void api(okSchema, `/api/operator/plans/${current.id}/delete`, { method: 'POST' })
+      .then(() => {
+        setSelected(new Set());
+        reload();
+      })
+      .catch((e: unknown) => setError(errorMessage(e)));
+  };
+  return (
+    <Page
+      title={t('operator.plans')}
+      meta={t('operator.plansCount', { count: plans.length })}
+      toolbar={
+        <>
+          <ToolButton icon="plus" onPress={() => setDialog('new')}>
+            {t('operator.newPlan')}
+          </ToolButton>
+          <ToolbarSeparator />
+          <ToolButton icon="pencil" isDisabled={!current} onPress={() => setDialog('edit')}>
+            {t('operator.editPlan')}
+          </ToolButton>
+          <ToolButton icon="trash-2" isDisabled={!current} onPress={remove}>
+            {t('operator.deletePlan')}
+          </ToolButton>
+        </>
+      }
+    >
+      <div className={styles.stack}>
+        <div className={styles.head}>
+          {(error ?? loadError) ? <Notice tone="danger">{error ?? loadError}</Notice> : null}
+          <Notice tone={installation && !installation.billing ? 'warning' : 'info'}>
+            {installation && !installation.billing ? t('operator.billingOff') : t('operator.plansHint')}
+          </Notice>
+        </div>
+        <DataTable
+          label={t('operator.plans')}
+          rows={plans}
+          selectionMode="single"
+          selected={selected}
+          onSelectionChange={setSelected}
+          empty={t('operator.plansEmpty')}
+          columns={[
+            { id: 'name', label: t('operator.planName'), isRowHeader: true, render: (p) => p.name },
+            { id: 'price', label: t('operator.priceId'), render: (p) => p.stripePriceId },
+            {
+              id: 'users',
+              label: t('operator.maxUsers'),
+              numeric: true,
+              render: (p) => (p.maxUsers ? String(p.maxUsers) : t('operator.unlimited')),
+            },
+            {
+              id: 'storage',
+              label: t('operator.storage'),
+              numeric: true,
+              render: (p) =>
+                p.maxStorageMb ? size(p.maxStorageMb * 1024 * 1024, i18n.language) : t('operator.unlimited'),
+            },
+          ]}
+        />
+      </div>
+      {dialog ? (
+        <PlanDialog
+          plan={dialog === 'edit' ? current : null}
+          onClose={() => setDialog(null)}
+          onSaved={() => {
+            setDialog(null);
+            reload();
+          }}
+        />
+      ) : null}
     </Page>
   );
 }
@@ -610,7 +904,8 @@ function LogView() {
               label: t('operator.changed'),
               render: (e) => {
                 const fields = e.details?.['fields'];
-                return Array.isArray(fields) ? fields.join(', ') : '';
+                const plan = e.details?.['plan'];
+                return Array.isArray(fields) ? fields.join(', ') : typeof plan === 'string' ? plan : '';
               },
             },
           ]}
@@ -620,7 +915,7 @@ function LogView() {
   );
 }
 
-type View = 'tenants' | 'installation' | 'log';
+type View = 'tenants' | 'plans' | 'installation' | 'log';
 
 function Console({ onSignedOut }: { onSignedOut: () => void }) {
   const { t } = useTranslation();
@@ -633,6 +928,7 @@ function Console({ onSignedOut }: { onSignedOut: () => void }) {
   };
   const items: { id: View; icon: string; label: string }[] = [
     { id: 'tenants', icon: 'folder', label: t('operator.title') },
+    { id: 'plans', icon: 'list-checks', label: t('operator.plans') },
     { id: 'installation', icon: 'database', label: t('operator.installation') },
     { id: 'log', icon: 'history', label: t('operator.log') },
   ];
@@ -663,6 +959,8 @@ function Console({ onSignedOut }: { onSignedOut: () => void }) {
         <main className={styles.main}>
           {view === 'tenants' ? (
             <TenantsView />
+          ) : view === 'plans' ? (
+            <PlansView />
           ) : view === 'installation' ? (
             <InstallationView />
           ) : (

@@ -22,6 +22,7 @@ license (Apache-2.0) allows any use, including commercial hosting.
 | Your company network with Active Directory | Docker Compose or Kubernetes, plus LDAP / Windows SSO                         | [docs/windows-sso.md](docs/windows-sso.md)     |
 | High availability, several replicas        | Kubernetes (Helm chart), S3 object storage                                    | [docs/kubernetes.md](docs/kubernetes.md)       |
 | Hosting for customers (SaaS)               | One installation per customer, or one installation for many (`tenancy=multi`) | [docs/multi-tenancy.md](docs/multi-tenancy.md) |
+| … and bill them by subscription            | Optional Stripe billing in the operator console                               | [docs/billing.md](docs/billing.md)             |
 
 Images: `ghcr.io/chaoscent/coursecraft-app` and
 `ghcr.io/chaoscent/coursecraft-converter` (amd64 and arm64, signed with

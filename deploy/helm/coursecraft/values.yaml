@@ -123,6 +123,13 @@ networkPolicy:
 operator:
   enabled: false
 
+# Optional billing with Stripe (tenancy: multi, see docs/billing.md). Name of
+# an existing Secret with the keys "secretKey" (sk_…, used by the operator
+# console) and "webhookSecret" (whsec_…, used by the app's webhook
+# <publicUrl>/api/billing/stripe/webhook). Empty = off.
+billing:
+  stripeSecret: ''
+
 metrics:
   enabled: true
   port: 9464

@@ -23,6 +23,10 @@ const schema = z.object({
   release: z.string().default('dev'),
   tenancy: z.enum(['single', 'multi']).default('single'),
   storage: z.enum(['fs', 's3']).default('fs'),
+  /** Stripe secret key (optional billing). */
+  stripeSecretKey: z.string().min(10).optional(),
+  /** Only for tests: a stand-in for Stripe's API. */
+  stripeApiBase: z.url().optional(),
 });
 export type OperatorConfig = z.infer<typeof schema>;
 
@@ -39,6 +43,8 @@ export function loadOperatorConfig(env: NodeJS.ProcessEnv = process.env): Operat
     release: env['COURSECRAFT_RELEASE'] || undefined,
     tenancy: env['COURSECRAFT_TENANCY'] || undefined,
     storage: env['COURSECRAFT_STORAGE'] || undefined,
+    stripeSecretKey: secret(env, 'COURSECRAFT_STRIPE_SECRET_KEY') || undefined,
+    stripeApiBase: env['COURSECRAFT_STRIPE_API_BASE'] || undefined,
   });
   if (!result.success) {
     const problems = result.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`);

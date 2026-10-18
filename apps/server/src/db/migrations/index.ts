@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { Kysely } from 'kysely';
 import { Migrator, type Migration } from 'kysely/migration';
-import { ident, readOnlyFor, revokeWrites } from './sql-helpers.js';
+import { grantColumnUpdate, ident, readOnlyFor, revokeWrites } from './sql-helpers.js';
 import * as m0001 from './0001-initial.js';
 import * as m0002 from './0002-identity.js';
 import * as m0003 from './0003-courses.js';
@@ -23,6 +23,7 @@ import * as m0018 from './0018-course-exports.js';
 import * as m0019 from './0019-path-notices.js';
 import * as m0020 from './0020-session-sso.js';
 import * as m0021 from './0021-operator-details.js';
+import * as m0022 from './0022-billing.js';
 
 /** Ordered list of all migrations. Released migrations never change. */
 export const MIGRATIONS: Readonly<Record<string, Migration>> = {
@@ -47,6 +48,7 @@ export const MIGRATIONS: Readonly<Record<string, Migration>> = {
   '0019-path-notices': m0019,
   '0020-session-sso': m0020,
   '0021-operator-details': m0021,
+  '0022-billing': m0022,
 };
 
 /**
@@ -59,6 +61,25 @@ export async function enforcePrivileges<DB>(db: Kysely<DB>): Promise<void> {
   await readOnlyFor(db, ident('tenants'), ident('coursecraft_app'));
   // Readable for backups made with the app role (names and field names only), never writable.
   await readOnlyFor(db, ident('operator_log'), ident('coursecraft_app'));
+  // Billing (optional, Stripe): the verified webhook in the app sets these columns of an
+  // organisation and records the event once; plans are managed by the operator.
+  await grantColumnUpdate(
+    db,
+    ident('tenants'),
+    [
+      ident('status'),
+      ident('plan'),
+      ident('plan_id'),
+      ident('max_users'),
+      ident('max_storage_mb'),
+      ident('stripe_customer_id'),
+      ident('stripe_subscription_id'),
+      ident('billing_state'),
+    ],
+    ident('coursecraft_app'),
+  );
+  await readOnlyFor(db, ident('billing_plans'), ident('coursecraft_app'));
+  await revokeWrites(db, ident('billing_events'), ident('coursecraft_app'));
 }
 
 export const LATEST_MIGRATION = Object.keys(MIGRATIONS).sort().at(-1);

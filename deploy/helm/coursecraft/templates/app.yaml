@@ -88,6 +88,10 @@ spec:
             # One limit per client across all replicas.
             - { name: COURSECRAFT_RATE_LIMIT_STORE, value: database }
             - { name: COURSECRAFT_TENANCY, value: {{ .Values.tenancy | quote }} }
+            {{- with .Values.billing.stripeSecret }}
+            - name: COURSECRAFT_STRIPE_WEBHOOK_SECRET
+              valueFrom: { secretKeyRef: { name: {{ . }}, key: webhookSecret } }
+            {{- end }}
             # Replicas start together: only one of them hands out the setup token.
             - { name: COURSECRAFT_SETUP_TOKEN_ON_START, value: if-missing }
             - { name: COURSECRAFT_LOG_LEVEL, value: {{ .Values.config.logLevel | quote }} }
