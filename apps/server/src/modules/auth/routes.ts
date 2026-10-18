@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
+import { singleLogoutUrl } from '../sso/service.js';
+import type { SealedJson } from '../../db/schema.js';
 import {
   getSessionResponseSchema,
   loginRequestSchema,
   loginResponseSchema,
-  okSchema,
+  logoutResponseSchema,
   totpLoginRequestSchema,
   type SessionInfo,
 } from '@coursecraft/shared';
@@ -41,12 +43,14 @@ export async function startSession(
   request: FastifyRequest,
   reply: FastifyReply,
   userId: string,
+  sso?: { providerId: string; logout: SealedJson | null },
 ): Promise<SessionInfo> {
   if (request.auth) await ctx.sessions.revoke(request.auth.sessionId);
-  const { token } = await ctx.sessions.create(userId, {
-    ipHmac: request.ipHmac,
-    userAgent: request.headers['user-agent'] ?? null,
-  });
+  const { token } = await ctx.sessions.create(
+    userId,
+    { ipHmac: request.ipHmac, userAgent: request.headers['user-agent'] ?? null },
+    sso,
+  );
   await ctx.db.updateTable('users').set({ last_login_at: new Date() }).where('id', '=', userId).execute();
   const resolved = await ctx.sessions.resolve(token);
   if (!resolved) throw new AppError('internal', 'Session could not be created');
@@ -127,14 +131,17 @@ export function authRoutes(app: FastifyInstance, ctx: AppContext): void {
     '/api/auth/logout',
     {
       config: { permission: 'session.self', allowDuringPasswordChange: true },
-      schema: { response: { 200: okSchema } },
+      schema: { response: { 200: logoutResponseSchema } },
     },
     async (request, reply) => {
       const auth = requireAuth(request);
+      const sso = await ctx.sessions.ssoOf(auth.sessionId);
       await ctx.sessions.revoke(auth.sessionId);
       clearSessionCookie(reply);
       await ctx.audit.record({ actorUserId: auth.userId, action: 'auth.logout', ipHmac: request.ipHmac });
-      return { ok: true as const };
+      // Single logout: the browser continues at the provider that signed the person in.
+      const redirect = sso ? await singleLogoutUrl(ctx, auth.userId, sso) : null;
+      return { ok: true as const, redirect };
     },
   );
 }

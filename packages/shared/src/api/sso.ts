@@ -35,6 +35,14 @@ const common = {
   emailTrusted: z.boolean(),
 };
 
+/** Provider group (name, id or DN, compared case-insensitively) to Coursecraft role; never administrator. */
+const groupRolesSchema = z
+  .array(z.object({ group: z.string().trim().min(1).max(500), role: z.enum(SSO_ROLES) }))
+  .max(50);
+
+/** Claim (OIDC) or attribute (SAML) carrying the person's groups; empty = no role mapping. */
+const groupClaimSchema = z.string().trim().max(300).default('');
+
 const urlSchema = z
   .url({ protocol: /^https?$/ })
   .max(500)
@@ -52,6 +60,10 @@ const oidcInput = z
     /** New secret; omitted keeps the stored one, null removes it. */
     clientSecret: z.string().trim().min(1).max(2000).nullable().optional(),
     scopes: z.string().trim().max(300).default('openid email profile'),
+    groupClaim: groupClaimSchema,
+    groupRoles: groupRolesSchema.default([]),
+    /** Also sign out at the provider when signing out of Coursecraft (if it supports it). */
+    singleLogout: z.boolean().default(false),
   })
   .strict();
 
@@ -74,6 +86,10 @@ const samlInput = z
       ),
     /** Our entity ID towards the provider. */
     spEntityId: z.string().trim().min(1).max(500),
+    groupClaim: groupClaimSchema,
+    groupRoles: groupRolesSchema.default([]),
+    /** The provider's single logout address (HTTP-Redirect); empty = sign out locally only. */
+    logoutUrl: z.union([z.literal(''), urlSchema]).default(''),
   })
   .strict();
 

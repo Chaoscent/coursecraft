@@ -659,6 +659,15 @@ test:db` starts an S3 server container (Scality CloudServer) besides
   managed database via `coursecraft db-bootstrap`. Helm chart and tests:
   `docs/kubernetes.md`.
 
+## 12k. Provider groups and single logout
+
+- `sso/roles.ts` maps provider groups to roles for LDAP, OIDC (`groupClaim`)
+  and SAML (attribute). Sessions keep `sso_provider_id` and sealed
+  `sso_logout` (migration 0020); `POST /api/auth/logout` answers with the
+  provider's logout address when single logout is configured, and the web
+  app continues there. `/api/auth/sso/saml/logout` receives the provider's
+  answer and goes to the login page.
+
 ## 12j. Learning path mails
 
 - `pathAssigned` and `pathReminder` mails (plain text, DE/EN), claimed once

@@ -45,6 +45,7 @@ const ALLOWED = [
   /^https:\/\/w3id\.org\/xapi\//,
   // SAML attribute names (claim identifiers matched against assertions, never requested).
   /^http:\/\/schemas\.xmlsoap\.org\/ws\/2005\/05\/identity\/claims\//,
+  /^http:\/\/schemas\.microsoft\.com\/ws\/2008\/06\/identity\/claims\//,
   /^http:\/\/purl\.imsglobal\.org\//,
   /^http:\/\/projecttincan\.com\/tincan\.xsd$/,
   /^urn:/,

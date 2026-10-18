@@ -3,7 +3,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { FakeIdp, type IdpUser } from '../support/oidc-idp.js';
 import { SESSION_COOKIE } from '../../apps/server/src/auth/sessions.js';
-import { createTestApp, type Actor, type TestApp } from '../support/test-app.js';
+import { createTestApp, ORIGIN, type Actor, type TestApp } from '../support/test-app.js';
 
 const BINDER = '__Host-cc_sso';
 const idp = new FakeIdp();
@@ -62,6 +62,36 @@ async function signIn(
     ...(sent ? { cookies: { [BINDER]: sent } } : {}),
   });
 }
+
+/** Signs out with a session cookie (fetching its CSRF token first), returns the response body. */
+async function logout(cookie: string) {
+  const session = await t.app.inject({
+    method: 'GET',
+    url: '/api/session',
+    cookies: { [SESSION_COOKIE]: cookie },
+  });
+  const csrf = session.json<{ session: { csrfToken: string } }>().session.csrfToken;
+  const res = await t.app.inject({
+    method: 'POST',
+    url: '/api/auth/logout',
+    headers: { origin: ORIGIN, 'x-csrf-token': csrf },
+    cookies: { [SESSION_COOKIE]: cookie },
+  });
+  expect(res.statusCode, res.body).toBe(200);
+  return res.json<{ ok: true; redirect: string | null }>();
+}
+
+const rolesOf = async (email: string) =>
+  (
+    await t.ctx.db
+      .selectFrom('user_roles')
+      .innerJoin('users', 'users.id', 'user_roles.user_id')
+      .select('user_roles.role')
+      .where('users.email', '=', email)
+      .execute()
+  )
+    .map((r) => r.role)
+    .sort();
 
 const errorOf = (res: { headers: Record<string, unknown> }) =>
   new URL(String(res.headers['location']), 'http://x').searchParams.get('sso_error');
@@ -257,5 +287,41 @@ describe('OpenID Connect', () => {
     expect(errorOf(await t.app.inject({ method: 'GET', url: `/api/auth/sso/${providerId}/start` }))).toBe(
       'failed',
     );
+  });
+});
+
+describe('OpenID Connect groups and single logout', () => {
+  it('maps the groups claim to roles at every sign-in and signs out at the provider', async () => {
+    const id = await configure({
+      name: 'Mit Gruppen',
+      groupClaim: 'groups',
+      groupRoles: [{ group: 'Trainers', role: 'trainer' }],
+      singleLogout: true,
+    });
+    const user = {
+      sub: 'g-1',
+      email: 'gruppen@example.org',
+      email_verified: true,
+      groups: ['trainers', 'other'],
+    };
+    const res = await signIn(id, user);
+    expect(res.headers.location).toBe('/');
+    expect(await rolesOf('gruppen@example.org')).toEqual(['learner', 'trainer']);
+    const cookie = res.cookies.find((c) => c.name === SESSION_COOKIE)?.value ?? '';
+    const out = await logout(cookie);
+    const redirect = new URL(out.redirect ?? '');
+    expect(redirect.origin + redirect.pathname).toBe(`${idp.issuer}/logout`);
+    expect(redirect.searchParams.get('id_token_hint')).toBeTruthy();
+    expect(redirect.searchParams.get('post_logout_redirect_uri')).toBe(`${ORIGIN}/login`);
+    // The group is gone at the provider: the role goes with the next sign-in.
+    await signIn(id, { ...user, groups: [] });
+    expect(await rolesOf('gruppen@example.org')).toEqual(['learner']);
+  });
+
+  it('signs out locally only when single logout is off', async () => {
+    const id = await configure({ name: 'Ohne SLO' });
+    const res = await signIn(id, { sub: 'n-1', email: 'lokal@example.org', email_verified: true });
+    const cookie = res.cookies.find((c) => c.name === SESSION_COOKIE)?.value ?? '';
+    expect((await logout(cookie)).redirect).toBeNull();
   });
 });

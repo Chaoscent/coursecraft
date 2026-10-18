@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { groupValues, syncRoles, type GroupRole } from './roles.js';
 import { assertUserQuota } from '../../tenancy/quotas.js';
 import { publicUrl } from '../../tenancy/origins.js';
 import type { SsoProvider, SsoProviderInput } from '@coursecraft/shared';
@@ -21,6 +22,8 @@ export const secretAad = (id: string) => `sso-secret:${id}`;
 const verifierAad = (stateHash: string) => `sso-verifier:${stateHash}`;
 export const callbackUrl = (ctx: AppContext) =>
   new URL('/api/auth/sso/callback', publicUrl(ctx.config)).toString();
+export const samlLogoutUrl = (ctx: AppContext) =>
+  new URL('/api/auth/sso/saml/logout', publicUrl(ctx.config)).toString();
 export const acsUrl = (ctx: AppContext) =>
   new URL('/api/auth/sso/saml/acs', publicUrl(ctx.config)).toString();
 export const metadataUrl = (ctx: AppContext, id: string) =>
@@ -82,13 +85,23 @@ export async function publicProviders(ctx: AppContext) {
 function providerConfig(input: SsoProviderInput): Record<string, unknown> {
   switch (input.kind) {
     case 'oidc':
-      return { issuer: input.issuer.replace(/\/+$/, ''), clientId: input.clientId, scopes: input.scopes };
+      return {
+        issuer: input.issuer.replace(/\/+$/, ''),
+        clientId: input.clientId,
+        scopes: input.scopes,
+        groupClaim: input.groupClaim,
+        groupRoles: input.groupRoles,
+        singleLogout: input.singleLogout,
+      };
     case 'saml':
       return {
         entryPoint: input.entryPoint,
         idpIssuer: input.idpIssuer,
         idpCert: input.idpCert,
         spEntityId: input.spEntityId,
+        groupClaim: input.groupClaim,
+        groupRoles: input.groupRoles,
+        logoutUrl: input.logoutUrl,
       };
     case 'proxy':
       return {
@@ -340,9 +353,25 @@ export interface Profile {
   emailVerified: boolean;
   name: string | null;
   locale: string | null;
+  /** Lower-case group values from the provider (for role mapping). */
+  groups?: string[];
 }
 
-export type Outcome = { userId: string } | { error: SsoError };
+/** Group mapping of an OIDC or SAML provider, applied after a successful sign-in. */
+async function withRoles(ctx: AppContext, row: Row, profile: Profile): Promise<Outcome> {
+  const outcome = await resolveUser(ctx, row, profile);
+  const groupRoles = (row.config as { groupRoles?: GroupRole[] }).groupRoles ?? [];
+  if ('userId' in outcome && groupRoles.length)
+    await syncRoles(ctx, outcome.userId, row, groupRoles, profile.groups ?? []);
+  return outcome;
+}
+
+/** What is needed to sign out at the provider later (sealed in the session). */
+export type LogoutData =
+  | { kind: 'oidc'; idToken: string }
+  | { kind: 'saml'; nameID: string; nameIDFormat: string | null; sessionIndex: string | null };
+
+export type Outcome = { userId: string; providerId?: string; logout?: LogoutData } | { error: SsoError };
 
 export async function finishOidc(
   ctx: AppContext,
@@ -366,7 +395,9 @@ export async function finishOidc(
     });
     const claims = tokens.claims();
     if (!claims?.sub) return { error: 'failed' };
-    return resolveUser(ctx, row, {
+    const groupClaim = (row.config as { groupClaim?: string }).groupClaim;
+    const outcome = await withRoles(ctx, row, {
+      groups: groupClaim ? groupValues(claims[groupClaim]) : [],
       subject: claims.sub,
       email: typeof claims['email'] === 'string' ? claims['email'] : null,
       emailVerified: claims['email_verified'] === true,
@@ -378,6 +409,15 @@ export async function finishOidc(
             : null,
       locale: typeof claims['locale'] === 'string' ? claims['locale'] : null,
     });
+    if (!('userId' in outcome)) return outcome;
+    const singleLogout = (row.config as { singleLogout?: boolean }).singleLogout === true;
+    return {
+      ...outcome,
+      providerId: row.id,
+      ...(singleLogout && tokens.id_token
+        ? { logout: { kind: 'oidc' as const, idToken: tokens.id_token } }
+        : {}),
+    };
   } catch (error) {
     // Details stay in the log; the browser only learns that it failed.
     ctx.log.warn({ err: error, provider: pending.providerId }, 'single sign-on failed');
@@ -473,7 +513,13 @@ export async function resolveUser(ctx: AppContext, row: Row, profile: Profile): 
 
 /* ---------- SAML 2.0 (HTTP-Redirect request, HTTP-POST response) ---------- */
 
-type SamlConfig = { entryPoint: string; idpIssuer: string; idpCert: string; spEntityId: string };
+type SamlConfig = {
+  entryPoint: string;
+  idpIssuer: string;
+  idpCert: string;
+  spEntityId: string;
+  logoutUrl?: string;
+};
 
 function samlFor(ctx: AppContext, row: Row): SAML {
   const c = row.config as unknown as SamlConfig;
@@ -491,6 +537,7 @@ function samlFor(ctx: AppContext, row: Row): SAML {
     maxAssertionAgeMs: 10 * 60_000,
     disableRequestedAuthnContext: true,
     signatureAlgorithm: 'sha256',
+    ...(c.logoutUrl ? { logoutUrl: c.logoutUrl, logoutCallbackUrl: samlLogoutUrl(ctx) } : {}),
   });
 }
 
@@ -541,7 +588,7 @@ const first = (value: unknown): string | null => {
   return typeof v === 'string' && v.trim() ? v.trim() : null;
 };
 
-export function samlProfile(p: SamlProfile): Profile {
+export function samlProfile(p: SamlProfile, groupAttribute = ''): Profile {
   const fromAttributes = (names: string[]) => names.map((n) => first(p[n])).find((v) => v !== null) ?? null;
   const nameIdEmail = p.nameIDFormat?.endsWith('emailAddress') && p.nameID.includes('@') ? p.nameID : null;
   return {
@@ -552,6 +599,7 @@ export function samlProfile(p: SamlProfile): Profile {
     emailVerified: true,
     name: fromAttributes(NAME_ATTRIBUTES),
     locale: first(p['locale']),
+    groups: groupAttribute ? groupValues(p[groupAttribute]) : [],
   };
 }
 
@@ -578,9 +626,89 @@ export async function finishSaml(
       ctx.log.warn({ provider: row.id }, 'SAML assertion from an unexpected issuer');
       return { error: 'failed' };
     }
-    return resolveUser(ctx, row, samlProfile(profile));
+    const outcome = await withRoles(
+      ctx,
+      row,
+      samlProfile(profile, (row.config as { groupClaim?: string }).groupClaim ?? ''),
+    );
+    if (!('userId' in outcome)) return outcome;
+    const logoutUrl = (row.config as unknown as SamlConfig).logoutUrl;
+    return {
+      ...outcome,
+      providerId: row.id,
+      ...(logoutUrl
+        ? {
+            logout: {
+              kind: 'saml' as const,
+              nameID: profile.nameID,
+              nameIDFormat: profile.nameIDFormat ?? null,
+              sessionIndex: profile.sessionIndex ?? null,
+            },
+          }
+        : {}),
+    };
   } catch (error) {
     ctx.log.warn({ err: error, provider: pending.providerId }, 'SAML sign-in failed');
     return { error: 'failed' };
+  }
+}
+
+/* ---------- Single logout ---------- */
+
+const logoutAad = (userId: string) => `sso-logout:${userId}`;
+
+export function sealLogout(ctx: AppContext, userId: string, data: LogoutData): SealedJson {
+  return ctx.box.seal(JSON.stringify(data), logoutAad(userId));
+}
+
+/**
+ * Where the browser goes after signing out of Coursecraft: the provider's
+ * logout address, when the session came from a provider with single logout
+ * switched on (OIDC end_session_endpoint with id_token_hint; SAML logout
+ * request by HTTP-Redirect). Null: signed out locally only. Never throws:
+ * the local sign-out has already happened.
+ */
+export async function singleLogoutUrl(
+  ctx: AppContext,
+  userId: string,
+  sso: { providerId: string; logout: SealedJson | null },
+): Promise<string | null> {
+  if (!sso.logout) return null;
+  try {
+    const row = await ctx.db
+      .selectFrom('sso_providers')
+      .selectAll()
+      .where('id', '=', sso.providerId)
+      .where('enabled', '=', true)
+      .executeTakeFirst();
+    if (!row) return null;
+    const data = JSON.parse(ctx.box.open(sso.logout, logoutAad(userId))) as LogoutData;
+    if (row.kind === 'oidc' && data.kind === 'oidc') {
+      const config = await oidcConfiguration(ctx, row);
+      if (!config.serverMetadata().end_session_endpoint) return null;
+      return client
+        .buildEndSessionUrl(config, {
+          id_token_hint: data.idToken,
+          post_logout_redirect_uri: new URL('/login', publicUrl(ctx.config)).toString(),
+        })
+        .toString();
+    }
+    const c = row.config as unknown as SamlConfig;
+    if (row.kind === 'saml' && data.kind === 'saml' && c.logoutUrl) {
+      return await samlFor(ctx, row).getLogoutUrlAsync(
+        {
+          issuer: c.idpIssuer,
+          nameID: data.nameID,
+          nameIDFormat: data.nameIDFormat ?? 'urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified',
+          ...(data.sessionIndex ? { sessionIndex: data.sessionIndex } : {}),
+        },
+        '',
+        {},
+      );
+    }
+    return null;
+  } catch (error) {
+    ctx.log.warn({ err: error, provider: sso.providerId }, 'single logout address could not be built');
+    return null;
   }
 }

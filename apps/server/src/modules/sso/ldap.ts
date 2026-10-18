@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Client, InvalidCredentialsError } from 'ldapts';
-import { SSO_ROLES } from '@coursecraft/shared';
+import type { SSO_ROLES } from '@coursecraft/shared';
 import type { AppContext } from '../../http/context.js';
+import { syncRoles } from './roles.js';
 import { clearFailures, isLocked, recordFailure } from './throttle.js';
 import { enabledProvider, resolveUser, secretAad, type Outcome, type Row } from './service.js';
 
@@ -132,7 +133,7 @@ async function directorySignIn(
       name: texts(entry[c.nameAttribute])[0] ?? null,
       locale: null,
     });
-    if ('userId' in outcome) await syncRoles(ctx, outcome.userId, row, c, groups);
+    if ('userId' in outcome) await syncRoles(ctx, outcome.userId, row, c.groupRoles, groups);
     return outcome;
   } catch (error) {
     ctx.log.warn({ err: error, provider: row.id }, 'directory sign-in failed');
@@ -140,45 +141,4 @@ async function directorySignIn(
   } finally {
     await client.unbind().catch(() => undefined);
   }
-}
-
-/**
- * With group mappings configured, the directory decides the Coursecraft roles
- * at every sign-in. Administrator is never granted or removed here.
- */
-async function syncRoles(
-  ctx: AppContext,
-  userId: string,
-  row: Row,
-  c: LdapConfig,
-  groups: string[],
-): Promise<void> {
-  if (!c.groupRoles.length) return;
-  const wanted = new Set<Role>([row.default_role]);
-  for (const m of c.groupRoles) if (groups.includes(m.group.toLowerCase())) wanted.add(m.role);
-  const stored = await ctx.db.selectFrom('user_roles').select('role').where('user_id', '=', userId).execute();
-  const current = new Set(stored.map((r) => r.role).filter((r): r is Role => SSO_ROLES.some((x) => x === r)));
-  const remove = [...current].filter((r) => !wanted.has(r));
-  const add = [...wanted].filter((r) => !current.has(r));
-  if (!remove.length && !add.length) return;
-  await ctx.db.transaction().execute(async (tx) => {
-    if (remove.length)
-      await tx.deleteFrom('user_roles').where('user_id', '=', userId).where('role', 'in', remove).execute();
-    if (add.length)
-      await tx
-        .insertInto('user_roles')
-        .values(add.map((role) => ({ user_id: userId, role })))
-        .execute();
-    await ctx.audit.record(
-      {
-        actorUserId: userId,
-        action: 'user.roles_synced',
-        targetType: 'user',
-        targetId: userId,
-        meta: { provider: row.id, added: add, removed: remove },
-      },
-      tx,
-    );
-  });
-  await ctx.sessions.markRotate(userId);
 }

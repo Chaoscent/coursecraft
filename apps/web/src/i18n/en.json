@@ -1231,7 +1231,7 @@
     "requiredGroup": "Members of this group only (DN)",
     "requiredGroupHint": "Empty = every user found. Nested AD groups: use a filter with 1.2.840.113556.1.4.1941.",
     "groupRoles": "Groups and roles",
-    "groupRolesHint": "One mapping per line: group DN => role (learner, author, trainer). Applied at every sign-in. Administrator is never granted.",
+    "groupRolesHint": "One mapping per line: group (DN, name or id) => role (learner, author, trainer). Applied at every sign-in. Administrator is never granted.",
     "ldapNote": "Coursecraft checks passwords directly against the directory server and never stores them. Accounts are linked by e-mail address.",
     "groupRolesInvalid": "Invalid line in the group mappings: {{line}}",
     "proxyNote": "A web server in front (Apache with mod_auth_gssapi, IIS) authenticates with Kerberos and passes the account in a header. Protect only the path /api/auth/proxy/… there.",
@@ -1256,7 +1256,14 @@
       "empty": "Sync aborted: the directory returned no accounts. Check the search base and filter.",
       "too_many": "Sync aborted: an unusually large number of accounts would be deactivated. Check the filter."
     },
-    "adminOnly": "Allow local password sign-in for administrators only (emergency access)"
+    "adminOnly": "Allow local password sign-in for administrators only (emergency access)",
+    "groupClaim": "Claim with groups",
+    "groupClaimHint": "e.g. groups. Must be in the ID token. Empty = no roles from groups.",
+    "groupAttributeSaml": "Attribute with groups",
+    "groupAttributeSamlHint": "Name of the assertion attribute, e.g. groups or http://schemas.microsoft.com/ws/2008/06/identity/claims/groups. Empty = no roles from groups.",
+    "singleLogout": "Also sign out at the provider when signing out (single logout)",
+    "logoutUrl": "Provider's single logout URL",
+    "logoutUrlHint": "Empty = sign out of Coursecraft only. The logout request is not signed; the provider must accept that."
   },
   "operator": {
     "brand": "Coursecraft · Operations",

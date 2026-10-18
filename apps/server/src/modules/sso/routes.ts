@@ -31,6 +31,7 @@ import {
   providerMetadata,
   startLogin,
   BINDER_COOKIE,
+  sealLogout,
   enabledProvider,
   type Outcome,
 } from './service.js';
@@ -55,7 +56,18 @@ export function ssoRoutes(app: FastifyInstance, ctx: AppContext): void {
       });
       return reply.redirect(`/login?sso_error=${outcome.error}`);
     }
-    await startSession(ctx, request, reply, outcome.userId);
+    await startSession(
+      ctx,
+      request,
+      reply,
+      outcome.userId,
+      outcome.providerId
+        ? {
+            providerId: outcome.providerId,
+            logout: outcome.logout ? sealLogout(ctx, outcome.userId, outcome.logout) : null,
+          }
+        : undefined,
+    );
     await ctx.audit.record({
       actorUserId: outcome.userId,
       action: 'auth.login',
@@ -64,6 +76,11 @@ export function ssoRoutes(app: FastifyInstance, ctx: AppContext): void {
     });
     return reply.redirect('/');
   };
+
+  // The provider's answer to a SAML logout request: the session here is already gone.
+  r.get('/api/auth/sso/saml/logout', { config: { permission: 'public' } }, async (_request, reply) =>
+    reply.redirect('/login'),
+  );
 
   r.get(
     '/api/auth/sso/providers',

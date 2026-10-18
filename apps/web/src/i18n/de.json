@@ -1231,7 +1231,7 @@
     "requiredGroup": "Nur Mitglieder dieser Gruppe (DN)",
     "requiredGroupHint": "Leer = alle gefundenen Benutzer. Verschachtelte AD-Gruppen: Filter mit 1.2.840.113556.1.4.1941 verwenden.",
     "groupRoles": "Gruppen und Rollen",
-    "groupRolesHint": "Eine Zeile je Zuordnung: Gruppen-DN => Rolle (learner, author, trainer). Wirkt bei jeder Anmeldung. Administrator wird nie vergeben.",
+    "groupRolesHint": "Eine Zeile je Zuordnung: Gruppe (DN, Name oder ID) => Rolle (learner, author, trainer). Wirkt bei jeder Anmeldung. Administrator wird nie vergeben.",
     "ldapNote": "Coursecraft prüft Passwörter direkt am Verzeichnisserver und speichert sie nicht. Konten werden über die E-Mail-Adresse verknüpft.",
     "groupRolesInvalid": "Ungültige Zeile in den Gruppenzuordnungen: {{line}}",
     "proxyNote": "Ein vorgeschalteter Webserver (Apache mit mod_auth_gssapi, IIS) authentifiziert per Kerberos und übergibt das Konto in einem Header. Nur der Pfad /api/auth/proxy/… darf dort geschützt sein.",
@@ -1256,7 +1256,14 @@
       "empty": "Abgleich abgebrochen: Das Verzeichnis lieferte keine Konten. Prüfen Sie Suchbasis und Filter.",
       "too_many": "Abgleich abgebrochen: Es würden auffällig viele Konten deaktiviert. Prüfen Sie den Filter."
     },
-    "adminOnly": "Lokale Passwort-Anmeldung nur für Administratoren erlauben (Notfallzugang)"
+    "adminOnly": "Lokale Passwort-Anmeldung nur für Administratoren erlauben (Notfallzugang)",
+    "groupClaim": "Claim mit Gruppen",
+    "groupClaimHint": "z. B. groups. Muss im ID-Token stehen. Leer = keine Rollen aus Gruppen.",
+    "groupAttributeSaml": "Attribut mit Gruppen",
+    "groupAttributeSamlHint": "Name des Attributs in der Assertion, z. B. groups oder http://schemas.microsoft.com/ws/2008/06/identity/claims/groups. Leer = keine Rollen aus Gruppen.",
+    "singleLogout": "Beim Abmelden auch beim Anbieter abmelden (Single Logout)",
+    "logoutUrl": "Single-Logout-URL des Anbieters",
+    "logoutUrlHint": "Leer = nur in Coursecraft abmelden. Die Abmeldeanfrage ist unsigniert; der Anbieter muss das zulassen."
   },
   "operator": {
     "brand": "Coursecraft · Betrieb",

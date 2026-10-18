@@ -82,6 +82,9 @@ function ProviderDialog({
   const [secret, setSecret] = useState('');
   const [removeSecret, setRemoveSecret] = useState(false);
   const [scopes, setScopes] = useState(cfg(provider, 'scopes', 'openid email profile'));
+  const [groupClaim, setGroupClaim] = useState(cfg(provider, 'groupClaim'));
+  const [singleLogout, setSingleLogout] = useState(provider?.config['singleLogout'] === true);
+  const [logoutUrl, setLogoutUrl] = useState(cfg(provider, 'logoutUrl'));
   const [domains, setDomains] = useState((provider?.allowedDomains ?? []).join(', '));
   const [autoCreate, setAutoCreate] = useState(provider?.autoCreate ?? false);
   const [role, setRole] = useState<(typeof SSO_ROLES)[number]>(provider?.defaultRole ?? 'learner');
@@ -126,7 +129,17 @@ function ProviderDialog({
         removeSecret ? { [name]: null } : secret ? { [name]: secret } : {};
       const body =
         kind === 'saml'
-          ? { kind, ...shared, entryPoint, idpIssuer, idpCert, spEntityId }
+          ? {
+              kind,
+              ...shared,
+              entryPoint,
+              idpIssuer,
+              idpCert,
+              spEntityId,
+              groupClaim,
+              groupRoles: parseGroupRoles(groupRoles),
+              logoutUrl,
+            }
           : kind === 'proxy'
             ? {
                 kind,
@@ -166,6 +179,9 @@ function ProviderDialog({
                   issuer,
                   clientId,
                   scopes,
+                  groupClaim,
+                  groupRoles: parseGroupRoles(groupRoles),
+                  singleLogout,
                   ...secretField('clientSecret'),
                 };
       if (provider) await api(idParamSchema, `/api/sso/providers/${provider.id}`, { method: 'PUT', body });
@@ -259,6 +275,24 @@ function ProviderDialog({
               </FormRow>
             ) : null}
             <TextField label={t('sso.scopes')} value={scopes} onChange={setScopes} />
+            <TextField
+              label={t('sso.groupClaim')}
+              value={groupClaim}
+              onChange={setGroupClaim}
+              description={t('sso.groupClaimHint')}
+            />
+            <TextField
+              label={t('sso.groupRoles')}
+              multiline
+              value={groupRoles}
+              onChange={setGroupRoles}
+              description={t('sso.groupRolesHint')}
+            />
+            <FormRow label="">
+              <Checkbox isSelected={singleLogout} onChange={setSingleLogout}>
+                {t('sso.singleLogout')}
+              </Checkbox>
+            </FormRow>
           </>
         ) : kind === 'proxy' ? (
           <>
@@ -466,6 +500,25 @@ function ProviderDialog({
               onChange={setSpEntityId}
               isRequired
               description={t('sso.spEntityIdHint')}
+            />
+            <TextField
+              label={t('sso.groupAttributeSaml')}
+              value={groupClaim}
+              onChange={setGroupClaim}
+              description={t('sso.groupAttributeSamlHint')}
+            />
+            <TextField
+              label={t('sso.groupRoles')}
+              multiline
+              value={groupRoles}
+              onChange={setGroupRoles}
+              description={t('sso.groupRolesHint')}
+            />
+            <TextField
+              label={t('sso.logoutUrl')}
+              value={logoutUrl}
+              onChange={setLogoutUrl}
+              description={t('sso.logoutUrlHint')}
             />
           </>
         )}

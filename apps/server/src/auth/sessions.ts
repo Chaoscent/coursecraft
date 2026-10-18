@@ -2,7 +2,7 @@
 import type { Role } from '@coursecraft/shared';
 import type { Kysely } from 'kysely';
 import { hashToken, hmac, randomToken } from '../crypto/tokens.js';
-import type { Database } from '../db/schema.js';
+import type { Database, SealedJson } from '../db/schema.js';
 
 export const SESSION_COOKIE = '__Host-cc_session';
 
@@ -56,7 +56,11 @@ export class SessionService {
     this.#now = now;
   }
 
-  async create(userId: string, meta: ClientMeta): Promise<{ token: string; sessionId: string }> {
+  async create(
+    userId: string,
+    meta: ClientMeta,
+    sso?: { providerId: string; logout: SealedJson | null },
+  ): Promise<{ token: string; sessionId: string }> {
     const token = randomToken();
     const now = this.#now();
     const row = await this.#db
@@ -69,6 +73,9 @@ export class SessionService {
         absolute_expires_at: new Date(now.getTime() + this.#policy.absoluteHours * 3_600_000),
         ip_hmac: meta.ipHmac,
         user_agent: meta.userAgent?.slice(0, 512) ?? null,
+        ...(sso
+          ? { sso_provider_id: sso.providerId, sso_logout: sso.logout ? JSON.stringify(sso.logout) : null }
+          : {}),
       })
       .returning('id')
       .executeTakeFirstOrThrow();
@@ -160,6 +167,16 @@ export class SessionService {
       .where('id', '=', sessionId)
       .execute();
     return token;
+  }
+
+  /** The provider a session came from, for single logout. */
+  async ssoOf(sessionId: string): Promise<{ providerId: string; logout: SealedJson | null } | null> {
+    const row = await this.#db
+      .selectFrom('sessions')
+      .select(['sso_provider_id', 'sso_logout'])
+      .where('id', '=', sessionId)
+      .executeTakeFirst();
+    return row?.sso_provider_id ? { providerId: row.sso_provider_id, logout: row.sso_logout } : null;
   }
 
   async revoke(sessionId: string): Promise<void> {

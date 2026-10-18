@@ -12,7 +12,7 @@ issue once the repository is published.
 - [x] Exports as background jobs (large courses).
 - [x] XLSX report export; public verification page for certificates.
 - [x] Learning paths: e-mail when assigned, reminders for due dates.
-- [ ] OIDC/SAML groups and claims to roles; single logout.
+- [x] OIDC/SAML groups and claims to roles; single logout.
 
 **Later (comfort and extensions):**
 
@@ -69,14 +69,17 @@ issue once the repository is published.
 
 ## Single sign-on
 
-- [ ] Map OIDC/SAML provider groups or claims to Coursecraft roles (done for
-      LDAP) and map directory groups to Coursecraft groups.
+- [x] Map OIDC/SAML provider groups or claims to Coursecraft roles.
+- [ ] Map provider or directory groups to Coursecraft groups.
 - [ ] In-app Kerberos/SPNEGO (no reverse proxy); the proxy variant is done
       (`docs/windows-sso.md`) but untested against a real domain.
 - [ ] Automatic redirect to Windows sign-in for domain computers.
 - [ ] Re-activate accounts that return to the directory; sync of changed
       names and e-mail addresses.
-- [ ] Single logout and back-channel logout; encrypted SAML assertions.
+- [x] Single logout started by Coursecraft (OIDC end-session, SAML logout
+      request).
+- [ ] Back-channel logout (OIDC) and logout started by the provider; signed
+      SAML logout requests (needs an SP key); encrypted SAML assertions.
 - [ ] E2E run against a real provider container (Keycloak) in a nightly job.
 - [ ] Per-provider button icons.
 

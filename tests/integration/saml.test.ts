@@ -244,3 +244,49 @@ describe('SAML', () => {
     expect(form.statusCode).toBe(415);
   });
 });
+
+describe('SAML groups and single logout', () => {
+  it('maps a group attribute to roles and sends the browser to the provider when signing out', async () => {
+    const id = await configure({
+      name: 'SAML mit Gruppen',
+      groupClaim: 'groups',
+      groupRoles: [{ group: 'Autoren', role: 'author' }],
+      logoutUrl: 'https://idp.example.org/slo',
+    });
+    const res = await signIn(id, {
+      nameId: 'g-saml',
+      attributes: { mail: 'saml-gruppe@example.org', groups: 'autoren' },
+    });
+    expect(res.headers.location).toBe('/');
+    const roles = (
+      await t.ctx.db
+        .selectFrom('user_roles')
+        .innerJoin('users', 'users.id', 'user_roles.user_id')
+        .select('user_roles.role')
+        .where('users.email', '=', 'saml-gruppe@example.org')
+        .execute()
+    ).map((r) => r.role);
+    expect(roles.sort()).toEqual(['author', 'learner']);
+
+    const cookie = res.cookies.find((c) => c.name === SESSION_COOKIE)?.value ?? '';
+    const session = await t.app.inject({
+      method: 'GET',
+      url: '/api/session',
+      cookies: { [SESSION_COOKIE]: cookie },
+    });
+    const csrf = session.json<{ session: { csrfToken: string } }>().session.csrfToken;
+    const out = await t.app.inject({
+      method: 'POST',
+      url: '/api/auth/logout',
+      headers: { origin: ORIGIN, 'x-csrf-token': csrf },
+      cookies: { [SESSION_COOKIE]: cookie },
+    });
+    const redirect = new URL(out.json<{ redirect: string }>().redirect);
+    expect(redirect.origin + redirect.pathname).toBe('https://idp.example.org/slo');
+    expect(redirect.searchParams.get('SAMLRequest')).toBeTruthy();
+    // The provider's answer lands on the login page.
+    const back = await t.app.inject({ method: 'GET', url: '/api/auth/sso/saml/logout?SAMLResponse=x' });
+    expect(back.statusCode).toBe(302);
+    expect(back.headers.location).toBe('/login');
+  });
+});

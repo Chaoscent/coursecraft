@@ -12,7 +12,7 @@ import {
 } from 'react-aria-components';
 import { useTranslation } from 'react-i18next';
 import { NavLink, Outlet, useNavigate } from 'react-router';
-import { okSchema } from '@coursecraft/shared';
+import { logoutResponseSchema } from '@coursecraft/shared';
 import { api } from '../api/client.js';
 import { useSession } from '../api/session.js';
 import { Icon } from '../components/Icon.js';
@@ -94,9 +94,11 @@ export function AppShell() {
   const user = session.user;
 
   const logout = async () => {
-    await api(okSchema, '/api/auth/logout', { method: 'POST' }).catch(() => undefined);
+    const result = await api(logoutResponseSchema, '/api/auth/logout', { method: 'POST' }).catch(() => null);
     setSession(null);
-    void navigate('/login');
+    // Single logout: continue at the identity provider, which sends the browser back to /login.
+    if (result?.redirect) window.location.assign(result.redirect);
+    else void navigate('/login');
   };
 
   const nav: { group: string; entries: NavEntry[] }[] = [

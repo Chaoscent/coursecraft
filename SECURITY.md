@@ -281,6 +281,19 @@ change:
   Responses are replay-limited by the single-use relay state and the short
   validity window; encrypted assertions and single logout are not supported.
 
+## 5e2. Provider groups and single logout
+
+- OIDC and SAML providers can name a claim or attribute with groups; mapped
+  groups decide the roles at every sign-in like for LDAP (default role plus
+  mapped roles, never administrator). OIDC groups are taken from the signed
+  ID token only, SAML groups from the signed assertion.
+- Single logout is started by Coursecraft: the session remembers its provider
+  and, sealed, the ID token (OIDC) or the NameID and session index (SAML).
+  Signing out ends the local session first, then sends the browser to the
+  provider (OIDC `end_session_endpoint` with `id_token_hint`; SAML logout
+  request by HTTP-Redirect, unsigned). Logout started by the provider and
+  back-channel logout are not supported yet.
+
 ## 5f. Directory sign-in (LDAP / Active Directory)
 
 - Passwords are sent only over `ldaps://` or StartTLS (the settings refuse

@@ -7,6 +7,7 @@ import { exportJWK, generateKeyPair, SignJWT, type JWK } from 'jose';
 
 export interface IdpUser {
   sub: string;
+  groups?: string[];
   email?: string;
   email_verified?: boolean;
   name?: string;
@@ -86,6 +87,7 @@ export class FakeIdp {
         token_endpoint_auth_methods_supported: ['client_secret_post', 'none'],
         code_challenge_methods_supported: ['S256'],
         authorization_response_iss_parameter_supported: true,
+        end_session_endpoint: `${this.issuer}/logout`,
       });
     }
     if (path === '/jwks') return json(200, { keys: [this.#jwk] });

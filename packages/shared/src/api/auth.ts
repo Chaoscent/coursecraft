@@ -31,6 +31,9 @@ export const getSessionResponseSchema = z.object({
   setupRequired: z.boolean(),
 });
 
+/** After signing out: where the browser goes next (the identity provider's logout), if anywhere. */
+export const logoutResponseSchema = z.object({ ok: z.literal(true), redirect: z.string().nullable() });
+
 export const loginRequestSchema = z
   .object({ email: z.string().trim().max(254), password: z.string().min(1).max(1024) })
   .strict();

@@ -69,6 +69,8 @@ export interface SessionsTable {
   rotate_pending: Generated<boolean>;
   ip_hmac: string | null;
   user_agent: string | null;
+  sso_provider_id: ColumnType<string | null, string | null | undefined, string | null>;
+  sso_logout: JSONColumnType<SealedJson | null, string | null | undefined, string | null>;
 }
 
 export interface LoginChallengesTable {
