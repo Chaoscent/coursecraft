@@ -18,6 +18,11 @@ const schema = z.object({
   port: z.coerce.number().int().min(1).max(65535).default(3002),
   webDir: z.string().default('/app/public'),
   logLevel: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
+  /** Address of the installation, for password links of the default organisation. */
+  publicUrl: z.url().optional(),
+  release: z.string().default('dev'),
+  tenancy: z.enum(['single', 'multi']).default('single'),
+  storage: z.enum(['fs', 's3']).default('fs'),
 });
 export type OperatorConfig = z.infer<typeof schema>;
 
@@ -30,6 +35,10 @@ export function loadOperatorConfig(env: NodeJS.ProcessEnv = process.env): Operat
     port: env['COURSECRAFT_OPERATOR_PORT'],
     webDir: env['COURSECRAFT_WEB_DIR'],
     logLevel: env['COURSECRAFT_LOG_LEVEL'],
+    publicUrl: env['COURSECRAFT_PUBLIC_URL'] || undefined,
+    release: env['COURSECRAFT_RELEASE'] || undefined,
+    tenancy: env['COURSECRAFT_TENANCY'] || undefined,
+    storage: env['COURSECRAFT_STORAGE'] || undefined,
   });
   if (!result.success) {
     const problems = result.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`);

@@ -8,7 +8,15 @@ const config = loadOperatorConfig();
 const migrator = createDatabase(config.migratorDatabaseUrl, { max: 2 });
 // Inside one organisation at a time (row-level security), never without one.
 const appDb = createDatabase(config.databaseUrl, { max: 2, tenancy: 'multi' });
-const app = await buildOperatorApp(config, { migrator, app: appDb, blobs: blobStoreFromEnv() });
+const app = await buildOperatorApp(config, {
+  migrator,
+  app: appDb,
+  blobs: blobStoreFromEnv(),
+  publicUrl: config.publicUrl,
+  release: config.release,
+  tenancy: config.tenancy,
+  storage: config.storage,
+});
 
 const shutdown = async () => {
   await app.close();

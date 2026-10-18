@@ -7,6 +7,10 @@ import {
   okSchema,
   operatorCreatedSchema,
   operatorDeleteSchema,
+  operatorInstallationSchema,
+  operatorLogSchema,
+  operatorResetLinkSchema,
+  operatorTenantDetailSchema,
   operatorLoginSchema,
   operatorNewTenantSchema,
   operatorSessionSchema,
@@ -24,12 +28,17 @@ import { installErrorHandling } from '../http/app.js';
 import type { OperatorConfig } from './config.js';
 import {
   addTenant,
+  adminResetLink,
+  installation,
   listTenants,
+  operatorLog,
   removeTenant,
   setupToken,
+  tenantDetail,
   updateTenant,
   type OperatorDeps,
 } from './service.js';
+import { z } from 'zod';
 
 const COOKIE = '__Host-cc_operator';
 const SESSION_MS = 8 * 3_600_000;
@@ -157,6 +166,40 @@ export async function buildOperatorApp(config: OperatorConfig, deps: OperatorDep
       );
       return { ok: true as const };
     },
+  );
+
+  r.get(
+    '/api/operator/tenants/:id/detail',
+    { preHandler: guard, schema: { params: idParamSchema, response: { 200: operatorTenantDetailSchema } } },
+    async (request) => tenantDetail(deps, request.params.id),
+  );
+
+  r.post(
+    '/api/operator/tenants/:id/admins/:userId/reset-link',
+    {
+      preHandler: guard,
+      schema: {
+        params: z.object({ id: z.uuid(), userId: z.uuid() }),
+        response: { 200: operatorResetLinkSchema },
+      },
+    },
+    async (request) => {
+      const result = await adminResetLink(deps, request.params.id, request.params.userId);
+      request.log.warn({ tenant: request.params.id }, 'password link for an administrator issued');
+      return result;
+    },
+  );
+
+  r.get(
+    '/api/operator/installation',
+    { preHandler: guard, schema: { response: { 200: operatorInstallationSchema } } },
+    async () => installation(deps),
+  );
+
+  r.get(
+    '/api/operator/log',
+    { preHandler: guard, schema: { response: { 200: operatorLogSchema } } },
+    async () => operatorLog(deps),
   );
 
   r.post(

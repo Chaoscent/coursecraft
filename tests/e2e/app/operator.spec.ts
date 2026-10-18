@@ -29,6 +29,8 @@ test('the operator signs in, adds an organisation, switches it off and deletes i
   await form.getByLabel('Adresse', { exact: true }).fill(`https://${host}.courses.test`);
   await form.getByLabel('Adresse für Kurse').fill(`https://${host}.content.test`);
   await form.getByLabel('Höchstens Benutzer').fill('25');
+  await form.getByLabel('Kontaktperson').fill('Dora Dietrich');
+  await form.getByLabel('Tarif').fill('Business');
   await form.getByRole('button', { name: 'Speichern' }).click();
   await expect(page.getByRole('dialog', { name: 'Setup-Token' })).toContainText(
     `https://${host}.courses.test/setup`,
@@ -38,6 +40,10 @@ test('the operator signs in, adds an organisation, switches it off and deletes i
   const row = page.getByRole('row', { name: new RegExp(name) });
   await expect(row).toContainText('0 / 25');
   await row.click();
+  const side = page.getByRole('complementary', { name: 'Details' });
+  await expect(side).toContainText('Dora Dietrich');
+  await expect(side).toContainText('Business');
+  await expect(side).toContainText('Noch kein Administrator');
   await page.getByRole('button', { name: 'Abschalten' }).click();
   await expect(row).toContainText('abgeschaltet');
   await page.getByRole('button', { name: 'Löschen …' }).click();
@@ -46,6 +52,13 @@ test('the operator signs in, adds an organisation, switches it off and deletes i
   await dialog.getByLabel('Name zur Bestätigung').fill(name);
   await dialog.getByRole('button', { name: 'Endgültig löschen' }).click();
   await expect(page.getByRole('row', { name: new RegExp(name) })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Installation' }).click();
+  await expect(page.getByRole('heading', { name: 'Installation' })).toBeVisible();
+  await expect(page.getByText('Eine Organisation')).toBeVisible();
+  await page.getByRole('button', { name: 'Protokoll' }).click();
+  await expect(
+    page.getByRole('row').filter({ hasText: 'Organisation gelöscht' }).filter({ hasText: name }),
+  ).toBeVisible();
   await page.getByRole('button', { name: 'Abmelden' }).click();
   await expect(page.getByRole('heading', { name: 'Betreiber-Anmeldung' })).toBeVisible();
 });

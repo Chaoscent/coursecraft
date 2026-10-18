@@ -49,6 +49,8 @@ spec:
               value: {{ include "coursecraft.dbUrl" (list "coursecraft_app" "COURSECRAFT_APP_PASSWORD" .) | quote }}
             - name: COURSECRAFT_OPERATOR_PASSWORD
               valueFrom: { secretKeyRef: { name: {{ $secret }}, key: operatorPassword } }
+            - { name: COURSECRAFT_PUBLIC_URL, value: {{ .Values.publicUrl | quote }} }
+            - { name: COURSECRAFT_TENANCY, value: {{ .Values.tenancy | quote }} }
             {{- if $fs }}
             - { name: COURSECRAFT_DATA_DIR, value: /data }
             {{- end }}

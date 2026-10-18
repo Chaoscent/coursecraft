@@ -258,10 +258,12 @@ export function GroupsPage() {
     >
       <div className={current ? styles.split : styles.stack}>
         <div className={styles.stack}>
-          {error ? <Notice tone="danger">{error}</Notice> : <span />}
-          <Checkbox isSelected={scope === 'all'} onChange={(all) => setScope(all ? 'all' : 'managed')}>
-            {t('groups.trainersSeeAll')}
-          </Checkbox>
+          <div className={styles.head}>
+            {error ? <Notice tone="danger">{error}</Notice> : null}
+            <Checkbox isSelected={scope === 'all'} onChange={(all) => setScope(all ? 'all' : 'managed')}>
+              {t('groups.trainersSeeAll')}
+            </Checkbox>
+          </div>
           <DataTable
             label={t('groups.title')}
             rows={groups}

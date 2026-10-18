@@ -32,8 +32,11 @@ beforeAll(async () => {
       port: 0,
       webDir: '/nonexistent',
       logLevel: 'fatal',
+      release: 'test',
+      tenancy: 'single',
+      storage: 'fs',
     },
-    { migrator, app, blobs: t.ctx.blobs },
+    { migrator, app, blobs: t.ctx.blobs, publicUrl: 'https://coursecraft.test', release: '1.2.3' },
   );
 });
 afterAll(async () => {
@@ -172,6 +175,87 @@ describe('operator console', () => {
     expect(upload.json<{ error: { code: string } }>().error.code).toBe('quota_exceeded');
     await call('PATCH', `/api/operator/tenants/${DEFAULT_TENANT_ID}`, { maxUsers: null, maxStorageMb: null });
     t.ctx.tenants.invalidate();
+  });
+
+  it('edits an organisation with contact, plan, notes and new addresses, and logs the change', async () => {
+    const { id } = (
+      await call('POST', '/api/operator/tenants', {
+        name: 'Firma D',
+        publicOrigin: 'https://d.courses.test',
+        contentOrigin: 'https://d.content.test',
+        maxUsers: null,
+        maxStorageMb: null,
+      })
+    ).json<{ id: string }>();
+    const res = await call('PATCH', `/api/operator/tenants/${id}`, {
+      name: 'Firma D GmbH',
+      publicOrigin: 'https://firma-d.courses.test',
+      contentOrigin: 'https://firma-d.content.test',
+      contactName: 'Dora Dietrich',
+      contactEmail: 'dora@firma-d.example',
+      plan: 'Business',
+      notes: 'Rechnung quartalsweise',
+    });
+    expect(res.statusCode, res.body).toBe(200);
+    expect((await tenants()).find((x) => x.id === id)).toMatchObject({
+      name: 'Firma D GmbH',
+      publicOrigin: 'https://firma-d.courses.test',
+      contactEmail: 'dora@firma-d.example',
+      plan: 'Business',
+      notes: 'Rechnung quartalsweise',
+    });
+    expect(
+      (await call('PATCH', `/api/operator/tenants/${id}`, { publicOrigin: 'http://not-https.test' }))
+        .statusCode,
+    ).toBe(400);
+    const log = (await call('GET', '/api/operator/log')).json<{
+      items: { action: string; tenantName: string | null; details: { fields?: string[] } | null }[];
+    }>().items;
+    const entry = log.find((e) => e.action === 'tenant.updated' && e.tenantName === 'Firma D GmbH');
+    expect(entry?.details?.fields).toContain('notes');
+    // The log names fields, never personal values.
+    expect(JSON.stringify(log)).not.toContain('dora@firma-d.example');
+  });
+
+  it('shows the details of an organisation and gives a locked-out administrator a password link', async () => {
+    const detail = (await call('GET', `/api/operator/tenants/${DEFAULT_TENANT_ID}/detail`)).json<{
+      users: number;
+      courses: number;
+      admins: { id: string; email: string }[];
+    }>();
+    expect(detail.users).toBeGreaterThanOrEqual(1);
+    const me = detail.admins.find((a) => a.id === admin.userId);
+    expect(me?.email).toBe(admin.email);
+    const res = await call(
+      'POST',
+      `/api/operator/tenants/${DEFAULT_TENANT_ID}/admins/${admin.userId}/reset-link`,
+    );
+    expect(res.statusCode, res.body).toBe(200);
+    const { link } = res.json<{ link: string }>();
+    expect(link.startsWith('https://coursecraft.test/reset-password#')).toBe(true);
+    const token = link.split('#')[1] ?? '';
+    const confirm = await t.request(null, 'POST', '/api/auth/password-reset/confirm', {
+      token,
+      newPassword: 'a brand new password 1',
+    });
+    expect(confirm.statusCode, confirm.body).toBe(200);
+    expect((await t.login(admin.email, 'a brand new password 1')).userId).toBe(admin.userId);
+    // Only administrators get such a link.
+    const learner = await t.createUser(['learner']);
+    expect(
+      (await call('POST', `/api/operator/tenants/${DEFAULT_TENANT_ID}/admins/${learner.id}/reset-link`))
+        .statusCode,
+    ).toBe(404);
+  });
+
+  it('describes the installation', async () => {
+    const info = (await call('GET', '/api/operator/installation')).json<{
+      version: string;
+      tenancy: string;
+      organisations: number;
+    }>();
+    expect(info).toMatchObject({ version: '1.2.3', tenancy: 'single', storage: 'fs' });
+    expect(info.organisations).toBeGreaterThanOrEqual(2);
   });
 
   it('signs out', async () => {

@@ -452,6 +452,15 @@ export interface CourseExportsTable {
   finished_at: Timestamp | null;
 }
 
+export interface OperatorLogTable {
+  id: Generated<string>;
+  at: CreatedAt;
+  action: string;
+  tenant_id: string | null;
+  tenant_name: string | null;
+  details: JSONColumnType<Record<string, unknown> | null, string | null | undefined, string | null>;
+}
+
 export interface GroupManagersTable {
   group_id: string;
   user_id: string;
@@ -464,6 +473,10 @@ export interface TenantsTable {
   content_origin: string | null;
   max_users: ColumnType<number | null, number | null | undefined, number | null>;
   max_storage_mb: ColumnType<number | null, number | null | undefined, number | null>;
+  contact_name: ColumnType<string | null, string | null | undefined, string | null>;
+  contact_email: ColumnType<string | null, string | null | undefined, string | null>;
+  plan: ColumnType<string | null, string | null | undefined, string | null>;
+  notes: ColumnType<string | null, string | null | undefined, string | null>;
   status: ColumnType<'active' | 'disabled', 'active' | 'disabled' | undefined, 'active' | 'disabled'>;
   created_at: CreatedAt;
 }
@@ -529,6 +542,7 @@ export interface Database {
   periodic_jobs: PeriodicJobsTable;
   tenants: TenantsTable;
   group_managers: GroupManagersTable;
+  operator_log: OperatorLogTable;
   course_exports: CourseExportsTable;
   path_notices: PathNoticesTable;
   user_identities: UserIdentitiesTable;

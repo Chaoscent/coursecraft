@@ -100,6 +100,8 @@ export async function readOnlyFor<DB>(
     n: number;
   }>`select count(*)::int as n from pg_roles where rolname = ${role}`.execute(db);
   if (result.rows[0]?.n) {
+    // Granted explicitly: reading is wanted (backups with the app role, tenant lookup).
+    await sql`grant select on ${sql.table(table)} to ${sql.id(role)}`.execute(db);
     await sql`revoke insert, update, delete, truncate on ${sql.table(table)} from ${sql.id(role)}`.execute(
       db,
     );

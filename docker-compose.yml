@@ -156,6 +156,8 @@ services:
       COURSECRAFT_DATA_DIR: /data
       # The image's health check asks this port.
       COURSECRAFT_PORT: '3002'
+      COURSECRAFT_PUBLIC_URL: ${COURSECRAFT_PUBLIC_URL:-}
+      COURSECRAFT_TENANCY: ${COURSECRAFT_TENANCY:-single}
     command: ['node', '/app/dist/operator-main.js']
     ports:
       - '127.0.0.1:${COURSECRAFT_OPERATOR_PORT:-3002}:3002'

@@ -626,12 +626,14 @@ export function SsoPage() {
       }
     >
       <div className={styles.stack}>
-        <Notice tone="info">{t('sso.privacyNote')}</Notice>
-        {message ? <Notice tone="success">{message}</Notice> : null}
-        <Checkbox isSelected={policy?.localLoginAdminOnly ?? false} onChange={setAdminOnly}>
-          {t('sso.adminOnly')}
-        </Checkbox>
-        {(actionError ?? loadError) ? <Notice tone="danger">{actionError ?? loadError}</Notice> : null}
+        <div className={styles.head}>
+          <Notice tone="info">{t('sso.privacyNote')}</Notice>
+          {message ? <Notice tone="success">{message}</Notice> : null}
+          {(actionError ?? loadError) ? <Notice tone="danger">{actionError ?? loadError}</Notice> : null}
+          <Checkbox isSelected={policy?.localLoginAdminOnly ?? false} onChange={setAdminOnly}>
+            {t('sso.adminOnly')}
+          </Checkbox>
+        </div>
         <DataTable
           label={t('sso.title')}
           rows={providers}

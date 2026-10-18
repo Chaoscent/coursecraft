@@ -45,4 +45,5 @@ out=$(as coursecraft_app app-pass-0123456789abcdef "update audit_log set action 
 other() { docker exec -e PGPASSWORD=app-pass-0123456789abcdef -e PGOPTIONS='-c app.tenant_id=11111111-1111-4111-8111-111111111111' "$DB" psql -qtA -h 127.0.0.1 -U coursecraft_app -d coursecraft -c "$1" 2>&1; }
 [ "$(other "select count(*) from settings")" = 0 ] || fail "another tenant sees the default tenant's rows"
 out=$(as coursecraft_app app-pass-0123456789abcdef "insert into tenants (name) values ('evil')" || true); echo "$out" | grep -q "permission denied" || fail "the app can create tenants: $out"
+out=$(as coursecraft_app app-pass-0123456789abcdef "insert into operator_log (action) values ('x')" || true); echo "$out" | grep -q "permission denied" || fail "the app can write the operator log: $out"
 echo "Bootstrap test passed."

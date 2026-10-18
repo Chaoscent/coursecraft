@@ -19,6 +19,10 @@ export const operatorTenantSchema = z.object({
   isDefault: z.boolean(),
   maxUsers: limit,
   maxStorageMb: limit,
+  contactName: z.string().nullable(),
+  contactEmail: z.string().nullable(),
+  plan: z.string().nullable(),
+  notes: z.string().nullable(),
   users: z.number().int(),
   storageBytes: z.number(),
   createdAt: z.string(),
@@ -36,14 +40,68 @@ export const operatorNewTenantSchema = z
   })
   .strict();
 
+const text = (max: number) => z.string().trim().max(max).nullable();
+
 export const operatorUpdateTenantSchema = z
   .object({
     name: z.string().trim().min(1).max(200).optional(),
+    publicOrigin: z.string().trim().max(300).optional(),
+    contentOrigin: z.string().trim().max(300).optional(),
     status: z.enum(['active', 'disabled']).optional(),
     maxUsers: limit.optional(),
     maxStorageMb: limit.optional(),
+    contactName: text(200).optional(),
+    contactEmail: z
+      .union([z.literal(''), z.email().max(254)])
+      .nullable()
+      .optional(),
+    plan: text(100).optional(),
+    notes: text(5000).optional(),
   })
   .strict();
+
+/** Figures and people of one organisation, for the details panel. */
+export const operatorTenantDetailSchema = z.object({
+  users: z.number().int(),
+  activeUsers30d: z.number().int(),
+  courses: z.number().int(),
+  libraryItems: z.number().int(),
+  storageBytes: z.number(),
+  lastSignInAt: z.string().nullable(),
+  admins: z.array(
+    z.object({
+      id: uuidSchema,
+      displayName: z.string(),
+      email: z.string(),
+      lastLoginAt: z.string().nullable(),
+    }),
+  ),
+});
+
+export const operatorResetLinkSchema = z.object({ link: z.string(), expiresAt: z.string() });
+
+export const operatorInstallationSchema = z.object({
+  version: z.string(),
+  tenancy: z.enum(['single', 'multi']),
+  storage: z.enum(['fs', 's3']),
+  migration: z.string(),
+  organisations: z.number().int(),
+  activeOrganisations: z.number().int(),
+  users: z.number().int(),
+  storageBytes: z.number(),
+});
+
+export const operatorLogSchema = z.object({
+  items: z.array(
+    z.object({
+      id: z.string(),
+      at: z.string(),
+      action: z.string(),
+      tenantName: z.string().nullable(),
+      details: z.record(z.string(), z.unknown()).nullable(),
+    }),
+  ),
+});
 
 export const operatorSetupTokenSchema = z.object({ token: z.string(), expiresAt: z.string() });
 export const operatorCreatedSchema = operatorSetupTokenSchema.extend({ id: uuidSchema });

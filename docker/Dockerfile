@@ -47,7 +47,8 @@ RUN apt-get update \
  && chown 10001:10000 /data && chown 10001:10000 /work && chmod 2770 /work
 COPY --from=build /out/app /app
 COPY docker/coursecraft.sh /usr/local/bin/coursecraft
-ENV NODE_ENV=production COURSECRAFT_DATA_DIR=/data COURSECRAFT_WEB_DIR=/app/public COURSECRAFT_PLAYER_DIR=/app/player
+ARG VERSION=dev
+ENV NODE_ENV=production COURSECRAFT_RELEASE=${VERSION} COURSECRAFT_DATA_DIR=/data COURSECRAFT_WEB_DIR=/app/public COURSECRAFT_PLAYER_DIR=/app/player
 USER 10001:10000
 WORKDIR /app
 EXPOSE 3000

@@ -22,6 +22,7 @@ import * as m0017 from './0017-tenant-quotas.js';
 import * as m0018 from './0018-course-exports.js';
 import * as m0019 from './0019-path-notices.js';
 import * as m0020 from './0020-session-sso.js';
+import * as m0021 from './0021-operator-details.js';
 
 /** Ordered list of all migrations. Released migrations never change. */
 export const MIGRATIONS: Readonly<Record<string, Migration>> = {
@@ -45,6 +46,7 @@ export const MIGRATIONS: Readonly<Record<string, Migration>> = {
   '0018-course-exports': m0018,
   '0019-path-notices': m0019,
   '0020-session-sso': m0020,
+  '0021-operator-details': m0021,
 };
 
 /**
@@ -55,6 +57,8 @@ export async function enforcePrivileges<DB>(db: Kysely<DB>): Promise<void> {
   await revokeWrites(db, ident('audit_log'), ident('coursecraft_app'));
   // Tenants are created and changed by the operator (migrator role), never by the app.
   await readOnlyFor(db, ident('tenants'), ident('coursecraft_app'));
+  // Readable for backups made with the app role (names and field names only), never writable.
+  await readOnlyFor(db, ident('operator_log'), ident('coursecraft_app'));
 }
 
 export const LATEST_MIGRATION = Object.keys(MIGRATIONS).sort().at(-1);
