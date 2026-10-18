@@ -66,7 +66,7 @@ export function TextField({ label, description, errorMessage, multiline, type, .
               aria-label={revealed ? t('fields.hideSecret') : t('fields.showSecret')}
               onPress={() => setRevealed(!revealed)}
             >
-              <Icon name={revealed ? 'eye-off' : 'eye'} />
+              <Icon name={revealed ? 'eye' : 'eye-off'} />
             </AriaButton>
           </div>
         ) : (
