@@ -2,7 +2,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { uploadTo } from '../support/courses.js';
 import { scorm12Package } from '../support/packages.js';
-import { createTestApp, type Actor, type TestApp } from '../support/test-app.js';
+import { createTestApp, trainersSeeEveryone, type Actor, type TestApp } from '../support/test-app.js';
 
 let t: TestApp;
 let admin: Actor;
@@ -16,6 +16,7 @@ let pathId: string;
 
 beforeAll(async () => {
   t = await createTestApp({ COURSECRAFT_CONTENT_URL: 'https://content.coursecraft.test' });
+  await trainersSeeEveryone(t);
   admin = await t.actor(['admin']);
   author = await t.actor(['author']);
   trainer = await t.actor(['trainer']);

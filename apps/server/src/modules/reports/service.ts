@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { learnerScope, seesUser } from '../../policy/learners.js';
 import type { ReportRow } from '@coursecraft/shared';
 import type { AppContext, AuthState } from '../../http/context.js';
 import { notFound } from '../../http/errors.js';
@@ -13,8 +14,9 @@ const chunks = <T>(list: T[]): T[][] =>
   Array.from({ length: Math.ceil(list.length / CHUNK) }, (_, i) => list.slice(i * CHUNK, (i + 1) * CHUNK));
 
 /** Every learner with an assignment (direct or via group) or an attempt, with their latest state. */
-export async function itemReport(ctx: AppContext, itemId: string) {
+export async function itemReport(ctx: AppContext, auth: AuthState, itemId: string) {
   const item = await assertItem(ctx, itemId);
+  const scope = await learnerScope(ctx, auth);
   const assignments = await ctx.db
     .selectFrom('assignments')
     .select(['user_id', 'group_id', 'due_at'])
@@ -65,7 +67,7 @@ export async function itemReport(ctx: AppContext, itemId: string) {
   const byUser = new Map<string, typeof regs>();
   for (const r of regs) byUser.set(r.user_id, [...(byUser.get(r.user_id) ?? []), r]);
 
-  const userIds = [...new Set([...due.keys(), ...byUser.keys()])];
+  const userIds = [...new Set([...due.keys(), ...byUser.keys()])].filter((id) => seesUser(scope, id));
   const users = (
     await Promise.all(
       chunks(userIds).map((ids) =>
@@ -130,6 +132,10 @@ export async function itemReport(ctx: AppContext, itemId: string) {
         .as('pending'),
     ])
     .where('registrations.library_item_id', '=', itemId)
+    // Statistics only over the learners the caller may see.
+    .$if(!scope.all, (q) =>
+      q.where('registrations.user_id', 'in', [...userIds, '00000000-0000-0000-0000-000000000000']),
+    )
     .groupBy('quiz_responses.question_id')
     .orderBy('quiz_responses.question_id')
     .execute();
@@ -191,7 +197,8 @@ export function reportCsv(rows: ReportRow[]): string {
   return `${BOM}${lines.join('\r\n')}\r\n`;
 }
 
-export async function gradingQueue(ctx: AppContext) {
+export async function gradingQueue(ctx: AppContext, auth: AuthState) {
+  const scope = await learnerScope(ctx, auth);
   const rows = await ctx.db
     .selectFrom('quiz_responses')
     .innerJoin('registrations', 'registrations.id', 'quiz_responses.registration_id')
@@ -209,6 +216,12 @@ export async function gradingQueue(ctx: AppContext) {
     ])
     .where('quiz_responses.needs_manual_grading', '=', true)
     .where('quiz_responses.manual_score', 'is', null)
+    .$if(!scope.all, (q) =>
+      q.where('registrations.user_id', 'in', [
+        ...(scope.all ? [] : scope.userIds),
+        '00000000-0000-0000-0000-000000000000',
+      ]),
+    )
     .orderBy('quiz_responses.answered_at')
     .limit(500)
     .execute();
@@ -233,6 +246,12 @@ export async function grade(
   auth: AuthState,
   input: { registrationId: string; questionId: string; score: number },
 ): Promise<void> {
+  const owner = await ctx.db
+    .selectFrom('registrations')
+    .select('user_id')
+    .where('id', '=', input.registrationId)
+    .executeTakeFirst();
+  if (!owner || !seesUser(await learnerScope(ctx, auth), owner.user_id)) throw notFound('Response not found');
   await ctx.db.transaction().execute(async (tx) => {
     const response = await tx
       .selectFrom('quiz_responses')

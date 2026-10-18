@@ -3,6 +3,34 @@
 Tracked here until the project has an issue tracker. Move each entry to an
 issue once the repository is published.
 
+## Priorities (2026-10-18)
+
+**Next (customers will ask early):**
+
+- [x] Trainers see only the learners of groups they manage.
+- [ ] Quotas per tenant (users, storage) and an operator web interface.
+- [ ] Exports as background jobs (large courses).
+- [ ] XLSX report export; public verification page for certificates.
+- [ ] Learning paths: e-mail when assigned, reminders for due dates.
+- [ ] OIDC/SAML groups and claims to roles; single logout.
+
+**Later (comfort and extensions):**
+
+- [ ] Caption editor; webcam overlay and cursor highlight in recordings.
+- [ ] Graph view for dialog scenes; rich text in interactions.
+- [ ] PPTX tables as editable elements.
+- [ ] AI alt-text suggestions for images.
+- [ ] Multi-SCO / multi-AU courses.
+- [ ] TypeScript 7 once typescript-eslint supports it.
+
+**Blocked (needs resources the project does not have):**
+
+- [ ] Tests against a real Active Directory and the Kerberos proxy.
+- [ ] Operation on a cloud provider (AWS/Azure) and with an NFS volume.
+- [ ] External penetration test; trademark search.
+- [ ] Conformance run against a real LMS (Moodle) and the ADL test suite
+      (possible without money, needs time: see Exports below).
+
 ## Kubernetes and SaaS
 
 - [ ] Quotas and usage per tenant; operator web interface; moving or
@@ -38,8 +66,7 @@ issue once the repository is published.
       statement query filters (agent, verb, activity, since/until, paging).
 - [ ] xAPI concurrency headers (If-Match / If-None-Match) for documents.
 - [ ] Multi-SCO SCORM packages and multi-AU cmi5 courses (today: first unit).
-- [ ] Trainers limited to their own groups (today: one organisation, all
-      learners visible to `reports.read`).
+- [x] Trainers limited to their own groups (group managers, trainer scope).
 
 ## Single sign-on
 
@@ -103,5 +130,5 @@ issue once the repository is published.
 - [ ] Install `docker-buildx` locally for multi-arch builds
       (`PLATFORMS=linux/amd64,linux/arm64 scripts/ci/build-images.sh`). Not needed
       for normal builds: Compose builds without it.
-- [ ] Publish images to a registry; until then `docker compose up` prints a
-      harmless "pull access denied" warning before building locally.
+- [ ] First release on GitHub (push, make the packages public, tag v0.1.0);
+      the release workflow then publishes images and the chart.

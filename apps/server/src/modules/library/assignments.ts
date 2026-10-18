@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { assertSeesAll, learnerScope, seesGroup, seesUser } from '../../policy/learners.js';
 import type { Assignment } from '@coursecraft/shared';
 import type { AppContext, AuthState } from '../../http/context.js';
 import { badRequest, notFound } from '../../http/errors.js';
@@ -14,8 +15,13 @@ export async function assertItem(ctx: AppContext, id: string): Promise<{ id: str
   return item;
 }
 
-export async function listAssignments(ctx: AppContext, itemId: string): Promise<Assignment[]> {
+export async function listAssignments(
+  ctx: AppContext,
+  auth: AuthState,
+  itemId: string,
+): Promise<Assignment[]> {
   await assertItem(ctx, itemId);
+  const scope = await learnerScope(ctx, auth);
   const rows = await ctx.db
     .selectFrom('assignments')
     .leftJoin('users', 'users.id', 'assignments.user_id')
@@ -32,7 +38,10 @@ export async function listAssignments(ctx: AppContext, itemId: string): Promise<
     .where('assignments.library_item_id', '=', itemId)
     .orderBy('assignments.created_at')
     .execute();
-  return rows.map((r) => ({
+  const visible = rows.filter((r) =>
+    r.user_id ? seesUser(scope, r.user_id) : seesGroup(scope, r.group_id ?? ''),
+  );
+  return visible.map((r) => ({
     id: r.id,
     targetType: r.user_id ? ('user' as const) : ('group' as const),
     targetId: (r.user_id ?? r.group_id) as string,
@@ -50,6 +59,7 @@ export async function createAssignments(
   input: { userIds: string[]; groupIds: string[]; dueAt: string | null; notify?: boolean },
 ): Promise<number> {
   await assertItem(ctx, itemId);
+  assertSeesAll(await learnerScope(ctx, auth), input.userIds, input.groupIds);
   const users = input.userIds.length
     ? await ctx.db
         .selectFrom('users')
@@ -111,6 +121,18 @@ export async function deleteAssignment(
   itemId: string,
   assignmentId: string,
 ) {
+  const target = await ctx.db
+    .selectFrom('assignments')
+    .select(['user_id', 'group_id'])
+    .where('id', '=', assignmentId)
+    .where('library_item_id', '=', itemId)
+    .executeTakeFirst();
+  if (target)
+    assertSeesAll(
+      await learnerScope(ctx, auth),
+      target.user_id ? [target.user_id] : [],
+      target.group_id ? [target.group_id] : [],
+    );
   const result = await ctx.db
     .deleteFrom('assignments')
     .where('id', '=', assignmentId)

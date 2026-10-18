@@ -52,6 +52,14 @@ export interface TestApp {
   ): Promise<LightMyRequestResponse>;
 }
 
+/** Small-organisation mode: every trainer sees every learner (tests that are about the LMS itself). */
+export async function trainersSeeEveryone(t: TestApp): Promise<void> {
+  await t.ctx.db
+    .insertInto('settings')
+    .values({ key: 'trainer_scope', value: JSON.stringify({ mode: 'all' }) })
+    .execute();
+}
+
 export function sessionCookie(res: LightMyRequestResponse): string | undefined {
   return res.cookies.find((c) => c.name === SESSION_COOKIE)?.value;
 }

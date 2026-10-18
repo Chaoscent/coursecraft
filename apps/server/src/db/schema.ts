@@ -430,6 +430,11 @@ export interface PeriodicJobsTable {
   locked_until: Timestamp;
 }
 
+export interface GroupManagersTable {
+  group_id: string;
+  user_id: string;
+}
+
 export interface TenantsTable {
   id: Generated<string>;
   name: string;
@@ -499,5 +504,6 @@ export interface Database {
   rate_limits: RateLimitsTable;
   periodic_jobs: PeriodicJobsTable;
   tenants: TenantsTable;
+  group_managers: GroupManagersTable;
   user_identities: UserIdentitiesTable;
 }

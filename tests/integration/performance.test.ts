@@ -6,7 +6,7 @@ import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { getDoc, openCourse, uploadTo } from '../support/courses.js';
 import { scorm12Package } from '../support/packages.js';
-import { createTestApp, type Actor, type TestApp } from '../support/test-app.js';
+import { createTestApp, trainersSeeEveryone, type Actor, type TestApp } from '../support/test-app.js';
 
 let t: TestApp;
 let admin: Actor;
@@ -14,6 +14,7 @@ let trainer: Actor;
 
 beforeAll(async () => {
   t = await createTestApp({ COURSECRAFT_CONTENT_URL: 'https://content.coursecraft.test' });
+  await trainersSeeEveryone(t);
   admin = await t.actor(['admin']);
   trainer = await t.actor(['trainer']);
 });

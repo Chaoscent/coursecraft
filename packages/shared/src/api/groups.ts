@@ -23,3 +23,9 @@ export const updateGroupRequestSchema = z
   .strict();
 
 export const groupMembersRequestSchema = z.object({ userIds: z.array(uuidSchema).min(1).max(1000) }).strict();
+
+/** Trainers responsible for a group (they see its learners). */
+export const groupManagersSchema = z.object({ userIds: z.array(uuidSchema).max(200) }).strict();
+
+/** Whether trainers see only managed groups (default) or every learner. */
+export const trainerScopeSchema = z.object({ mode: z.enum(['managed', 'all']) }).strict();

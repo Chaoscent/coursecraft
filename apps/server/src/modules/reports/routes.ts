@@ -21,7 +21,7 @@ export function reportRoutes(app: FastifyInstance, ctx: AppContext): void {
       config: { permission: 'reports.read' },
       schema: { params: libraryItemIdSchema, response: { 200: itemReportSchema } },
     },
-    async (request) => itemReport(ctx, request.params.id),
+    async (request) => itemReport(ctx, requireAuth(request), request.params.id),
   );
 
   r.get(
@@ -29,7 +29,7 @@ export function reportRoutes(app: FastifyInstance, ctx: AppContext): void {
     { config: { permission: 'reports.read' }, schema: { params: libraryItemIdSchema } },
     async (request, reply) => {
       const auth = requireAuth(request);
-      const report = await itemReport(ctx, request.params.id);
+      const report = await itemReport(ctx, auth, request.params.id);
       await ctx.audit.record({
         actorUserId: auth.userId,
         action: 'report.exported',
@@ -47,7 +47,7 @@ export function reportRoutes(app: FastifyInstance, ctx: AppContext): void {
   r.get(
     '/api/grading',
     { config: { permission: 'grading.perform' }, schema: { response: { 200: gradingQueueSchema } } },
-    async () => ({ items: await gradingQueue(ctx) }),
+    async (request) => ({ items: await gradingQueue(ctx, requireAuth(request)) }),
   );
 
   r.post(

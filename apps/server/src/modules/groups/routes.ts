@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 import {
   createGroupRequestSchema,
+  groupManagersSchema,
   groupMembersRequestSchema,
   groupSchema,
   idParamSchema,
   listGroupsResponseSchema,
   okSchema,
+  trainerScopeSchema,
   updateGroupRequestSchema,
 } from '@coursecraft/shared';
 import type { FastifyInstance } from 'fastify';
@@ -15,6 +17,7 @@ import { requireAuth } from '../../auth/plugin.js';
 import type { Database } from '../../db/schema.js';
 import type { AppContext } from '../../http/context.js';
 import { AppError, conflict, notFound } from '../../http/errors.js';
+import { learnerScope, saveTrainerScopeMode, trainerScopeMode } from '../../policy/learners.js';
 
 async function listGroups(db: Kysely<Database>, ids?: string[]) {
   let query = db
@@ -64,9 +67,84 @@ export function groupRoutes(app: FastifyInstance, ctx: AppContext): void {
   r.get(
     '/api/groups',
     { config: { permission: 'assignments.manage' }, schema: { response: { 200: listGroupsResponseSchema } } },
-    async () => ({
-      items: await listGroups(ctx.db),
-    }),
+    async (request) => {
+      const scope = await learnerScope(ctx, requireAuth(request));
+      const items = await listGroups(ctx.db);
+      return { items: scope.all ? items : items.filter((g) => scope.groupIds.has(g.id)) };
+    },
+  );
+
+  r.get(
+    '/api/groups/:id/managers',
+    { config, schema: { params: idParamSchema, response: { 200: groupManagersSchema } } },
+    async (request) => {
+      const [group] = await listGroups(ctx.db, [request.params.id]);
+      if (!group) throw notFound('Group not found');
+      const rows = await ctx.db
+        .selectFrom('group_managers')
+        .select('user_id')
+        .where('group_id', '=', request.params.id)
+        .execute();
+      return { userIds: rows.map((r) => r.user_id) };
+    },
+  );
+
+  r.put(
+    '/api/groups/:id/managers',
+    { config, schema: { params: idParamSchema, body: groupManagersSchema, response: { 200: okSchema } } },
+    async (request) => {
+      const auth = requireAuth(request);
+      const { id } = request.params;
+      const [group] = await listGroups(ctx.db, [id]);
+      if (!group) throw notFound('Group not found');
+      const userIds = [...new Set(request.body.userIds)];
+      // Only trainers (or administrators) can manage a group: the role is what grants report access.
+      const eligible = userIds.length
+        ? await ctx.db
+            .selectFrom('user_roles')
+            .select('user_id')
+            .where('user_id', 'in', userIds)
+            .where('role', 'in', ['trainer', 'admin'])
+            .execute()
+        : [];
+      if (new Set(eligible.map((e) => e.user_id)).size !== userIds.length)
+        throw new AppError('bad_request', 'Only trainers can manage a group');
+      await ctx.db.transaction().execute(async (tx) => {
+        await tx.deleteFrom('group_managers').where('group_id', '=', id).execute();
+        if (userIds.length)
+          await tx
+            .insertInto('group_managers')
+            .values(userIds.map((user_id) => ({ group_id: id, user_id })))
+            .execute();
+      });
+      await ctx.audit.record({
+        actorUserId: auth.userId,
+        action: 'group.managers_set',
+        targetType: 'group',
+        targetId: id,
+        meta: { managers: userIds.length },
+        ipHmac: request.ipHmac,
+      });
+      return { ok: true as const };
+    },
+  );
+
+  r.get(
+    '/api/settings/trainer-scope',
+    { config: { permission: 'settings.manage' }, schema: { response: { 200: trainerScopeSchema } } },
+    async () => ({ mode: await trainerScopeMode(ctx) }),
+  );
+
+  r.put(
+    '/api/settings/trainer-scope',
+    {
+      config: { permission: 'settings.manage' },
+      schema: { body: trainerScopeSchema, response: { 200: okSchema } },
+    },
+    async (request) => {
+      await saveTrainerScopeMode(ctx, requireAuth(request), request.body.mode);
+      return { ok: true as const };
+    },
   );
 
   r.post(

@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 import {
+  groupManagersSchema,
   groupSchema,
   listGroupsResponseSchema,
   listUsersResponseSchema,
   okSchema,
+  trainerScopeSchema,
   type Group,
   type User,
 } from '@coursecraft/shared';
@@ -13,7 +15,7 @@ import { api } from '../api/client.js';
 import { Button, ToolButton } from '../components/Button.js';
 import { DataTable, type Selection } from '../components/DataTable.js';
 import { Dialog } from '../components/Dialog.js';
-import { FormGrid, SelectField, TextField } from '../components/Field.js';
+import { Checkbox, FormGrid, SelectField, TextField } from '../components/Field.js';
 import { Notice } from '../components/Notice.js';
 import { Page, ToolbarSeparator } from '../components/Page.js';
 import { errorMessage } from '../lib/errors.js';
@@ -78,6 +80,46 @@ function GroupDialog({
         />
       </FormGrid>
     </Dialog>
+  );
+}
+
+/** Trainers responsible for the group: they see its learners in reports, grading and assignments. */
+function Managers({ group }: { group: Group }) {
+  const { t } = useTranslation();
+  const fetchTrainers = useCallback(
+    () =>
+      api(listUsersResponseSchema, '/api/users', { query: { role: 'trainer', pageSize: 200 } }).then(
+        (r) => r.items,
+      ),
+    [],
+  );
+  const fetchManagers = useCallback(
+    () => api(groupManagersSchema, `/api/groups/${group.id}/managers`).then((r) => r.userIds),
+    [group.id],
+  );
+  const { data: trainers = [] } = useApi(fetchTrainers);
+  const { data: managers = [], reload } = useApi(fetchManagers);
+  const [error, setError] = useState<string | null>(null);
+  const toggle = (userId: string, on: boolean) =>
+    void api(okSchema, `/api/groups/${group.id}/managers`, {
+      method: 'PUT',
+      body: { userIds: on ? [...managers, userId] : managers.filter((id) => id !== userId) },
+    })
+      .then(reload)
+      .catch((e: unknown) => setError(errorMessage(e)));
+
+  return (
+    <div className={styles.stack}>
+      <h2>{t('groups.managers')}</h2>
+      <p className={styles.muted}>{t('groups.managersHint')}</p>
+      {error ? <Notice tone="danger">{error}</Notice> : null}
+      {trainers.length === 0 ? <div className={styles.member}>{t('groups.noTrainers')}</div> : null}
+      {trainers.map((tr) => (
+        <Checkbox key={tr.id} isSelected={managers.includes(tr.id)} onChange={(on) => toggle(tr.id, on)}>
+          {tr.displayName}
+        </Checkbox>
+      ))}
+    </div>
   );
 }
 
@@ -180,6 +222,15 @@ export function GroupsPage() {
     return groups.find((g) => g.id === id) ?? null;
   }, [selected, groups]);
   const byId = new Map(groups.map((g) => [g.id, g]));
+  const fetchScope = useCallback(
+    () => api(trainerScopeSchema, '/api/settings/trainer-scope').then((r) => r.mode),
+    [],
+  );
+  const { data: scope, reload: reloadScope } = useApi(fetchScope);
+  const setScope = (mode: 'all' | 'managed') =>
+    void api(okSchema, '/api/settings/trainer-scope', { method: 'PUT', body: { mode } })
+      .then(reloadScope)
+      .catch((e: unknown) => setError(errorMessage(e)));
 
   const done = () => {
     setDialog(null);
@@ -208,6 +259,9 @@ export function GroupsPage() {
       <div className={current ? styles.split : styles.stack}>
         <div className={styles.stack}>
           {error ? <Notice tone="danger">{error}</Notice> : <span />}
+          <Checkbox isSelected={scope === 'all'} onChange={(all) => setScope(all ? 'all' : 'managed')}>
+            {t('groups.trainersSeeAll')}
+          </Checkbox>
           <DataTable
             label={t('groups.title')}
             rows={groups}
@@ -226,7 +280,14 @@ export function GroupsPage() {
             ]}
           />
         </div>
-        {current ? <Members key={current.id} group={current} onChanged={load} /> : null}
+        {current ? (
+          <div className={styles.stack}>
+            <Members key={current.id} group={current} onChanged={load} />
+            <aside className={styles.side} aria-label={t('groups.managers')}>
+              <Managers key={current.id} group={current} />
+            </aside>
+          </div>
+        ) : null}
       </div>
       {dialog === 'new' ? (
         <GroupDialog group={null} groups={groups} onClose={() => setDialog(null)} onSaved={done} />

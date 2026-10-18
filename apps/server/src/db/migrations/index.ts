@@ -17,6 +17,7 @@ import * as m0012 from './0012-proxy-auth.js';
 import * as m0013 from './0013-directory-attempts.js';
 import * as m0014 from './0014-replicas.js';
 import * as m0015 from './0015-tenancy.js';
+import * as m0016 from './0016-group-managers.js';
 
 /** Ordered list of all migrations. Released migrations never change. */
 export const MIGRATIONS: Readonly<Record<string, Migration>> = {
@@ -35,6 +36,7 @@ export const MIGRATIONS: Readonly<Record<string, Migration>> = {
   '0013-directory-attempts': m0013,
   '0014-replicas': m0014,
   '0015-tenancy': m0015,
+  '0016-group-managers': m0016,
 };
 
 /**

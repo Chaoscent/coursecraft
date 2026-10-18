@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { buildContentApp } from '../../apps/server/src/http/content-app.js';
 import { openCourse, uploadTo } from '../support/courses.js';
 import { scorm12Package, scorm2004Package, tincanPackage, zipFiles } from '../support/packages.js';
-import { createTestApp, ORIGIN, type Actor, type TestApp } from '../support/test-app.js';
+import { createTestApp, trainersSeeEveryone, ORIGIN, type Actor, type TestApp } from '../support/test-app.js';
 
 const CONTENT = 'https://content.coursecraft.test';
 let t: TestApp;
@@ -18,6 +18,7 @@ let parentGroup: string;
 
 beforeAll(async () => {
   t = await createTestApp({ COURSECRAFT_CONTENT_URL: CONTENT });
+  await trainersSeeEveryone(t);
   content = await buildContentApp(t.ctx.config, t.ctx);
   await content.ready();
   admin = await t.actor(['admin']);

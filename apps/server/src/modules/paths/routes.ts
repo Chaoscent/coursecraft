@@ -68,7 +68,7 @@ export function pathRoutes(app: FastifyInstance, ctx: AppContext): void {
   r.get(
     '/api/paths/:id/assignments',
     { config: assign, schema: { params: idParamSchema, response: { 200: assignmentsResponseSchema } } },
-    async (request) => ({ items: await listPathAssignments(ctx, request.params.id) }),
+    async (request) => ({ items: await listPathAssignments(ctx, requireAuth(request), request.params.id) }),
   );
 
   r.post(

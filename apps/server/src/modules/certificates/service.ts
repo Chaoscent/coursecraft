@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { learnerScope, seesUser } from '../../policy/learners.js';
 import type { Certificate } from '@coursecraft/shared';
 import { randomBytes } from 'node:crypto';
 import type { AppContext, AuthState } from '../../http/context.js';
@@ -148,7 +149,11 @@ export async function certificatePdf(
 ): Promise<{ pdf: Buffer; serial: string }> {
   const row = await ctx.db.selectFrom('certificates').selectAll().where('id', '=', id).executeTakeFirst();
   // Other people's certificates look as if they did not exist, unless the viewer may read reports.
-  if (!row || (row.user_id !== auth.userId && !auth.permissions.includes('reports.read')))
+  if (
+    !row ||
+    (row.user_id !== auth.userId &&
+      !(auth.permissions.includes('reports.read') && seesUser(await learnerScope(ctx, auth), row.user_id)))
+  )
     throw notFound('Certificate not found');
   const owner = await ctx.db
     .selectFrom('users')

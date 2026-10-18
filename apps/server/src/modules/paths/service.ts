@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { assertSeesAll, learnerScope, seesGroup, seesUser } from '../../policy/learners.js';
 import type { Assignment, PathDetail, PathInput, PathSummary } from '@coursecraft/shared';
 import type { AppContext, AuthState } from '../../http/context.js';
 import { badRequest, notFound } from '../../http/errors.js';
@@ -143,7 +144,12 @@ export async function deletePath(ctx: AppContext, auth: AuthState, id: string): 
   });
 }
 
-export async function listPathAssignments(ctx: AppContext, id: string): Promise<Assignment[]> {
+export async function listPathAssignments(
+  ctx: AppContext,
+  auth: AuthState,
+  id: string,
+): Promise<Assignment[]> {
+  const scope = await learnerScope(ctx, auth);
   const rows = await ctx.db
     .selectFrom('path_assignments')
     .leftJoin('users', 'users.id', 'path_assignments.user_id')
@@ -160,7 +166,10 @@ export async function listPathAssignments(ctx: AppContext, id: string): Promise<
     .where('path_assignments.path_id', '=', id)
     .orderBy('path_assignments.created_at')
     .execute();
-  return rows.map((r) => ({
+  const visible = rows.filter((r) =>
+    r.user_id ? seesUser(scope, r.user_id) : seesGroup(scope, r.group_id ?? ''),
+  );
+  return visible.map((r) => ({
     id: r.id,
     targetType: r.user_id ? ('user' as const) : ('group' as const),
     targetId: r.user_id ?? r.group_id ?? '',
@@ -178,6 +187,7 @@ export async function createPathAssignments(
 ): Promise<number> {
   const path = await ctx.db.selectFrom('learning_paths').select('id').where('id', '=', id).executeTakeFirst();
   if (!path) throw notFound('Path not found');
+  assertSeesAll(await learnerScope(ctx, auth), input.userIds, input.groupIds);
   const users = input.userIds.length
     ? await ctx.db
         .selectFrom('users')
@@ -236,6 +246,18 @@ export async function deletePathAssignment(
   id: string,
   assignmentId: string,
 ): Promise<void> {
+  const target = await ctx.db
+    .selectFrom('path_assignments')
+    .select(['user_id', 'group_id'])
+    .where('id', '=', assignmentId)
+    .where('path_id', '=', id)
+    .executeTakeFirst();
+  if (target)
+    assertSeesAll(
+      await learnerScope(ctx, auth),
+      target.user_id ? [target.user_id] : [],
+      target.group_id ? [target.group_id] : [],
+    );
   const deleted = await ctx.db
     .deleteFrom('path_assignments')
     .where('id', '=', assignmentId)

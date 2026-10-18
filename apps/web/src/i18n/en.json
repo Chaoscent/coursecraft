@@ -240,7 +240,11 @@
     "addNamed": "Add {{name}}",
     "removeMember": "Remove {{name}}",
     "none": "No groups yet.",
-    "empty": "No groups yet. Departments are created as groups."
+    "empty": "No groups yet. Departments are created as groups.",
+    "managers": "Managed by",
+    "managersHint": "These trainers see the learners of the group and its subgroups in reports, grading and assignments.",
+    "noTrainers": "No users with the trainer role yet.",
+    "trainersSeeAll": "Every trainer sees every learner (no management by group)"
   },
   "audit": {
     "title": "Audit log",

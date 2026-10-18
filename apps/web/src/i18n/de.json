@@ -240,7 +240,11 @@
     "addNamed": "{{name}} hinzufügen",
     "removeMember": "{{name}} entfernen",
     "none": "Noch keine Gruppen.",
-    "empty": "Noch keine Gruppen. Abteilungen werden als Gruppen angelegt."
+    "empty": "Noch keine Gruppen. Abteilungen werden als Gruppen angelegt.",
+    "managers": "Betreut von",
+    "managersHint": "Diese Trainer sehen die Lernenden der Gruppe und ihrer Untergruppen in Berichten, Bewertung und Zuweisungen.",
+    "noTrainers": "Noch keine Benutzer mit der Rolle Trainer.",
+    "trainersSeeAll": "Alle Trainer sehen alle Lernenden (ohne Betreuung nach Gruppen)"
   },
   "audit": {
     "title": "Audit-Log",

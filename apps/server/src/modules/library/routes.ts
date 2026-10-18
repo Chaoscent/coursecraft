@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { learnerScope } from '../../policy/learners.js';
 import { contentUrl } from '../../tenancy/origins.js';
 import {
   assignmentParamsSchema,
@@ -103,6 +104,8 @@ export function libraryRoutes(app: FastifyInstance, ctx: AppContext): void {
             eb('email', 'ilike', likePattern(request.query.q)),
           ]),
         );
+      const scope = await learnerScope(ctx, requireAuth(request));
+      if (!scope.all) q = q.where('id', 'in', [...scope.userIds, '00000000-0000-0000-0000-000000000000']);
       const rows = await q.orderBy('display_name').limit(50).execute();
       return { items: rows.map((u) => ({ id: u.id, displayName: u.display_name, email: u.email })) };
     },
@@ -114,7 +117,7 @@ export function libraryRoutes(app: FastifyInstance, ctx: AppContext): void {
       config: { permission: 'assignments.manage' },
       schema: { params: libraryItemIdSchema, response: { 200: assignmentsResponseSchema } },
     },
-    async (request) => ({ items: await listAssignments(ctx, request.params.id) }),
+    async (request) => ({ items: await listAssignments(ctx, requireAuth(request), request.params.id) }),
   );
 
   r.post(

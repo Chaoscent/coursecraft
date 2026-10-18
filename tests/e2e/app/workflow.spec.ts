@@ -51,3 +51,16 @@ test('password fields can be revealed with the eye button', async ({ page }) => 
   await page.getByRole('button', { name: 'Verbergen' }).click();
   await expect(field).toHaveAttribute('type', 'password');
 });
+
+test('an administrator names the trainers of a group', async ({ page, browserName }) => {
+  const name = `Team ${browserName} ${Date.now()}`;
+  await login(page, ADMIN.email, ADMIN.password);
+  await page.getByRole('link', { name: 'Gruppen' }).click();
+  await expect(page.getByText('Alle Trainer sehen alle Lernenden')).toBeVisible();
+  await page.getByRole('button', { name: 'Neue Gruppe …' }).click();
+  await page.getByRole('dialog').getByLabel('Name').fill(name);
+  await page.getByRole('dialog').getByRole('button', { name: 'Speichern' }).click();
+  await page.getByRole('row', { name: new RegExp(name) }).click();
+  await expect(page.getByRole('complementary', { name: 'Betreut von' })).toBeVisible();
+  await expect(page.getByText('Diese Trainer sehen die Lernenden der Gruppe')).toBeVisible();
+});

@@ -659,6 +659,14 @@ test:db` starts an S3 server container (Scality CloudServer) besides
   managed database via `coursecraft db-bootstrap`. Helm chart and tests:
   `docs/kubernetes.md`.
 
+## 12h. Trainer scope
+
+- `group_managers` (migration 0016) links trainers to groups;
+  `policy/learners.ts` computes the visible groups (with subgroups) and their
+  members per request. Reports, grading, assignments, path assignments, the
+  user directory and certificates filter or refuse by that scope. Setting
+  `trainer_scope` (`managed` default, or `all`).
+
 ## 12g. Tenancy
 
 - `COURSECRAFT_TENANCY=single|multi`; migration 0015 adds `tenants`,

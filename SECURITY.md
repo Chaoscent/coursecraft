@@ -327,6 +327,18 @@ change:
 - Roles from directory groups are applied as for the password login;
   administrator is never granted.
 
+## 5h. Who sees which learners
+
+- Administrators see everyone. Trainers see only the learners of groups they
+  manage (`group_managers`, set by administrators) and of their subgroups:
+  in reports and their statistics, the grading queue, assignments of
+  courses and learning paths, the user directory for assigning, and
+  certificates. Ids outside the scope answer "not found".
+- A per-organisation switch (`trainer_scope = all`) restores "every trainer
+  sees every learner" for small organisations; the default is `managed`.
+- Rules live in `policy/learners.ts`; `tests/security/trainer-scope.test.ts`
+  covers every endpoint above.
+
 ## 8. Known limitations
 
 - Third-party packages run arbitrary JavaScript on the content origin. They
