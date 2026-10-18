@@ -40,13 +40,8 @@ ALTER DEFAULT PRIVILEGES FOR ROLE coursecraft_migrator IN SCHEMA pgboss
   GRANT EXECUTE ON FUNCTIONS TO coursecraft_app, coursecraft_converter;
 `;
 
-/**
- * Creates the three service roles and their privileges in an existing
- * database (a managed PostgreSQL, where no init script can run). Safe to run
- * again: roles are kept and passwords are set to the given values, which also
- * rotates them.
- */
-export async function bootstrapDatabase(adminUrl: string, passwords: BootstrapPasswords): Promise<void> {
+/** The bootstrap as one psql script (also used by the test database setup). */
+export function bootstrapScript(passwords: BootstrapPasswords, database: string): string {
   for (const [name, value] of [
     ['migrator', passwords.migrator],
     ['app', passwords.app],
@@ -54,16 +49,27 @@ export async function bootstrapDatabase(adminUrl: string, passwords: BootstrapPa
   ] as const)
     if (!PASSWORD.test(value))
       throw new Error(`The ${name} password must be 16-200 characters from A-Z a-z 0-9 _ - + = . /`);
-  const env = pgEnv(adminUrl);
-  const db = env['PGDATABASE'];
-  if (!db) throw new Error('The administrator URL must name the database');
-  const script = [
+  if (!/^[A-Za-z0-9_-]{1,63}$/.test(database)) throw new Error('Unexpected database name');
+  return [
     `\\set migrator_pw '${passwords.migrator}'`,
     `\\set app_pw '${passwords.app}'`,
     `\\set converter_pw '${passwords.converter}'`,
-    `\\set db '${db.replaceAll("'", '')}'`,
+    `\\set db '${database}'`,
     SQL,
   ].join('\n');
+}
+
+/**
+ * Creates the three service roles and their privileges in an existing
+ * database (a managed PostgreSQL, or the bundled one on first start). Safe to
+ * run again: roles are kept and passwords are set to the given values, which
+ * also rotates them.
+ */
+export async function bootstrapDatabase(adminUrl: string, passwords: BootstrapPasswords): Promise<void> {
+  const env = pgEnv(adminUrl);
+  const db = env['PGDATABASE'];
+  if (!db) throw new Error('The administrator URL must name the database');
+  const script = bootstrapScript(passwords, db);
   await new Promise<void>((resolve, reject) => {
     const child = spawn('psql', ['--no-psqlrc', '--quiet', '--set=ON_ERROR_STOP=1', '--file=-'], {
       env,

@@ -2,10 +2,11 @@
 # Chardsoft Coursecraft on Kubernetes. See docs/kubernetes.md.
 
 image:
-  # Build and push with docker/Dockerfile (targets "app" and "converter").
-  app: coursecraft/app
-  converter: coursecraft/converter
-  tag: local
+  # Published images (GitHub container registry); your own builds work too
+  # (docker/Dockerfile, targets "app" and "converter").
+  app: ghcr.io/chaoscent/coursecraft-app
+  converter: ghcr.io/chaoscent/coursecraft-converter
+  tag: latest
   pullPolicy: IfNotPresent
 imagePullSecrets: []
 

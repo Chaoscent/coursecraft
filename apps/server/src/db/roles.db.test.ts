@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 /**
  * Verifies the database role model against a real PostgreSQL started with
- * the same init script as docker-compose (requires Docker).
+ * the same role setup as `coursecraft db-bootstrap` (requires Docker).
  */
 import { mkdtempSync, readdirSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -9,14 +9,13 @@ import { join } from 'node:path';
 import type { Kysely } from 'kysely';
 import { GenericContainer, Wait, type StartedTestContainer } from 'testcontainers';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { bootstrapRoles } from '../../../../tests/support/postgres.js';
 import { initSecrets } from '../cli/init-secrets.js';
 import { migrate } from '../cli/migrate.js';
 import { createDatabase } from './connection.js';
 import { createMigrator } from './migrations/index.js';
 import { checkReadiness } from './readiness.js';
 import type { Database } from './schema.js';
-
-const INIT_DIR = new URL('../../../../docker/postgres-init/', import.meta.url).pathname;
 
 let container: StartedTestContainer;
 let secrets: string;
@@ -41,15 +40,16 @@ beforeAll(async () => {
         target: `/run/coursecraft/${name}`,
         mode: 0o444,
       })),
-      ...readdirSync(INIT_DIR).map((name) => ({
-        source: join(INIT_DIR, name),
-        target: `/docker-entrypoint-initdb.d/${name}`,
-        mode: 0o755,
-      })),
     ])
     .withExposedPorts(5432)
     .withWaitStrategy(Wait.forLogMessage(/database system is ready to accept connections/, 2))
     .start();
+  const read = (name: string) => readFileSync(join(dbSecrets, name), 'utf8').trim();
+  await bootstrapRoles(container, {
+    migrator: read('migrator_password'),
+    app: read('app_password'),
+    converter: read('converter_password'),
+  });
   await migrate(url('migrate'));
 });
 

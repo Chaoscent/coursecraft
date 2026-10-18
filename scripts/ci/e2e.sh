@@ -10,6 +10,7 @@ CONTENT_PORT=3101
 # Content origin on a second port of the same host (same-site, other origin).
 export COURSECRAFT_PUBLIC_URL="http://localhost:$PORT" COURSECRAFT_HTTP_PORT="$PORT" COURSECRAFT_LOGIN_RATE_LIMIT=1000 COURSECRAFT_AI_ENABLED=true \
   COURSECRAFT_CONTENT_URL="http://localhost:$CONTENT_PORT" COURSECRAFT_CONTENT_HTTP_PORT="$CONTENT_PORT"
+export COURSECRAFT_APP_IMAGE="${COURSECRAFT_APP_IMAGE:-coursecraft/app:local}" COURSECRAFT_CONVERTER_IMAGE="${COURSECRAFT_CONVERTER_IMAGE:-coursecraft/converter:local}"
 COMPOSE="docker compose -p coursecraft-e2e"
 
 cleanup() { $COMPOSE down -v --remove-orphans >/dev/null 2>&1 || true; }

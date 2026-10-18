@@ -5,6 +5,7 @@
 set -eu
 cd "$(dirname "$0")/../.."
 PROJECT=coursecraft-offline
+export COURSECRAFT_APP_IMAGE="${COURSECRAFT_APP_IMAGE:-coursecraft/app:local}" COURSECRAFT_CONVERTER_IMAGE="${COURSECRAFT_CONVERTER_IMAGE:-coursecraft/converter:local}"
 COMPOSE="docker compose -p $PROJECT -f docker-compose.yml -f tests/offline/compose.offline.yml"
 
 cleanup() { $COMPOSE down -v --remove-orphans >/dev/null 2>&1 || true; }

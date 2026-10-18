@@ -53,6 +53,10 @@ export function initSecrets(layout: SecretLayout): string[] {
     () => url('coursecraft_migrator', read('db', 'migrator_password')),
     UIDS.app,
   );
+  // The migrate step also creates the service roles (coursecraft db-bootstrap) with the superuser.
+  write('migrate', 'admin_database_url', () => url('postgres', read('db', 'postgres_password')), UIDS.app);
+  for (const role of ['migrator', 'app', 'converter'])
+    write('migrate', `${role}_password`, () => read('db', `${role}_password`), UIDS.app);
   write('app', 'database_url', () => url('coursecraft_app', read('db', 'app_password')), UIDS.app);
   write('app', 'master_key', () => randomBytes(32).toString('base64'), UIDS.app);
   write('app', 'ip_pepper', () => randomBytes(32).toString('base64'), UIDS.app);

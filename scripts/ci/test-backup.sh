@@ -5,6 +5,7 @@
 set -eu
 cd "$(dirname "$0")/../.."
 PROJECT=coursecraft-backup
+export COURSECRAFT_APP_IMAGE="${COURSECRAFT_APP_IMAGE:-coursecraft/app:local}" COURSECRAFT_CONVERTER_IMAGE="${COURSECRAFT_CONVERTER_IMAGE:-coursecraft/converter:local}"
 COMPOSE="docker compose -p $PROJECT"
 export COURSECRAFT_PUBLIC_URL=http://localhost:3300 COURSECRAFT_HTTP_PORT=3300 COURSECRAFT_CONTENT_HTTP_PORT=3301
 

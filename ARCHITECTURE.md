@@ -248,8 +248,8 @@ organization.
 | `coursecraft_app`       | `app`, `coursecraft backup` | DML on application tables (`INSERT, SELECT` only on `audit_log`); use of `pgboss`. No DDL. |
 | `coursecraft_converter` | `converter`                 | Use of `pgboss` only. No access to `public`.                                               |
 
-`docker/postgres-init/10-roles.sh` creates the roles on first DB start and
-sets default privileges, so every object the migrator creates is granted
+`coursecraft db-bootstrap` (run by the `migrate` step before every migration,
+idempotent) creates the roles and sets default privileges, so every object the migrator creates is granted
 automatically. `apps/server/src/db/roles.db.test.ts` verifies the model
 against a real PostgreSQL. Expired audit entries are deleted by a dedicated
 maintenance role introduced together with retention in Phase 8.

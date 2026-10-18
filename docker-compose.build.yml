@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: Apache-2.0
+# Builds the images from this source tree instead of pulling them:
+#   docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+x-local-app: &local-app
+  image: coursecraft/app:local
+  pull_policy: never
+
+services:
+  init: *local-app
+  migrate: *local-app
+  maintenance: *local-app
+  app:
+    image: coursecraft/app:local
+    pull_policy: never
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: app
+  converter:
+    image: coursecraft/converter:local
+    pull_policy: never
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: converter

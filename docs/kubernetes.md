@@ -19,8 +19,8 @@ app ── PostgreSQL (managed or operator)       app ── S3 bucket ── co
 - An S3-compatible bucket (AWS S3, MinIO, Ceph RGW, Scality, ...) **or** a
   ReadWriteMany volume (NFS, CephFS, EFS, Azure Files) with
   `storage.kind=fs`.
-- Images built from `docker/Dockerfile` (targets `app` and `converter`) in a
-  registry the cluster can pull from.
+- The published images (`ghcr.io/chaoscent/coursecraft-app` and
+  `-converter`), or your own builds from `docker/Dockerfile`.
 
 ## Install
 
@@ -31,10 +31,7 @@ kubectl -n coursecraft create secret generic coursecraft-db-admin \
 kubectl -n coursecraft create secret generic coursecraft-s3 \
   --from-literal=accessKeyId=... --from-literal=secretAccessKey=...
 
-helm install coursecraft deploy/helm/coursecraft -n coursecraft \
-  --set image.app=registry.example.com/coursecraft/app \
-  --set image.converter=registry.example.com/coursecraft/converter \
-  --set image.tag=1.0.0 \
+helm install coursecraft oci://ghcr.io/chaoscent/charts/coursecraft --version 1.0.0 -n coursecraft \
   --set publicUrl=https://courses.example.com \
   --set contentUrl=https://courses-content.example.com \
   --set database.host=db.example.com \
@@ -67,7 +64,7 @@ one-off pod with the migrator role:
 
 ```sh
 kubectl -n coursecraft scale deploy/coursecraft-app deploy/coursecraft-converter --replicas=0
-kubectl -n coursecraft run restore --rm -it --restart=Never --image=registry.example.com/coursecraft/app:1.0.0 \
+kubectl -n coursecraft run restore --rm -it --restart=Never --image=ghcr.io/chaoscent/coursecraft-app:1.0.0 \
   --env COURSECRAFT_MIGRATOR_DATABASE_URL='postgres://coursecraft_migrator:...@db.example.com:5432/coursecraft' \
   --env COURSECRAFT_STORAGE=s3 --env COURSECRAFT_S3_ENDPOINT=... --env COURSECRAFT_S3_BUCKET=... \
   --env COURSECRAFT_S3_ACCESS_KEY_ID=... --env COURSECRAFT_S3_SECRET_ACCESS_KEY=... \

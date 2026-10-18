@@ -14,6 +14,9 @@ fail() { echo "FAIL: $1" >&2; exit 1; }
 k() { docker exec "$K" kubectl "$@"; }
 helm() { docker run --rm --network "container:$K" -v "$WORK/kubeconfig:/kube:ro" -v "$PWD/deploy/helm:/charts" -e KUBECONFIG=/kube alpine/helm:latest "$@"; }
 
+for image in rancher/k3s:latest postgres:17-trixie zenko/cloudserver:latest amazon/aws-cli:latest node:24-trixie-slim alpine/helm:latest; do
+  docker image inspect "$image" >/dev/null 2>&1 || docker pull -q "$image" >/dev/null
+done
 docker rm -f "$K" >/dev/null 2>&1 || true
 docker run -d --name "$K" --privileged --tmpfs /run --tmpfs /var/run rancher/k3s:latest server --disable traefik --disable metrics-server >/dev/null
 for _ in $(seq 1 60); do k get nodes 2>/dev/null | grep -q " Ready" && break; sleep 3; done
@@ -45,7 +48,7 @@ done
 [ "$bucket" = 1 ] || fail "bucket could not be created"
 
 helm install cc /charts/coursecraft -n cc --wait --timeout 300s \
-  --set image.pullPolicy=Never --set publicUrl=http://localhost:8080 --set contentUrl=http://localhost:8081 \
+  --set image.app=coursecraft/app --set image.converter=coursecraft/converter --set image.tag=local --set image.pullPolicy=Never --set publicUrl=http://localhost:8080 --set contentUrl=http://localhost:8081 \
   --set database.host=pg.cc.svc --set database.sslmode=disable --set database.bootstrap.adminSecret=admin-db \
   --set storage.s3.endpoint="http://$S3IP:8000" --set storage.s3.bucket=coursecraft --set storage.s3.secret=s3-keys \
   --set ingress.enabled=false >/dev/null

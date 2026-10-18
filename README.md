@@ -7,65 +7,76 @@ entirely on your own server: no telemetry, no external requests, no
 third-party services.
 
 > **Status:** feature-complete through Phase 8 (editor, LMS, exports,
-> AI adapter, mail, certificates, learning paths, SSO, backup/restore). See
+> AI adapter, mail, certificates, learning paths, SSO, backup/restore), plus
+> directory sign-in, Kubernetes and multi-tenancy. See
 > [docs/phases.md](docs/phases.md) and [docs/todo.md](docs/todo.md).
 
-## Deployment options
+## Run it your way
 
-- **One server:** Docker Compose (below). Files on a volume, everything on one host.
-- **Kubernetes:** Helm chart in `deploy/helm/coursecraft`, several app
-  replicas, files in S3-compatible object storage. See
-  [docs/kubernetes.md](docs/kubernetes.md).
-- **Several organisations:** one installation serves many customers, kept
-  apart by the database itself (row-level security). See
-  [docs/multi-tenancy.md](docs/multi-tenancy.md).
-- **Company network:** sign-in with Active Directory / LDAP and automatic
-  Windows sign-in through a Kerberos reverse proxy. See
-  [docs/windows-sso.md](docs/windows-sso.md).
+The same images run everywhere; you choose what you build with them. The
+license (Apache-2.0) allows any use, including commercial hosting.
 
-## Quick start
+| You want                                   | Use                                                                           | Guide                                          |
+| ------------------------------------------ | ----------------------------------------------------------------------------- | ---------------------------------------------- |
+| Try it, or one organisation on one server  | Docker Compose                                                                | below                                          |
+| Your company network with Active Directory | Docker Compose or Kubernetes, plus LDAP / Windows SSO                         | [docs/windows-sso.md](docs/windows-sso.md)     |
+| High availability, several replicas        | Kubernetes (Helm chart), S3 object storage                                    | [docs/kubernetes.md](docs/kubernetes.md)       |
+| Hosting for customers (SaaS)               | One installation per customer, or one installation for many (`tenancy=multi`) | [docs/multi-tenancy.md](docs/multi-tenancy.md) |
+
+Images: `ghcr.io/chaoscent/coursecraft-app` and
+`ghcr.io/chaoscent/coursecraft-converter` (amd64 and arm64, signed with
+Sigstore, with SBOM). Helm chart: `oci://ghcr.io/chaoscent/charts/coursecraft`.
+
+## Quick start (Docker Compose)
 
 Requirements: Docker Engine 26+ with Compose 2.30+, 2 GB RAM, amd64 or arm64.
+No source code needed:
 
 ```sh
-git clone <repository-url> coursecraft && cd coursecraft
-cp .env.example .env          # adjust COURSECRAFT_PUBLIC_URL if not on localhost
+mkdir coursecraft && cd coursecraft
+curl -fsSLO https://github.com/Chaoscent/coursecraft/releases/latest/download/docker-compose.yml
+curl -fsSL -o .env https://github.com/Chaoscent/coursecraft/releases/latest/download/env.example
+# set COURSECRAFT_PUBLIC_URL in .env if not on localhost
 docker compose up -d
 ```
 
-Check that everything is up: `curl http://localhost:3000/readyz` returns
-`{"status":"ready"}`. (Phase 0 has no UI yet. From Phase 1 on, the setup
-wizard at <http://localhost:3000> asks for a one-time setup token from
-`docker compose logs app` or `docker compose exec app coursecraft setup-token`.)
-
-The first start builds the images locally (about 2–5 minutes). Compose first
-tries to pull `coursecraft/app` and `coursecraft/converter` and prints "pull access
-denied"; that warning is expected until images are published.
-
-Secrets (database passwords, encryption key) are generated automatically on
-first start and stored in the `secrets` volume.
+Open <http://localhost:3000>: the setup wizard asks for a one-time setup
+token from `docker compose logs app` (or `docker compose exec app coursecraft
+setup-token`). Secrets (database passwords, encryption key) are generated on
+first start and kept in the `secrets` volume. Pin a version with
+`COURSECRAFT_VERSION=1.2.3` in `.env`; `docker compose pull && docker compose
+up -d` updates.
 
 For production, put Coursecraft behind a reverse proxy with TLS (examples in
 `docs/reverse-proxy/`). Plain HTTP is only supported on `localhost`, and only
 in Chrome, Edge and Firefox: Safari needs HTTPS even locally (see
 `docs/reverse-proxy/README.md`).
 
+Building from source instead (developers):
+
+```sh
+git clone https://github.com/Chaoscent/coursecraft.git && cd coursecraft
+cp .env.example .env
+docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+```
+
 ## Schnellstart (Deutsch)
 
 Voraussetzungen: Docker Engine 26+ mit Compose 2.30+, 2 GB RAM, amd64 oder arm64.
+Der Quellcode wird nicht gebraucht:
 
 ```sh
-git clone <repository-url> coursecraft && cd coursecraft
-cp .env.example .env          # COURSECRAFT_PUBLIC_URL anpassen, falls nicht localhost
+mkdir coursecraft && cd coursecraft
+curl -fsSLO https://github.com/Chaoscent/coursecraft/releases/latest/download/docker-compose.yml
+curl -fsSL -o .env https://github.com/Chaoscent/coursecraft/releases/latest/download/env.example
+# COURSECRAFT_PUBLIC_URL in .env anpassen, falls nicht localhost
 docker compose up -d
 ```
 
-Prüfen: `curl http://localhost:3000/readyz` liefert `{"status":"ready"}`.
-Ab Phase 1 fragt der Einrichtungsassistent unter <http://localhost:3000> nach
-dem einmaligen Setup-Token aus `docker compose logs app` bzw.
-`docker compose exec app coursecraft setup-token`.
-Für den Produktivbetrieb Coursecraft hinter einen Reverse Proxy mit TLS stellen.
-Unverschlüsseltes HTTP funktioniert nur auf `localhost`.
+Der Einrichtungsassistent unter <http://localhost:3000> fragt nach dem
+einmaligen Setup-Token aus `docker compose logs app`. Für den Produktivbetrieb
+Coursecraft hinter einen Reverse Proxy mit TLS stellen. Firmennetz mit AD,
+Kubernetes oder Betrieb für viele Kunden: siehe Tabelle oben.
 
 ## Backup and restore
 

@@ -1,0 +1,113 @@
+# SPDX-License-Identifier: Apache-2.0
+# Publishes ready-to-run images and the Helm chart, so anyone can run
+# Chardsoft Coursecraft without building it:
+#   - every push to main:   ghcr.io/<owner>/coursecraft-{app,converter}:edge
+#   - every tag vX.Y.Z:     :X.Y.Z, :X.Y and :latest, the Helm chart as
+#                           oci://ghcr.io/<owner>/charts/coursecraft, and a
+#                           GitHub release with docker-compose.yml and env.example
+# Images are built for amd64 and arm64, carry an SBOM and build provenance,
+# and are signed with Sigstore (keyless, tied to this workflow).
+# Note: packages of a private repository are private; make them public in the
+# package settings (or publish the repository) before announcing a release.
+name: Release
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*.*.*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  checks:
+    uses: ./.github/workflows/ci.yml
+
+  images:
+    needs: checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    strategy:
+      matrix:
+        target: [app, converter]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/coursecraft-${{ matrix.target }}
+          tags: |
+            type=edge,branch=main
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+          labels: |
+            org.opencontainers.image.licenses=Apache-2.0
+            org.opencontainers.image.vendor=Chardsoft
+      - id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile
+          target: ${{ matrix.target }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          sbom: true
+          provenance: mode=max
+          cache-from: type=gha,scope=${{ matrix.target }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.target }}
+      - uses: sigstore/cosign-installer@v3
+      - name: Sign
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          for tag in $TAGS; do cosign sign --yes "${tag%%:*}@${DIGEST}"; done
+
+  chart:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: images
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - name: Package and push the chart
+        env:
+          VERSION: ${{ github.ref_name }}
+          OWNER: ${{ github.repository_owner }}
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          owner=$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')
+          version=${VERSION#v}
+          # Released charts point at the released images.
+          sed -i "s|ghcr.io/chaoscent/|ghcr.io/$owner/|; s|^  tag: latest$|  tag: '$version'|" deploy/helm/coursecraft/values.yaml
+          helm package deploy/helm/coursecraft --version "$version" --app-version "$version"
+          echo "$TOKEN" | helm registry login ghcr.io -u "${{ github.actor }}" --password-stdin
+          helm push "coursecraft-$version.tgz" "oci://ghcr.io/$owner/charts"
+      - name: GitHub release with the files for Docker Compose
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ github.ref_name }}
+        run: |
+          cp .env.example env.example
+          gh release create "$VERSION" --verify-tag --generate-notes \
+            docker-compose.yml env.example deploy/helm/coursecraft-tenant.sh

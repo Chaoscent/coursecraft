@@ -32,6 +32,10 @@ RUN pnpm --filter @coursecraft/server --filter @coursecraft/converter --filter @
 # Runtime images keep only node itself; npm and corepack are removed (not needed,
 # and their bundled dependencies would add attack surface).
 FROM ${NODE_IMAGE} AS app
+LABEL org.opencontainers.image.title="Chardsoft Coursecraft" \
+      org.opencontainers.image.description="E-learning authoring suite and LMS: web app and API" \
+      org.opencontainers.image.vendor="Chardsoft" \
+      org.opencontainers.image.licenses="Apache-2.0"
 RUN apt-get update \
  && apt-get install -y --no-install-recommends postgresql-client-17 \
  && rm -rf /var/lib/apt/lists/* \
@@ -52,6 +56,10 @@ CMD ["node", "/app/dist/main.js"]
 
 # --- converter: untrusted documents and media --------------------------------
 FROM ${NODE_IMAGE} AS converter
+LABEL org.opencontainers.image.title="Chardsoft Coursecraft converter" \
+      org.opencontainers.image.description="Isolated conversion of untrusted presentations and media" \
+      org.opencontainers.image.vendor="Chardsoft" \
+      org.opencontainers.image.licenses="Apache-2.0"
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
       libreoffice-impress-nogui ffmpeg \
