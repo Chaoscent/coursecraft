@@ -298,7 +298,7 @@
     "payload_too_large": "Die Datei ist zu groß.",
     "unsupported_media_type": "Dieses Format wird nicht unterstützt.",
     "invalid_file": "Die Datei ist beschädigt oder kann nicht gelesen werden.",
-    "quota_exceeded": "Das Tageskontingent für KI-Anfragen ist aufgebraucht.",
+    "quota_exceeded": "Ein Kontingent ist ausgeschöpft (KI-Anfragen, Benutzer oder Speicherplatz). Wenden Sie sich an die Administration.",
     "upstream_failed": "Der KI-Dienst hat nicht oder nicht verwertbar geantwortet.",
     "internal": "Unerwarteter Fehler. Bitte erneut versuchen.",
     "network": "Server nicht erreichbar."
@@ -1254,5 +1254,39 @@
       "too_many": "Abgleich abgebrochen: Es würden auffällig viele Konten deaktiviert. Prüfen Sie den Filter."
     },
     "adminOnly": "Lokale Passwort-Anmeldung nur für Administratoren erlauben (Notfallzugang)"
+  },
+  "operator": {
+    "brand": "Coursecraft · Betrieb",
+    "signIn": "Betreiber-Anmeldung",
+    "signInHint": "Verwaltung der Organisationen dieser Installation. Passwort aus COURSECRAFT_OPERATOR_PASSWORD.",
+    "title": "Organisationen",
+    "count_one": "{{count}} Organisation",
+    "count_other": "{{count}} Organisationen",
+    "new": "Neue Organisation …",
+    "edit": "Bearbeiten …",
+    "newToken": "Neues Setup-Token",
+    "enable": "Einschalten",
+    "disable": "Abschalten",
+    "delete": "Löschen …",
+    "deleteForGood": "Endgültig löschen",
+    "deleteWarning": "„{{name}}“ wird mit allen Benutzern, Kursen, Ergebnissen und Dateien gelöscht. Das lässt sich nicht rückgängig machen.",
+    "typeName": "Name zur Bestätigung",
+    "name": "Name",
+    "publicOrigin": "Adresse",
+    "publicOriginHint": "z. B. https://firma.courses.example.com",
+    "contentOrigin": "Adresse für Kurse",
+    "contentOriginHint": "Eigene Adresse für die Kurswiedergabe, z. B. https://firma.content.example.com",
+    "maxUsers": "Höchstens Benutzer",
+    "maxStorage": "Höchstens Speicher (MB)",
+    "unlimitedHint": "Leer = unbegrenzt.",
+    "tokenTitle": "Setup-Token",
+    "tokenHint": "Die erste Administratorin oder der erste Administrator öffnet {{url}} und gibt dieses Token ein. Gültig bis {{until}}; es wird nur jetzt angezeigt.",
+    "empty": "Keine Organisationen.",
+    "default": "Standard",
+    "active": "aktiv",
+    "disabled": "abgeschaltet",
+    "users": "Benutzer",
+    "storage": "Speicher",
+    "status": "Nur für den Betreiber. Änderungen wirken in der App innerhalb von 30 Sekunden."
   }
 }

@@ -35,6 +35,8 @@ export interface TestApp {
   ctx: AppContext;
   /** Connection URL of the migrator role (owner of the tables; tenants). */
   migratorUrl: string;
+  /** Connection URL of the app role. */
+  databaseUrl: string;
   routes: RegisteredRoute[];
   close(): Promise<void>;
   createUser(
@@ -156,6 +158,7 @@ export async function createTestApp(env: Record<string, string> = {}): Promise<T
     app,
     ctx,
     migratorUrl,
+    databaseUrl: url,
     routes,
     request,
     createUser,

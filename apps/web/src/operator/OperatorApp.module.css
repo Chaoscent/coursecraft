@@ -1,0 +1,54 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+.app {
+  display: grid;
+  grid-template-rows: var(--menubar-height) 1fr var(--statusbar-height);
+  height: 100vh;
+}
+.menubar {
+  display: flex;
+  align-items: stretch;
+  background: var(--color-panel);
+  border-bottom: var(--hairline) solid var(--color-border);
+}
+.brand {
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-3);
+  font-weight: var(--weight-semibold);
+  border-right: var(--hairline) solid var(--color-border);
+}
+.spacer {
+  flex: 1;
+}
+.main {
+  display: grid;
+  min-height: 0;
+}
+.statusbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0 var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  background: var(--color-panel);
+  border-top: var(--hairline) solid var(--color-border);
+}
+.stack {
+  display: grid;
+  align-content: start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+}
+.token {
+  padding: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  word-break: break-all;
+  background: var(--color-surface);
+  border: var(--hairline) solid var(--color-border-strong);
+  user-select: all;
+}
+.num {
+  font-variant-numeric: tabular-nums;
+}

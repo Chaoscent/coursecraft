@@ -142,6 +142,35 @@ services:
     cpus: ${COURSECRAFT_CONVERTER_CPUS:-2}
     pids_limit: 256
 
+  # Optional operator console (several organisations): docker compose --profile operator up -d
+  # Reachable only on this machine; password: docker compose run --rm --entrypoint cat operator /run/coursecraft/password
+  operator:
+    <<: [*app-image, *hardening]
+    profiles: [operator]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    environment:
+      COURSECRAFT_MIGRATOR_DATABASE_URL_FILE: /run/coursecraft/migrator_database_url
+      COURSECRAFT_DATABASE_URL_FILE: /run/coursecraft/database_url
+      COURSECRAFT_OPERATOR_PASSWORD_FILE: /run/coursecraft/password
+      COURSECRAFT_DATA_DIR: /data
+      # The image's health check asks this port.
+      COURSECRAFT_PORT: '3002'
+    command: ['node', '/app/dist/operator-main.js']
+    ports:
+      - '127.0.0.1:${COURSECRAFT_OPERATOR_PORT:-3002}:3002'
+    volumes:
+      - data:/data
+      - type: volume
+        source: secrets
+        target: /run/coursecraft
+        read_only: true
+        volume: { subpath: operator }
+    tmpfs:
+      - /tmp:size=32m
+    networks: [edge, backend]
+    mem_limit: 256m
+
   # On demand only: `docker compose --profile maintenance run --rm maintenance restore <file>`.
   # Has the DDL-capable role and the data volume; stop app and converter first.
   maintenance:

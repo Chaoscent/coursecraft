@@ -7,9 +7,15 @@ import { DEFAULT_SCOPE, runAsTenant, type TenantScope } from './context.js';
 
 const CACHE_MS = 30_000;
 
+export interface Quotas {
+  maxUsers: number | null;
+  maxStorageMb: number | null;
+}
+
 interface Entry {
   scope: TenantScope;
   active: boolean;
+  quotas: Quotas;
 }
 
 /**
@@ -32,7 +38,7 @@ export class TenantDirectory {
     if (Date.now() - this.#loaded < CACHE_MS) return;
     this.#loading ??= this.#db
       .selectFrom('tenants')
-      .select(['id', 'public_origin', 'content_origin', 'status'])
+      .select(['id', 'public_origin', 'content_origin', 'status', 'max_users', 'max_storage_mb'])
       .execute()
       .then((rows) => {
         const byOrigin = new Map<string, Entry>();
@@ -41,6 +47,7 @@ export class TenantDirectory {
           const entry = {
             scope: { id: row.id, publicOrigin: row.public_origin, contentOrigin: row.content_origin },
             active: row.status === 'active',
+            quotas: { maxUsers: row.max_users, maxStorageMb: row.max_storage_mb },
           };
           byId.set(row.id, entry);
           if (row.public_origin) byOrigin.set(row.public_origin, entry);
@@ -69,6 +76,11 @@ export class TenantDirectory {
   async byId(id: string): Promise<TenantScope | null> {
     await this.#refresh();
     return this.#byId.get(id)?.scope ?? null;
+  }
+
+  async quotas(id: string): Promise<Quotas> {
+    await this.#refresh();
+    return this.#byId.get(id)?.quotas ?? { maxUsers: null, maxStorageMb: null };
   }
 
   /** Tenants that periodic work runs for. */

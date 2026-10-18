@@ -10,7 +10,7 @@ S3="--set storage.s3.endpoint=https://s3.example --set storage.s3.bucket=b --set
 OUT=$(mktemp -d)
 trap 'rm -rf "$OUT"' EXIT
 helm lint /charts/coursecraft $COMMON $S3
-helm template cc /charts/coursecraft $COMMON $S3 --set networkPolicy.enabled=true --set autoscaling.enabled=true >"$OUT/s3.yaml"
+helm template cc /charts/coursecraft $COMMON $S3 --set networkPolicy.enabled=true --set autoscaling.enabled=true --set operator.enabled=true --set tenancy=multi >"$OUT/s3.yaml"
 helm template cc /charts/coursecraft $COMMON --set storage.kind=fs >"$OUT/fs.yaml"
 for f in s3 fs; do
   docker run --rm -v "$OUT:/in:ro" ghcr.io/yannh/kubeconform:latest-alpine -summary -strict -ignore-missing-schemas "/in/$f.yaml"

@@ -7,7 +7,7 @@ const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 
 const external = Object.keys(pkg.dependencies ?? {}).filter((name) => !name.startsWith('@coursecraft/'));
 
 await build({
-  entryPoints: ['src/main.ts', 'src/cli.ts', 'src/healthcheck.ts'],
+  entryPoints: ['src/main.ts', 'src/cli.ts', 'src/healthcheck.ts', 'src/operator-main.ts'],
   outdir: 'dist',
   bundle: true,
   platform: 'node',

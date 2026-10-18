@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { assertStorageQuota } from '../../tenancy/quotas.js';
 import {
   CONVERTER_OUTPUT,
   QUEUES,
@@ -84,6 +85,7 @@ export async function startPresentationImport(
   fileName: string,
   lang: string,
 ): Promise<string> {
+  await assertStorageQuota(ctx, bytes.length);
   const payload = await preparePresentation(ctx.db, ctx.assets, bytes, {
     lang,
     fileName,
@@ -197,6 +199,7 @@ export async function startMediaConversion(
     trimEndMs?: number | undefined;
   },
 ): Promise<string> {
+  await assertStorageQuota(ctx, bytes.length);
   const { trimStartMs: startMs = 0, trimEndMs: endMs } = options;
   if (endMs !== undefined && endMs <= startMs)
     throw new AppError('bad_request', 'Trim end must be after start');

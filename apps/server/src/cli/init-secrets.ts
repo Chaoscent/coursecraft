@@ -66,6 +66,15 @@ export function initSecrets(layout: SecretLayout): string[] {
     () => url('coursecraft_converter', read('db', 'converter_password')),
     UIDS.converter,
   );
+  // Operator console (optional service): table owner, app role and its own password.
+  write(
+    'operator',
+    'migrator_database_url',
+    () => url('coursecraft_migrator', read('db', 'migrator_password')),
+    UIDS.app,
+  );
+  write('operator', 'database_url', () => url('coursecraft_app', read('db', 'app_password')), UIDS.app);
+  write('operator', 'password', () => hex(16), UIDS.app);
   for (const dir of dirs) chmodSync(dir, 0o500);
   return created;
 }

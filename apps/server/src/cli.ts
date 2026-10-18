@@ -3,7 +3,8 @@ import { createReadStream, createWriteStream, readFileSync, rmSync, statSync } f
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 import { pipeline } from 'node:stream/promises';
-import { FsBlobStore, S3BlobStore, type BlobStore } from '@coursecraft/storage';
+import type { BlobStore, S3BlobStore } from '@coursecraft/storage';
+import { blobStoreFromEnv, objectStoreFromEnv } from './storage.js';
 import { backup, restore } from './cli/backup.js';
 import { bootstrapDatabase } from './cli/db-bootstrap.js';
 import { DEFAULT_TENANT_ID } from './tenancy/context.js';
@@ -26,29 +27,12 @@ function secretFromEnv(name: string): string {
 }
 
 /** Object storage from the environment, or null when files live on the data volume. */
-function objectStore(): S3BlobStore | null {
-  if (process.env['COURSECRAFT_STORAGE'] !== 's3') return null;
-  const required = (name: string): string => {
-    const value = process.env[name];
-    if (!value) throw new Error(`${name} must be set when COURSECRAFT_STORAGE=s3`);
-    return value;
-  };
-  return new S3BlobStore({
-    endpoint: required('COURSECRAFT_S3_ENDPOINT'),
-    region: process.env['COURSECRAFT_S3_REGION'] ?? 'us-east-1',
-    bucket: required('COURSECRAFT_S3_BUCKET'),
-    accessKeyId: secretFromEnv('COURSECRAFT_S3_ACCESS_KEY_ID'),
-    secretAccessKey: secretFromEnv('COURSECRAFT_S3_SECRET_ACCESS_KEY'),
-    keyPrefix: process.env['COURSECRAFT_S3_KEY_PREFIX'] ?? '',
-    virtualHostedStyle: process.env['COURSECRAFT_S3_VIRTUAL_HOSTED_STYLE'] === 'true',
-  });
-}
+const objectStore = (): S3BlobStore | null => objectStoreFromEnv();
 
 const dataDir = (): string | null =>
   objectStore() ? null : (process.env['COURSECRAFT_DATA_DIR'] ?? '/data');
 
-const blobStore = (): BlobStore =>
-  objectStore() ?? new FsBlobStore(process.env['COURSECRAFT_DATA_DIR'] ?? '/data');
+const blobStore = (): BlobStore => blobStoreFromEnv();
 
 async function tenantCommand(args: string[]): Promise<number> {
   const [action, ...params] = args;

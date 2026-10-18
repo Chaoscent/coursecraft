@@ -67,7 +67,7 @@ k -n cc create job --from=cronjob/cc-backup backup-now >/dev/null
 for _ in $(seq 1 30); do k -n cc get job backup-now -o jsonpath='{.status.succeeded}' | grep -q 1 && break; sleep 2; done
 k -n cc logs job/backup-now | grep -q "Backup uploaded" || fail "backup job failed"
 echo "Single organisation: passed. Switching the same installation to several organisations."
-helm upgrade cc /charts/coursecraft -n cc --reuse-values --set tenancy=multi --wait --timeout 300s >/dev/null
+helm upgrade cc /charts/coursecraft -n cc --reuse-values --set tenancy=multi --set operator.enabled=true --wait --timeout 300s >/dev/null
 k -n cc rollout status deploy/cc-app --timeout=180s >/dev/null
 for _ in $(seq 1 60); do [ "$(k -n cc get pods -l app.kubernetes.io/component=app --no-headers | wc -l)" = 2 ] && break; sleep 2; done
 # The forward to the replaced pods breaks on first use; the loop above starts a new one.
@@ -98,4 +98,11 @@ done
 k -n cc create job --from=cronjob/cc-backup backup-multi >/dev/null
 for _ in $(seq 1 30); do k -n cc get job backup-multi -o jsonpath='{.status.succeeded}' | grep -q 1 && break; sleep 2; done
 k -n cc logs job/backup-multi | grep -q "Backup uploaded" || fail "backup with several organisations failed"
+# Operator console: only inside the cluster; sign in through a port-forward.
+docker exec -d "$K" sh -c 'while true; do kubectl -n cc port-forward --address 127.0.0.1 svc/cc-operator 3002:3002; sleep 1; done'
+sleep 4
+OP_PASSWORD=$(k -n cc get secret cc-secrets -o jsonpath='{.data.operatorPassword}' | base64 -d)
+login=$(docker exec "$K" wget -qO- --header 'Content-Type: application/json' --header 'Origin: http://127.0.0.1:3002' \
+  --post-data "{\"password\":\"$OP_PASSWORD\"}" http://127.0.0.1:3002/api/operator/login 2>&1 || true)
+echo "$login" | grep -q '"authenticated":true' || fail "operator console sign-in: $login"
 echo "Kubernetes test passed."

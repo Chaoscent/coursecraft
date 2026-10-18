@@ -8,7 +8,7 @@ issue once the repository is published.
 **Next (customers will ask early):**
 
 - [x] Trainers see only the learners of groups they manage.
-- [ ] Quotas per tenant (users, storage) and an operator web interface.
+- [x] Quotas per tenant (users, storage) and an operator web interface.
 - [ ] Exports as background jobs (large courses).
 - [ ] XLSX report export; public verification page for certificates.
 - [ ] Learning paths: e-mail when assigned, reminders for due dates.
@@ -33,8 +33,8 @@ issue once the repository is published.
 
 ## Kubernetes and SaaS
 
-- [ ] Quotas and usage per tenant; operator web interface; moving or
-      restoring a single tenant (see docs/multi-tenancy.md).
+- [ ] Moving or restoring a single tenant; usage per tenant in the metrics
+      (see docs/multi-tenancy.md).
 - [ ] Self-service sign-up and payment (optional; the operator creates
       tenants today).
 

@@ -18,6 +18,7 @@ import * as m0013 from './0013-directory-attempts.js';
 import * as m0014 from './0014-replicas.js';
 import * as m0015 from './0015-tenancy.js';
 import * as m0016 from './0016-group-managers.js';
+import * as m0017 from './0017-tenant-quotas.js';
 
 /** Ordered list of all migrations. Released migrations never change. */
 export const MIGRATIONS: Readonly<Record<string, Migration>> = {
@@ -37,6 +38,7 @@ export const MIGRATIONS: Readonly<Record<string, Migration>> = {
   '0014-replicas': m0014,
   '0015-tenancy': m0015,
   '0016-group-managers': m0016,
+  '0017-tenant-quotas': m0017,
 };
 
 /**

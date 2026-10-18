@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { assertUserQuota } from '../../tenancy/quotas.js';
 import { ROLES, emailSchema, displayNameSchema, localeSchema, type Role } from '@coursecraft/shared';
 import { parse } from 'csv-parse/sync';
 import { randomBytes } from 'node:crypto';
@@ -64,6 +65,7 @@ export async function createUser(
   ipHmac: string,
 ): Promise<string> {
   if (await emailTaken(ctx.db, input.email)) throw conflict('E-mail address already in use');
+  await assertUserQuota(ctx);
   const passwordHash = await hashPassword(input.password);
   return ctx.db.transaction().execute(async (tx) => {
     const user = await tx

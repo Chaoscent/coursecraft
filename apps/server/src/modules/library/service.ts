@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { assertStorageQuota } from '../../tenancy/quotas.js';
 import { contentUrl } from '../../tenancy/origins.js';
 import type { LibraryItem, PackageKind } from '@coursecraft/shared';
 import { randomUUID } from 'node:crypto';
@@ -23,6 +24,11 @@ async function storePackage(
   meta: { kind?: PackageKind; userId: string; sourceCourseId?: string; sourceVersion?: number },
 ): Promise<{ id: string; manifest: PackageManifest }> {
   const zip = await ZipArchive.open(bytes, PACKAGE_LIMITS);
+  // The extracted size is what is stored.
+  await assertStorageQuota(
+    ctx,
+    zip.names().reduce((n, name) => n + zip.size(name), 0),
+  );
   const id = randomUUID();
   const store = packageStore(ctx);
   try {

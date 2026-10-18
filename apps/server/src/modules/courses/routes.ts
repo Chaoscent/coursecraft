@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { assertStorageQuota } from '../../tenancy/quotas.js';
 import {
   addNodeRequestSchema,
   assetParamsSchema,
@@ -322,6 +323,7 @@ export function courseRoutes(
       } catch {
         throw new AppError('payload_too_large', 'File is too large');
       }
+      await assertStorageQuota(ctx, bytes.length);
       const asset = await storeAsset(ctx.db, store, bytes, displayName(file.filename), auth.userId);
       await attachAssets(ctx.db, request.params.id, [asset]);
       return asset;

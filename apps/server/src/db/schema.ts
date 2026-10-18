@@ -440,6 +440,8 @@ export interface TenantsTable {
   name: string;
   public_origin: string | null;
   content_origin: string | null;
+  max_users: ColumnType<number | null, number | null | undefined, number | null>;
+  max_storage_mb: ColumnType<number | null, number | null | undefined, number | null>;
   status: ColumnType<'active' | 'disabled', 'active' | 'disabled' | undefined, 'active' | 'disabled'>;
   created_at: CreatedAt;
 }

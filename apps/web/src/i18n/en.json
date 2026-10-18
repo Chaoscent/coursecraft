@@ -298,7 +298,7 @@
     "payload_too_large": "The file is too large.",
     "unsupported_media_type": "This format is not supported.",
     "invalid_file": "The file is damaged or cannot be read.",
-    "quota_exceeded": "The daily quota for AI requests is used up.",
+    "quota_exceeded": "A limit is reached (AI requests, users or storage). Please contact your administrator.",
     "upstream_failed": "The AI service did not answer, or not usably.",
     "internal": "Unexpected error. Please try again.",
     "network": "Server not reachable."
@@ -1254,5 +1254,39 @@
       "too_many": "Sync aborted: an unusually large number of accounts would be deactivated. Check the filter."
     },
     "adminOnly": "Allow local password sign-in for administrators only (emergency access)"
+  },
+  "operator": {
+    "brand": "Coursecraft · Operations",
+    "signIn": "Operator sign-in",
+    "signInHint": "Manages the organisations of this installation. Password from COURSECRAFT_OPERATOR_PASSWORD.",
+    "title": "Organisations",
+    "count_one": "{{count}} organisation",
+    "count_other": "{{count}} organisations",
+    "new": "New organisation …",
+    "edit": "Edit …",
+    "newToken": "New setup token",
+    "enable": "Switch on",
+    "disable": "Switch off",
+    "delete": "Delete …",
+    "deleteForGood": "Delete for good",
+    "deleteWarning": "“{{name}}” is deleted with all users, courses, results and files. This cannot be undone.",
+    "typeName": "Name to confirm",
+    "name": "Name",
+    "publicOrigin": "Address",
+    "publicOriginHint": "e.g. https://company.courses.example.com",
+    "contentOrigin": "Address for courses",
+    "contentOriginHint": "A separate address for course playback, e.g. https://company.content.example.com",
+    "maxUsers": "Users at most",
+    "maxStorage": "Storage at most (MB)",
+    "unlimitedHint": "Empty = unlimited.",
+    "tokenTitle": "Setup token",
+    "tokenHint": "The first administrator opens {{url}} and enters this token. Valid until {{until}}; it is shown only now.",
+    "empty": "No organisations.",
+    "default": "default",
+    "active": "on",
+    "disabled": "off",
+    "users": "Users",
+    "storage": "Storage",
+    "status": "For the operator only. Changes reach the app within 30 seconds."
   }
 }

@@ -71,6 +71,32 @@ setup token for one tenant: `coursecraft setup-token <tenant-id>`.
 
 Changes to tenants reach all app replicas within 30 seconds.
 
+### Operator console
+
+A separate web console lists the organisations with their usage (users,
+storage) and lets the operator create them (with the setup token for the
+first administrator), set limits, switch them off and on, issue new setup
+tokens and delete them. It runs as its own process with the table owner's
+rights and is never published on the internet:
+
+- Docker Compose: `docker compose --profile operator up -d`, then
+  <http://localhost:3002>. Password:
+  `docker compose run --rm --entrypoint cat operator /run/coursecraft/password`.
+- Helm: `--set operator.enabled=true`, then
+  `kubectl port-forward svc/<release>-operator 3002:3002`. Password: key
+  `operatorPassword` of the chart's Secret.
+
+Sign-in is rate-limited, the session cookie is `__Host-`, HttpOnly and
+SameSite=Strict, and every change needs the session's CSRF token and a
+same-origin request.
+
+### Limits
+
+`max_users` and `max_storage_mb` per organisation (empty = unlimited). New
+accounts (by administrators or by single sign-on) and uploads, imports and
+conversions are refused with `quota_exceeded` once a limit is reached;
+existing data stays untouched.
+
 ### Backups
 
 The backup uses the migrator role, which owns the tables and dumps every
@@ -93,8 +119,6 @@ The id of the default tenant (single installations) is
 
 - Self-service sign-up and payment (the operator creates tenants; billing
   happens outside Coursecraft).
-- Quotas per tenant (users, storage) and usage figures per tenant in the
-  metrics.
+- Usage figures per tenant in the Prometheus metrics (the console shows them).
 - Moving one tenant to its own installation, and restoring a single tenant
   from a backup.
-- An operator web interface (today: command line).

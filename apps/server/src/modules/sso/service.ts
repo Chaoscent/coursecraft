@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { assertUserQuota } from '../../tenancy/quotas.js';
 import { publicUrl } from '../../tenancy/origins.js';
 import type { SsoProvider, SsoProviderInput } from '@coursecraft/shared';
 import type { FastifyReply, FastifyRequest } from 'fastify';
@@ -432,6 +433,11 @@ export async function resolveUser(ctx: AppContext, row: Row, profile: Profile): 
     return { userId: existing.id };
   }
   if (!row.auto_create) return { error: 'no_account' };
+  try {
+    await assertUserQuota(ctx);
+  } catch {
+    return { error: 'no_account' };
+  }
   const userId = await ctx.db.transaction().execute(async (tx) => {
     const user = await tx
       .insertInto('users')

@@ -21,7 +21,8 @@ export async function registerWebApp(app: FastifyInstance, root: string, config:
     const path = request.url.split('?')[0] ?? '/';
     if (path.startsWith('/api/')) throw new AppError('not_found', 'Not found');
     const file = normalize(join(root, decodeURIComponent(path)));
-    const inside = file.startsWith(base);
+    // The operator console belongs to the operator process only.
+    const inside = file.startsWith(base) && path !== '/operator.html';
     if (inside && existsSync(file) && statSync(file).isFile()) {
       const immutable = path.startsWith('/assets/');
       return reply

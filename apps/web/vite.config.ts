@@ -15,5 +15,9 @@ export default defineConfig({
     // Nothing is inlined: the CSP forbids inline scripts, data: scripts and inline styles.
     assetsInlineLimit: 0,
     sourcemap: true,
+    rollupOptions: {
+      // The operator console is a separate page, served only by the operator process.
+      input: { main: 'index.html', operator: 'operator.html' },
+    },
   },
 });

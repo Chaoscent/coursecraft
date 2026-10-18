@@ -9,6 +9,7 @@ services:
   init: *local-app
   migrate: *local-app
   maintenance: *local-app
+  operator: *local-app
   app:
     image: coursecraft/app:local
     pull_policy: never

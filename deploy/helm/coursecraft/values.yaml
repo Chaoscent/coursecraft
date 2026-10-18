@@ -117,6 +117,12 @@ networkPolicy:
   enabled: false
   ingressControllerNamespace: ingress-nginx
 
+# Operator console (organisations, limits, usage). Not exposed: reach it with
+#   kubectl port-forward svc/<release>-operator 3002:3002
+# Password: key "operatorPassword" of the chart's Secret.
+operator:
+  enabled: false
+
 metrics:
   enabled: true
   port: 9464
