@@ -73,4 +73,47 @@ describe('certificates', () => {
     expect((await t.request(admin, 'GET', `/api/certificates/${cert.id}/pdf`)).statusCode).toBe(200);
     expect((await t.request(other, 'POST', `/api/learn/items/${itemId}/certificate`)).statusCode).toBe(403);
   });
+
+  it('can be verified by anyone who has the number, and nothing else is revealed', async () => {
+    const [cert] = (await t.request(learner, 'GET', '/api/learn/certificates')).json<{
+      items: { serial: string }[];
+    }>().items;
+    const serial = cert?.serial ?? '';
+    const res = await t.request(null, 'GET', `/api/certificates/verify/${serial.toLowerCase()}`);
+    expect(res.statusCode, res.body).toBe(200);
+    const body = res.json<Record<string, string>>();
+    expect(body).toMatchObject({ serial, itemTitle: 'Brandschutz (Grundlagen)' });
+    expect(body['learnerName']).toBeTruthy();
+    // No ids, e-mail addresses or scores.
+    expect(Object.keys(body).sort()).toEqual([
+      'completedAt',
+      'issuedAt',
+      'itemTitle',
+      'learnerName',
+      'serial',
+    ]);
+    expect((await t.request(null, 'GET', '/api/certificates/verify/CC-AAAA-BBBB-CCCC')).statusCode).toBe(404);
+    expect((await t.request(null, 'GET', "/api/certificates/verify/CC-AAAA-BBBB-CCC'")).statusCode).toBe(400);
+  });
+
+  it('prints the verification address on the certificate', async () => {
+    const [cert] = (await t.request(learner, 'GET', '/api/learn/certificates')).json<{
+      items: { id: string; serial: string }[];
+    }>().items;
+    const pdf = await t.request(learner, 'GET', `/api/certificates/${cert?.id ?? ''}/pdf`);
+    // Text is written as hex strings in the content stream.
+    expect(pdf.rawPayload.toString('latin1')).toContain(
+      Buffer.from(`/verify/${cert?.serial ?? ''}`).toString('hex'),
+    );
+  });
+
+  it('exports the report as Excel workbook for report readers only', async () => {
+    const xlsx = await t.request(admin, 'GET', `/api/reports/items/${itemId}/xlsx`);
+    expect(xlsx.statusCode).toBe(200);
+    expect(xlsx.headers['content-type']).toBe(
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    expect(xlsx.rawPayload.subarray(0, 4).toString('hex')).toBe('504b0304');
+    expect((await t.request(learner, 'GET', `/api/reports/items/${itemId}/xlsx`)).statusCode).toBe(403);
+  });
 });

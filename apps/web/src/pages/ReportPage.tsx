@@ -31,13 +31,22 @@ export function ReportPage() {
       title={data ? t('report.title', { title: data.item.title }) : t('report.loading')}
       meta={t('report.learners', { count: rows.length })}
       toolbar={
-        <ToolButton
-          icon="download"
-          isDisabled={!data}
-          onPress={() => void download(`/api/reports/items/${id}/csv`, 'report.csv')}
-        >
-          {t('report.csv')}
-        </ToolButton>
+        <>
+          <ToolButton
+            icon="download"
+            isDisabled={!data}
+            onPress={() => void download(`/api/reports/items/${id}/xlsx`, 'report.xlsx')}
+          >
+            {t('report.xlsx')}
+          </ToolButton>
+          <ToolButton
+            icon="download"
+            isDisabled={!data}
+            onPress={() => void download(`/api/reports/items/${id}/csv`, 'report.csv')}
+          >
+            {t('report.csv')}
+          </ToolButton>
+        </>
       }
     >
       <div className={styles.reportGrid}>

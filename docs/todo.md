@@ -9,8 +9,8 @@ issue once the repository is published.
 
 - [x] Trainers see only the learners of groups they manage.
 - [x] Quotas per tenant (users, storage) and an operator web interface.
-- [ ] Exports as background jobs (large courses).
-- [ ] XLSX report export; public verification page for certificates.
+- [x] Exports as background jobs (large courses).
+- [x] XLSX report export; public verification page for certificates.
 - [ ] Learning paths: e-mail when assigned, reminders for due dates.
 - [ ] OIDC/SAML groups and claims to roles; single logout.
 
@@ -40,8 +40,8 @@ issue once the repository is published.
 
 - [ ] Multipart upload for objects above 5 GB (single PUT limit); today the
       upload limit (`COURSECRAFT_UPLOAD_MAX_MB`, package limits) stays below it.
-- [ ] Build exports as streams or background jobs instead of one buffer in
-      memory (also listed under Exports).
+- [x] Build exports as streams or background jobs instead of one buffer in
+      memory.
 
 ## Tooling
 
@@ -52,8 +52,7 @@ issue once the repository is published.
 
 ## Exports
 
-- [ ] Run exports as background jobs (pg-boss) once courses carry large
-      video files; today the export request builds the ZIP synchronously.
+- [x] Run exports as background jobs (pg-boss); archives kept for a day.
 - [ ] Nightly conformance run in a disposable Moodle container (SCORM 1.2/2004)
       and the ADL LRS test suite (Phase 5).
 - [ ] Some LMS require the ADL/IMS XSD files next to `imsmanifest.xml`; check
@@ -61,7 +60,7 @@ issue once the repository is published.
 
 ## LMS
 
-- [ ] XLSX report export (exceljs) next to CSV.
+- [x] XLSX report export next to CSV (own minimal writer).
 - [ ] LRS credentials for external clients (Basic auth per client) and full
       statement query filters (agent, verb, activity, since/until, paging).
 - [ ] xAPI concurrency headers (If-Match / If-None-Match) for documents.
@@ -90,7 +89,7 @@ issue once the repository is published.
 
 ## Certificates
 
-- [ ] Public verification page for a serial number.
+- [x] Public verification page for a serial number (/verify).
 - [ ] Course-specific templates (logo, signature) and embedded fonts for
       names outside WinAnsi (needs a font-subsetting library with a
       compatible license; `pdf-lib` was rejected because of its Zlib-licensed

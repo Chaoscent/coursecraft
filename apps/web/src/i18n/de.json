@@ -639,7 +639,9 @@
       "survey": "Umfrage",
       "interaction": "Interaktion",
       "dialog": "Dialog"
-    }
+    },
+    "exportBuilding": "Das Paket wird auf dem Server erstellt. Bei großen Kursen dauert das einen Moment; der Download startet von selbst.",
+    "exportFailed": "Der Export ist fehlgeschlagen."
   },
   "quiz": {
     "types": {
@@ -873,7 +875,8 @@
     "type": "Typ",
     "answers": "Antworten",
     "correctRate": "Richtig",
-    "pending": "Offen zur Bewertung"
+    "pending": "Offen zur Bewertung",
+    "xlsx": "Excel exportieren"
   },
   "grading": {
     "title": "Bewertung",
@@ -1288,5 +1291,18 @@
     "users": "Benutzer",
     "storage": "Speicher",
     "status": "Nur für den Betreiber. Änderungen wirken in der App innerhalb von 30 Sekunden."
+  },
+  "verify": {
+    "title": "Zertifikat prüfen",
+    "hint": "Geben Sie die Zertifikatsnummer ein, die auf dem Zertifikat unten steht.",
+    "serial": "Zertifikatsnummer",
+    "check": "Prüfen",
+    "valid": "Dieses Zertifikat ist echt und wurde von dieser Plattform ausgestellt.",
+    "notFound": "Zu dieser Nummer gibt es kein Zertifikat.",
+    "learner": "Ausgestellt für",
+    "course": "Kurs",
+    "completed": "Abgeschlossen",
+    "issued": "Ausgestellt",
+    "signIn": "Zur Anmeldung"
   }
 }

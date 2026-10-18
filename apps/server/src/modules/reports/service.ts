@@ -175,25 +175,28 @@ export function csvCell(value: string | number | null): string {
   return /[",\n\r;]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
+/** One row per learner, the same columns for CSV and XLSX. */
+export function reportTable(rows: ReportRow[]): { header: string[]; cells: (string | number | null)[][] } {
+  return {
+    header: CSV_HEADER,
+    cells: rows.map((r) => [
+      r.displayName,
+      r.email,
+      r.status,
+      r.scoreScaled === null ? null : Math.round(r.scoreScaled * 100),
+      r.attempts,
+      Math.round(r.timeSpentMs / 60_000),
+      r.dueAt,
+      r.overdue ? 'yes' : 'no',
+      r.completedAt,
+      r.lastActivityAt,
+    ]),
+  };
+}
+
 export function reportCsv(rows: ReportRow[]): string {
-  const lines = [CSV_HEADER.join(',')];
-  for (const r of rows)
-    lines.push(
-      [
-        r.displayName,
-        r.email,
-        r.status,
-        r.scoreScaled === null ? null : Math.round(r.scoreScaled * 100),
-        r.attempts,
-        Math.round(r.timeSpentMs / 60_000),
-        r.dueAt,
-        r.overdue ? 'yes' : 'no',
-        r.completedAt,
-        r.lastActivityAt,
-      ]
-        .map(csvCell)
-        .join(','),
-    );
+  const { header, cells } = reportTable(rows);
+  const lines = [header.join(','), ...cells.map((row) => row.map(csvCell).join(','))];
   return `${BOM}${lines.join('\r\n')}\r\n`;
 }
 

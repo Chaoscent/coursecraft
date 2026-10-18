@@ -1,11 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
-import { certificateSchema, idParamSchema, libraryItemIdSchema } from '@coursecraft/shared';
+import {
+  certificateSchema,
+  certificateSerialSchema,
+  certificateVerificationSchema,
+  idParamSchema,
+  libraryItemIdSchema,
+} from '@coursecraft/shared';
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { requireAuth } from '../../auth/plugin.js';
 import type { AppContext } from '../../http/context.js';
-import { certificatePdf, issueCertificate, myCertificates } from './service.js';
+import { certificatePdf, issueCertificate, myCertificates, verifyCertificate } from './service.js';
 
 export function certificateRoutes(app: FastifyInstance, ctx: AppContext): void {
   const r = app.withTypeProvider<ZodTypeProvider>();
@@ -21,6 +27,19 @@ export function certificateRoutes(app: FastifyInstance, ctx: AppContext): void {
     '/api/learn/items/:id/certificate',
     { config, schema: { params: libraryItemIdSchema, response: { 200: certificateSchema } } },
     async (request) => issueCertificate(ctx, requireAuth(request), request.params.id),
+  );
+
+  r.get(
+    '/api/certificates/verify/:serial',
+    {
+      // Public, but throttled: serials are random, guessing them is pointless and slow.
+      config: { permission: 'public', rateLimit: { max: 20, timeWindow: '1 minute' } },
+      schema: {
+        params: z.object({ serial: certificateSerialSchema }),
+        response: { 200: certificateVerificationSchema },
+      },
+    },
+    async (request) => verifyCertificate(ctx, request.params.serial),
   );
 
   r.get(

@@ -64,3 +64,12 @@ test('an administrator names the trainers of a group', async ({ page, browserNam
   await expect(page.getByRole('complementary', { name: 'Betreut von' })).toBeVisible();
   await expect(page.getByText('Diese Trainer sehen die Lernenden der Gruppe')).toBeVisible();
 });
+
+test('anyone can check a certificate number without signing in', async ({ page }) => {
+  await page.goto('/verify');
+  await expect(page.getByRole('heading', { name: 'Zertifikat prüfen' })).toBeVisible();
+  await page.getByLabel('Zertifikatsnummer').fill('cc-aaaa-bbbb-cccc');
+  await page.getByRole('button', { name: 'Prüfen' }).click();
+  await expect(page).toHaveURL(/\/verify\/CC-AAAA-BBBB-CCCC$/);
+  await expect(page.getByText('Zu dieser Nummer gibt es kein Zertifikat.')).toBeVisible();
+});

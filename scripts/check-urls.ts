@@ -29,6 +29,8 @@ const ALLOWED = [
   /^https:\/\/api\.anthropic\.com$/,
   /^https:\/\/api\.openai\.com\/v1$/,
   /^http:\/\/ollama:11434\/v1$/,
+  // Example addresses in the operator console hints (reserved example.com domain).
+  /^https:\/\/[a-z]+\.(courses|content)\.example\.com$/,
   /^https?:\/\/www\.w3\.org\//,
   // XML namespaces of presentation files (OOXML, Dublin Core); identifiers, never requested.
   /^http:\/\/schemas\.openxmlformats\.org\//,

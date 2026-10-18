@@ -659,6 +659,19 @@ test:db` starts an S3 server container (Scality CloudServer) besides
   managed database via `coursecraft db-bootstrap`. Helm chart and tests:
   `docs/kubernetes.md`.
 
+## 12i. Background exports, Excel, certificate check
+
+- Course exports are streamed (`streamExport`); the editor queues them
+  (`POST /api/courses/:id/exports`, migration 0018, queue `export.build`).
+  The app worker builds the archive into a scratch file, stores it below
+  `exports/` (file system or S3) and serves it for a day; the cleanup job
+  removes older ones.
+- Reports also as XLSX through `lib/xlsx.ts`: one sheet, inline strings only
+  (no formulas, so no formula injection), on the ZIP library already in use.
+- `GET /api/certificates/verify/:serial` (public, rate-limited) and the page
+  `/verify/:serial`; the PDF prints that address. Only name, course and dates
+  are shown.
+
 ## 12h. Trainer scope
 
 - `group_managers` (migration 0016) links trainers to groups;

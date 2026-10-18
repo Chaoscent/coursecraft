@@ -31,7 +31,6 @@ named, listed so the choice can be reviewed early.
 | @napi-rs/image                       | in use                           | MIT                                         | Resize, re-encode, strip EXIF                                  | sharp (rejected: links LGPL libvips)                                                                                                                       |
 | pdfjs-dist + @napi-rs/canvas         | in use (converter)               | Apache-2.0 / MIT                            | Render PPTX slides (via PDF from LibreOffice) to PNG           | node-canvas (links Cairo), Poppler (GPL), MuPDF (AGPL). pdf.js ships fonts and decoders with their own permissive licenses, see THIRD_PARTY_NOTICES.md     |
 | scorm-again                          | in use (runtime, content origin) | MIT                                         | SCORM 1.2/2004 runtime API                                     | own implementation                                                                                                                                         |
-| exceljs                              | planned (5)                      | MIT                                         | XLSX report export                                             | SheetJS (npm build outdated)                                                                                                                               |
 | nodemailer                           | in use                           | MIT-0                                       | SMTP                                                           | —                                                                                                                                                          |
 | openid-client / @node-saml/node-saml | in use                           | MIT                                         | OIDC / SAML login                                              | passport strategies (more glue)                                                                                                                            |
 | ldapts                               | in use                           | MIT                                         | LDAP / Active Directory sign-in (search, bind, StartTLS)       | ldapjs (unmaintained, archived); own BER codec (too much risk)                                                                                             |
@@ -88,6 +87,13 @@ Certificates are written by a small built-in PDF writer
 Helvetica fonts, text and lines. `pdf-lib` was considered and rejected: its
 dependency `pako` is licensed `MIT AND Zlib`, and Zlib is not on the license
 allowlist. Revisit if embedded fonts (names outside WinAnsi) become necessary.
+
+## Excel reports without a spreadsheet library
+
+`apps/server/src/lib/xlsx.ts` writes one sheet with inline strings on top of
+yazl. `exceljs` was planned and dropped: it pulls in a large tree (archiver,
+unzipper, jszip under "MIT OR GPL-3.0") for a feature that needs one sheet of
+text and numbers.
 
 ## License exceptions
 

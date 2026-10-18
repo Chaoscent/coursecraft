@@ -7,6 +7,7 @@ import { AppShell } from '../layout/AppShell.js';
 import { ChangePasswordPage } from '../pages/ChangePasswordPage.js';
 import { HomePage } from '../pages/HomePage.js';
 import { LoginPage } from '../pages/LoginPage.js';
+import { VerifyPage } from '../pages/VerifyPage.js';
 import { ResetPasswordPage } from '../pages/ResetPasswordPage.js';
 import { SetupPage } from '../pages/SetupPage.js';
 import { PlayerPage } from '../pages/PlayerPage.js';
@@ -67,6 +68,8 @@ const router = createBrowserRouter([
   { path: '/setup', element: <SetupPage /> },
   { path: '/login', element: <LoginPage /> },
   { path: '/reset-password', element: <ResetPasswordPage /> },
+  { path: '/verify', element: <VerifyPage /> },
+  { path: '/verify/:serial', element: <VerifyPage /> },
   {
     path: '/author/courses/:id',
     element: (

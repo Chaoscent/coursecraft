@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { publicUrl } from '../../tenancy/origins.js';
 import { learnerScope, seesUser } from '../../policy/learners.js';
 import type { Certificate } from '@coursecraft/shared';
 import { randomBytes } from 'node:crypto';
@@ -119,6 +120,7 @@ const TEXT = {
     date: 'Abgeschlossen am',
     score: 'Ergebnis',
     serial: 'Zertifikatsnummer',
+    verify: 'Echtheit prüfen',
     locale: 'de-DE',
   },
   en: {
@@ -129,6 +131,7 @@ const TEXT = {
     date: 'Completed on',
     score: 'Result',
     serial: 'Certificate number',
+    verify: 'Verify at',
     locale: 'en-GB',
   },
 } as const;
@@ -140,6 +143,23 @@ function fitted(text: string, size: number, bold: boolean, maxWidth: number): { 
   let t = text;
   while (t.length > 3 && textWidth(t, s, bold) > maxWidth) t = `${t.slice(0, -2).trimEnd()}…`;
   return { text: t, size: s };
+}
+
+/** Public check of a printed certificate number; unknown numbers answer "not found". */
+export async function verifyCertificate(ctx: AppContext, serial: string) {
+  const row = await ctx.db
+    .selectFrom('certificates')
+    .select(['serial', 'learner_name', 'item_title', 'completed_at', 'issued_at'])
+    .where('serial', '=', serial)
+    .executeTakeFirst();
+  if (!row) throw notFound('Certificate not found');
+  return {
+    serial: row.serial,
+    learnerName: row.learner_name,
+    itemTitle: row.item_title,
+    completedAt: row.completed_at.toISOString(),
+    issuedAt: row.issued_at.toISOString(),
+  };
 }
 
 export async function certificatePdf(
@@ -181,7 +201,13 @@ export async function certificatePdf(
     ...(row.score_scaled !== null
       ? [{ text: `${t.score}: ${Math.round(row.score_scaled * 100)} %`, size: 14, y: 140 }]
       : []),
-    { text: `${t.serial}: ${row.serial}`, size: 10, y: 60, color: grey },
+    { text: `${t.serial}: ${row.serial}`, size: 10, y: 62, color: grey },
+    {
+      text: `${t.verify}: ${new URL(`/verify/${row.serial}`, publicUrl(ctx.config)).toString()}`,
+      size: 9,
+      y: 47,
+      color: grey,
+    },
   ];
   const pdf = renderPdf({
     width: W,

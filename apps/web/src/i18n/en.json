@@ -639,7 +639,9 @@
       "survey": "Survey",
       "interaction": "Interaction",
       "dialog": "Dialog"
-    }
+    },
+    "exportBuilding": "The package is being built on the server. Large courses take a moment; the download starts by itself.",
+    "exportFailed": "The export failed."
   },
   "quiz": {
     "types": {
@@ -873,7 +875,8 @@
     "type": "Type",
     "answers": "Answers",
     "correctRate": "Correct",
-    "pending": "Awaiting grading"
+    "pending": "Awaiting grading",
+    "xlsx": "Export Excel"
   },
   "grading": {
     "title": "Grading",
@@ -1288,5 +1291,18 @@
     "users": "Users",
     "storage": "Storage",
     "status": "For the operator only. Changes reach the app within 30 seconds."
+  },
+  "verify": {
+    "title": "Verify a certificate",
+    "hint": "Enter the certificate number printed at the bottom of the certificate.",
+    "serial": "Certificate number",
+    "check": "Verify",
+    "valid": "This certificate is genuine and was issued by this platform.",
+    "notFound": "There is no certificate with this number.",
+    "learner": "Issued to",
+    "course": "Course",
+    "completed": "Completed",
+    "issued": "Issued",
+    "signIn": "Go to sign-in"
   }
 }
