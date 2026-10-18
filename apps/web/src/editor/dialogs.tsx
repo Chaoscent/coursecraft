@@ -2,7 +2,12 @@
 import type { Draft } from 'immer';
 import type { Course } from '@coursecraft/course-model';
 import { noTracking, Player } from '@coursecraft/player';
-import { listVersionsResponseSchema, revResponseSchema, type EXPORT_FORMATS } from '@coursecraft/shared';
+import {
+  exportStatusSchema,
+  listVersionsResponseSchema,
+  revResponseSchema,
+  type EXPORT_FORMATS,
+} from '@coursecraft/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
@@ -34,15 +39,21 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
     setError(null);
     try {
       await flush(store);
-      const { courseId, course } = store.getState();
-      const title = course.meta.title[course.languages.default] ?? 'course';
-      await download(
-        `/api/courses/${courseId}/export?format=${format}`,
-        `${title.replace(/[^\p{L}\p{N}_-]+/gu, '-')}-${format}.zip`,
-      );
+      const { courseId } = store.getState();
+      // Built in the background on the server; large courses take a while.
+      let status = await api(exportStatusSchema, `/api/courses/${courseId}/exports`, {
+        method: 'POST',
+        body: { format },
+      });
+      while (status.status === 'pending') {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        status = await api(exportStatusSchema, `/api/exports/${status.id}`);
+      }
+      if (status.status === 'failed') throw new Error(status.error ?? t('editor.exportFailed'));
+      await download(`/api/exports/${status.id}/download`, status.fileName ?? `course-${format}.zip`);
       onClose();
     } catch (e) {
-      setError(errorMessage(e));
+      setError(e instanceof Error && !('status' in e) ? e.message : errorMessage(e));
     } finally {
       setBusy(false);
     }
@@ -63,6 +74,7 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
       }
     >
       {error ? <Notice tone="danger">{error}</Notice> : null}
+      {busy ? <Notice tone="info">{t('editor.exportBuilding')}</Notice> : null}
       <FormGrid wide>
         <SelectField
           label={t('editor.exportFormat')}

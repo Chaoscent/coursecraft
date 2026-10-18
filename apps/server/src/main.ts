@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { convertDoneJobSchema, mailJobSchema, QUEUES } from '@coursecraft/shared';
+import { convertDoneJobSchema, exportJobSchema, mailJobSchema, QUEUES } from '@coursecraft/shared';
 import { loadConfig } from './config/env.js';
 import { createContext } from './context-factory.js';
 import { checkReadiness } from './db/readiness.js';
@@ -8,6 +8,7 @@ import { buildContentApp } from './http/content-app.js';
 import { bossQueue, createBoss } from './jobs/queue.js';
 import { expireStale, handleConvertDone } from './modules/conversions/service.js';
 import { handleMailJob, sendDueReminders } from './modules/mail/service.js';
+import { handleExportJob, purgeExports } from './modules/exports/jobs.js';
 import { issueSetupToken } from './modules/setup/service.js';
 import { serveMetrics } from './http/metrics.js';
 import { currentScope, DEFAULT_SCOPE, DEFAULT_TENANT_ID, runAsTenant } from './tenancy/context.js';
@@ -30,6 +31,13 @@ const contentApp =
 ctx.log = app.log;
 boss.on('error', (error: Error) => app.log.error({ err: error }, 'job queue error'));
 await boss.start();
+await boss.work(QUEUES.exportBuild, { batchSize: 1 }, async ([job]) => {
+  if (!job) return;
+  const parsed = exportJobSchema.safeParse(job.data);
+  if (!parsed.success) return app.log.warn({ jobId: job.id }, 'invalid export job dropped');
+  await inTenantOf(parsed.data.tenantId, () => handleExportJob(ctx, parsed.data));
+});
+
 /** Runs a job for the tenant it was queued for; jobs of removed tenants are dropped. */
 async function inTenantOf(tenantId: string | undefined, work: () => Promise<void>): Promise<void> {
   const scope = tenantId ? await ctx.tenants.byId(tenantId) : DEFAULT_SCOPE;
@@ -124,6 +132,7 @@ every('cleanup', CLEANUP_INTERVAL_MS, async () => {
   const deleted = await ctx.sessions.deleteExpired();
   if (deleted) app.log.info({ deleted }, 'expired sessions removed');
   await purgeOldAttempts(ctx);
+  await purgeExports(ctx);
 });
 every('rate-limit-purge', CLEANUP_INTERVAL_MS, async () => {
   // Shared by all tenants; one run is enough (the default tenant's round).

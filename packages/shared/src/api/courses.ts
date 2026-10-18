@@ -136,3 +136,15 @@ export const saveCourseResponseSchema = z.object({
   rev: z.number().int(),
   nodeRevs: z.record(z.string(), z.number().int()),
 });
+
+/** Export built in the background; downloadable for a day. */
+export const startExportRequestSchema = z.object({ format: z.enum(EXPORT_FORMATS) }).strict();
+export const exportStatusSchema = z.object({
+  id: z.uuid(),
+  status: z.enum(['pending', 'done', 'failed']),
+  error: z.string().nullable(),
+  fileName: z.string().nullable(),
+  size: z.number().nullable(),
+  createdAt: z.string(),
+});
+export type ExportStatus = z.infer<typeof exportStatusSchema>;

@@ -93,12 +93,18 @@ async function* streamOf(store: AssetStore, sha: string): AsyncGenerator<Buffer>
  * Builds a self-contained package: the player, the validated course data and
  * all referenced media. Nothing in it loads from outside the package.
  */
-export async function buildExport(
+/**
+ * Builds a self-contained package as a stream: the player, the validated
+ * course data and all referenced media. Nothing in it loads from outside the
+ * package. Validation and the check for missing files happen before the
+ * first byte, so a failed export never sends half an archive.
+ */
+export async function streamExport(
   document: unknown,
   format: ExportFormat,
   store: AssetStore,
   playerDir: string,
-): Promise<{ buffer: Buffer; title: string; files: string[] }> {
+): Promise<{ stream: Readable; title: string; files: string[] }> {
   let course: Course;
   try {
     course = loadCourse(document);
@@ -145,11 +151,32 @@ export async function buildExport(
   for (const [path, sha] of assetPaths)
     zip.addReadStream(Readable.from(streamOf(store, sha)), path, { mtime: new Date(0) });
   zip.end();
-  const chunks: Buffer[] = [];
-  for await (const chunk of zip.outputStream) chunks.push(chunk as Buffer);
   return {
-    buffer: Buffer.concat(chunks),
-    title: courseTitle(course),
+    stream: zip.outputStream as Readable,
+    title,
     files: [...entries.keys(), ...assetPaths.map(([p]) => p)],
   };
+}
+
+/** The same in memory, for small packages (publishing to the library). */
+export async function buildExport(
+  document: unknown,
+  format: ExportFormat,
+  store: AssetStore,
+  playerDir: string,
+): Promise<{ buffer: Buffer; title: string; files: string[] }> {
+  const built = await streamExport(document, format, store, playerDir);
+  const chunks: Buffer[] = [];
+  for await (const chunk of built.stream) chunks.push(chunk as Buffer);
+  return { buffer: Buffer.concat(chunks), title: built.title, files: built.files };
+}
+
+/** A file name for the archive: letters, digits, dash and underscore only. */
+export function exportFileName(title: string, format: ExportFormat): string {
+  const safe =
+    title
+      .replace(/[^\p{L}\p{N}_-]+/gu, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 60) || 'course';
+  return `${safe}-${format}.zip`;
 }

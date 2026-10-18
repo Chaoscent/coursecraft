@@ -12,6 +12,8 @@ export const QUEUES = {
   convertDone: 'convert.done',
   /** App → app: one e-mail to one user, rendered at send time. */
   mail: 'mail.send',
+  /** App → app: build an export archive in the background. */
+  exportBuild: 'export.build',
 } as const;
 
 export type QueueName = (typeof QUEUES)[keyof typeof QUEUES];
@@ -89,3 +91,6 @@ export const mailJobSchema = z
   })
   .strict();
 export type MailJob = z.infer<typeof mailJobSchema>;
+
+export const exportJobSchema = z.object({ exportId: jobIdSchema, ...tenantField }).strict();
+export type ExportJob = z.infer<typeof exportJobSchema>;

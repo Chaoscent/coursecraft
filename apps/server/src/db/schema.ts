@@ -430,6 +430,19 @@ export interface PeriodicJobsTable {
   locked_until: Timestamp;
 }
 
+export interface CourseExportsTable {
+  id: Generated<string>;
+  course_id: string;
+  format: string;
+  status: ColumnType<'pending' | 'done' | 'failed', 'pending' | undefined, 'done' | 'failed'>;
+  error: string | null;
+  file_name: string | null;
+  size: ColumnType<string | null, number | null | undefined, number | null>;
+  created_by: string | null;
+  created_at: CreatedAt;
+  finished_at: Timestamp | null;
+}
+
 export interface GroupManagersTable {
   group_id: string;
   user_id: string;
@@ -507,5 +520,6 @@ export interface Database {
   periodic_jobs: PeriodicJobsTable;
   tenants: TenantsTable;
   group_managers: GroupManagersTable;
+  course_exports: CourseExportsTable;
   user_identities: UserIdentitiesTable;
 }

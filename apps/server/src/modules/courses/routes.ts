@@ -9,6 +9,8 @@ import {
   createCourseRequestSchema,
   createVersionRequestSchema,
   exportQuerySchema,
+  exportStatusSchema,
+  startExportRequestSchema,
   idParamSchema,
   listCoursesQuerySchema,
   listCoursesResponseSchema,
@@ -36,7 +38,8 @@ import { likePattern } from '../users/repo.js';
 import { attachAssets, displayName, storeAsset } from '../assets/service.js';
 import type { AssetStore } from '../assets/store.js';
 import { EXTENSIONS } from '../assets/store.js';
-import { buildExport } from '../exports/builder.js';
+import { exportFileName, streamExport } from '../exports/builder.js';
+import { exportDownload, exportStatus, startExport } from '../exports/jobs.js';
 import { createCourse, loadDocument } from './document.js';
 import { acquireLock, assertLockHeld, breakLock, currentLock, releaseLock } from './locks.js';
 import {
@@ -473,6 +476,39 @@ export function courseRoutes(
     },
   );
 
+  r.post(
+    '/api/courses/:id/exports',
+    {
+      config,
+      schema: {
+        params: idParamSchema,
+        body: startExportRequestSchema,
+        response: { 200: exportStatusSchema },
+      },
+    },
+    async (request) => startExport(ctx, requireAuth(request), request.params.id, request.body.format),
+  );
+
+  r.get(
+    '/api/exports/:id',
+    { config, schema: { params: idParamSchema, response: { 200: exportStatusSchema } } },
+    async (request) => exportStatus(ctx, requireAuth(request), request.params.id),
+  );
+
+  r.get(
+    '/api/exports/:id/download',
+    { config, schema: { params: idParamSchema } },
+    async (request, reply) => {
+      const file = await exportDownload(ctx, requireAuth(request), request.params.id);
+      return reply
+        .header('Content-Type', 'application/zip')
+        .header('Content-Length', String(file.size))
+        .header('Content-Disposition', `attachment; filename="${encodeURIComponent(file.fileName)}"`)
+        .header('Cache-Control', 'no-store')
+        .send(file.stream);
+    },
+  );
+
   r.get(
     '/api/courses/:id/export',
     { config, schema: { params: idParamSchema, querystring: exportQuerySchema } },
@@ -481,7 +517,7 @@ export function courseRoutes(
       await assertCourseEditor(ctx.db, auth, request.params.id);
       if (!playerDir) throw new AppError('internal', 'Player bundle is not available');
       const { course } = await loadDocument(ctx.db, request.params.id);
-      const zip = await buildExport(course, request.query.format, store, playerDir);
+      const zip = await streamExport(course, request.query.format, store, playerDir);
       await ctx.audit.record({
         actorUserId: auth.userId,
         action: 'course.exported',
@@ -490,18 +526,14 @@ export function courseRoutes(
         meta: { format: request.query.format },
         ipHmac: request.ipHmac,
       });
-      const safeTitle =
-        zip.title
-          .replace(/[^\p{L}\p{N}_-]+/gu, '-')
-          .replace(/^-+|-+$/g, '')
-          .slice(0, 60) || 'course';
+      // Streamed: a course with large media never sits in memory as a whole.
       return reply
         .header('Content-Type', 'application/zip')
         .header(
           'Content-Disposition',
-          `attachment; filename="${encodeURIComponent(safeTitle)}-${request.query.format}.zip"`,
+          `attachment; filename="${encodeURIComponent(exportFileName(zip.title, request.query.format))}"`,
         )
-        .send(zip.buffer);
+        .send(zip.stream);
     },
   );
 }
