@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { notifyPathAssigned } from '../mail/service.js';
 import { assertSeesAll, learnerScope, seesGroup, seesUser } from '../../policy/learners.js';
 import type { Assignment, PathDetail, PathInput, PathSummary } from '@coursecraft/shared';
 import type { AppContext, AuthState } from '../../http/context.js';
@@ -183,7 +184,7 @@ export async function createPathAssignments(
   ctx: AppContext,
   auth: AuthState,
   id: string,
-  input: { userIds: string[]; groupIds: string[]; dueAt: string | null },
+  input: { userIds: string[]; groupIds: string[]; dueAt: string | null; notify?: boolean },
 ): Promise<number> {
   const path = await ctx.db.selectFrom('learning_paths').select('id').where('id', '=', id).executeTakeFirst();
   if (!path) throw notFound('Path not found');
@@ -203,6 +204,7 @@ export async function createPathAssignments(
     throw badRequest('Unknown user or group');
   const dueAt = input.dueAt ? new Date(input.dueAt) : null;
   let count = 0;
+  const touched: string[] = [];
   await ctx.db.transaction().execute(async (tx) => {
     for (const [column, ids] of [
       ['user_id', users.map((u) => u.id)],
@@ -215,17 +217,21 @@ export async function createPathAssignments(
           .where('path_id', '=', id)
           .where(column, '=', target)
           .executeTakeFirst();
-        if (existing)
+        if (existing) {
           await tx
             .updateTable('path_assignments')
             .set({ due_at: dueAt })
             .where('id', '=', existing.id)
             .execute();
-        else
-          await tx
+          touched.push(existing.id);
+        } else {
+          const created = await tx
             .insertInto('path_assignments')
             .values({ path_id: id, [column]: target, due_at: dueAt, created_by: auth.userId })
-            .execute();
+            .returning('id')
+            .executeTakeFirstOrThrow();
+          touched.push(created.id);
+        }
         count += 1;
       }
     }
@@ -235,8 +241,10 @@ export async function createPathAssignments(
     action: 'path.assigned',
     targetType: 'learning_path',
     targetId: id,
-    meta: { users: users.length, groups: groups.length },
+    meta: { users: users.length, groups: groups.length, notify: input.notify ?? false },
   });
+  // One notice per learner and assignment, also when it is saved again.
+  if (input.notify) await notifyPathAssigned(ctx, touched);
   return count;
 }
 

@@ -659,6 +659,13 @@ test:db` starts an S3 server container (Scality CloudServer) besides
   managed database via `coursecraft db-bootstrap`. Helm chart and tests:
   `docs/kubernetes.md`.
 
+## 12j. Learning path mails
+
+- `pathAssigned` and `pathReminder` mails (plain text, DE/EN), claimed once
+  per learner and path assignment in `path_notices` (migration 0019).
+  Reminders go only to learners with open steps, in the same hourly run as
+  course reminders.
+
 ## 12i. Background exports, Excel, certificate check
 
 - Course exports are streamed (`streamExport`); the editor queues them

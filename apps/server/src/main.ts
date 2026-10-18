@@ -7,7 +7,7 @@ import { buildApp } from './http/app.js';
 import { buildContentApp } from './http/content-app.js';
 import { bossQueue, createBoss } from './jobs/queue.js';
 import { expireStale, handleConvertDone } from './modules/conversions/service.js';
-import { handleMailJob, sendDueReminders } from './modules/mail/service.js';
+import { handleMailJob, sendDueReminders, sendPathReminders } from './modules/mail/service.js';
 import { handleExportJob, purgeExports } from './modules/exports/jobs.js';
 import { issueSetupToken } from './modules/setup/service.js';
 import { serveMetrics } from './http/metrics.js';
@@ -143,7 +143,7 @@ every('conversion-sweep', CONVERSION_SWEEP_MS, async () => {
   if (expired) app.log.warn({ expired }, 'conversions without converter answer given up');
 });
 every('due-reminders', REMINDER_INTERVAL_MS, async () => {
-  const queued = await sendDueReminders(ctx);
+  const queued = (await sendDueReminders(ctx)) + (await sendPathReminders(ctx));
   if (queued) app.log.info({ queued }, 'due-date reminders queued');
 });
 every('directory-sync', REMINDER_INTERVAL_MS, async () => {

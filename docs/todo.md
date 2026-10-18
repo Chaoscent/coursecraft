@@ -11,7 +11,7 @@ issue once the repository is published.
 - [x] Quotas per tenant (users, storage) and an operator web interface.
 - [x] Exports as background jobs (large courses).
 - [x] XLSX report export; public verification page for certificates.
-- [ ] Learning paths: e-mail when assigned, reminders for due dates.
+- [x] Learning paths: e-mail when assigned, reminders for due dates.
 - [ ] OIDC/SAML groups and claims to roles; single logout.
 
 **Later (comfort and extensions):**
@@ -82,8 +82,8 @@ issue once the repository is published.
 
 ## Learning paths
 
-- [ ] E-mail notice when a path is assigned, and reminders for path due
-      dates.
+- [x] E-mail notice when a path is assigned, and reminders for path due
+      dates (only learners with open steps).
 - [ ] Path overview in reports (progress per learner across steps).
 - [ ] Prerequisites that are not a plain sequence (several courses before one).
 

@@ -430,6 +430,13 @@ export interface PeriodicJobsTable {
   locked_until: Timestamp;
 }
 
+export interface PathNoticesTable {
+  path_assignment_id: string;
+  user_id: string;
+  kind: 'assigned' | 'reminder';
+  sent_at: DefaultedTimestamp;
+}
+
 export interface CourseExportsTable {
   id: Generated<string>;
   course_id: string;
@@ -521,5 +528,6 @@ export interface Database {
   tenants: TenantsTable;
   group_managers: GroupManagersTable;
   course_exports: CourseExportsTable;
+  path_notices: PathNoticesTable;
   user_identities: UserIdentitiesTable;
 }

@@ -27,6 +27,14 @@ const TEMPLATES: Record<'de' | 'en', Record<MailJob['kind'] | 'test', Template>>
       subject: `Erinnerung: ${p['title'] ?? ''}`,
       text: `Hallo ${p['name'] ?? ''},\n\nder Kurs „${p['title'] ?? ''}“ ist bis ${p['due'] ?? ''} fällig und noch nicht abgeschlossen.\n\n${p['link'] ?? ''}`,
     }),
+    pathAssigned: (p) => ({
+      subject: `Neuer Lernpfad: ${p['title'] ?? ''}`,
+      text: `Hallo ${p['name'] ?? ''},\n\nIhnen wurde der Lernpfad „${p['title'] ?? ''}“ mit ${p['steps'] ?? ''} Kursen zugewiesen.${p['due'] ? ` Bitte schließen Sie ihn bis ${p['due']} ab.` : ''}\n\n${p['link'] ?? ''}`,
+    }),
+    pathReminder: (p) => ({
+      subject: `Erinnerung: ${p['title'] ?? ''}`,
+      text: `Hallo ${p['name'] ?? ''},\n\nder Lernpfad „${p['title'] ?? ''}“ ist bis ${p['due'] ?? ''} fällig. Offen sind noch ${p['open'] ?? ''} von ${p['steps'] ?? ''} Kursen.\n\n${p['link'] ?? ''}`,
+    }),
     test: () => ({
       subject: 'Coursecraft: Testnachricht',
       text: 'Die E-Mail-Einstellungen funktionieren.',
@@ -44,6 +52,14 @@ const TEMPLATES: Record<'de' | 'en', Record<MailJob['kind'] | 'test', Template>>
     reminder: (p) => ({
       subject: `Reminder: ${p['title'] ?? ''}`,
       text: `Hello ${p['name'] ?? ''},\n\nthe course “${p['title'] ?? ''}” is due by ${p['due'] ?? ''} and not completed yet.\n\n${p['link'] ?? ''}`,
+    }),
+    pathAssigned: (p) => ({
+      subject: `New learning path: ${p['title'] ?? ''}`,
+      text: `Hello ${p['name'] ?? ''},\n\nthe learning path “${p['title'] ?? ''}” with ${p['steps'] ?? ''} courses was assigned to you.${p['due'] ? ` Please complete it by ${p['due']}.` : ''}\n\n${p['link'] ?? ''}`,
+    }),
+    pathReminder: (p) => ({
+      subject: `Reminder: ${p['title'] ?? ''}`,
+      text: `Hello ${p['name'] ?? ''},\n\nthe learning path “${p['title'] ?? ''}” is due by ${p['due'] ?? ''}. ${p['open'] ?? ''} of ${p['steps'] ?? ''} courses are still open.\n\n${p['link'] ?? ''}`,
     }),
     test: () => ({
       subject: 'Coursecraft: test message',

@@ -7,7 +7,11 @@ import type { AddressInfo } from 'node:net';
 import { SMTPServer } from 'smtp-server';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { RecordingQueue } from '../../apps/server/src/jobs/queue.js';
-import { handleMailJob, sendDueReminders } from '../../apps/server/src/modules/mail/service.js';
+import {
+  handleMailJob,
+  sendDueReminders,
+  sendPathReminders,
+} from '../../apps/server/src/modules/mail/service.js';
 import { scorm12Package } from '../support/packages.js';
 import { createTestApp, type Actor, type TestApp } from '../support/test-app.js';
 import { uploadTo } from '../support/courses.js';
@@ -184,5 +188,72 @@ describe('e-mail', () => {
         .slice(remindersBefore)
         .every((j) => j.kind === 'reminder'),
     ).toBe(true);
+  });
+
+  it('notifies learners of a new learning path and reminds those with open steps', async () => {
+    await configure();
+    const item = async (title: string) =>
+      (await uploadTo(t, admin, '/api/library/import', 'p.zip', await scorm12Package({ title }))).json<{
+        id: string;
+      }>().id;
+    const steps = [await item('Pfad Teil 1'), await item('Pfad Teil 2')];
+    const path = (
+      await t.request(admin, 'POST', '/api/paths', {
+        title: 'Einarbeitung Vertrieb',
+        description: '',
+        sequential: false,
+        itemIds: steps,
+      })
+    ).json<{ id: string }>();
+    const open = await t.createUser(['learner']);
+    const finished = await t.createUser(['learner']);
+    const dueAt = new Date(Date.now() + 24 * 3_600_000).toISOString();
+    const before = mailJobs().length;
+    const assign = () =>
+      t.request(admin, 'POST', `/api/paths/${path.id}/assignments`, {
+        userIds: [open.id, finished.id],
+        groupIds: [],
+        dueAt,
+        notify: true,
+      });
+    expect((await assign()).statusCode).toBe(200);
+    expect((await assign()).statusCode).toBe(200);
+    const assigned = mailJobs().slice(before);
+    expect(assigned.map((j) => [j.kind, j.userId]).sort()).toEqual(
+      [
+        ['pathAssigned', open.id],
+        ['pathAssigned', finished.id],
+      ].sort(),
+    );
+    await deliverQueued(before);
+    expect(received.find((m) => m.to[0] === open.email)?.body).toContain('Einarbeitung Vertrieb');
+    expect(received.find((m) => m.to[0] === open.email)?.body).toContain('2 Kursen');
+
+    // One learner has completed both steps: no reminder for them.
+    const pkg = await t.ctx.db
+      .selectFrom('library_items')
+      .select(['id', 'package_id'])
+      .where('id', 'in', steps)
+      .execute();
+    for (const p of pkg)
+      await t.ctx.db
+        .insertInto('registrations')
+        .values({
+          user_id: finished.id,
+          library_item_id: p.id,
+          package_id: p.package_id,
+          attempt: 1,
+          completion: 'completed',
+        })
+        .execute();
+    const remindersBefore = mailJobs().length;
+    expect(await sendPathReminders(t.ctx)).toBe(1);
+    expect(await sendPathReminders(t.ctx)).toBe(0);
+    const reminder = mailJobs().slice(remindersBefore)[0];
+    expect(reminder).toMatchObject({
+      kind: 'pathReminder',
+      userId: open.id,
+      params: { open: '2', steps: '2' },
+    });
   });
 });

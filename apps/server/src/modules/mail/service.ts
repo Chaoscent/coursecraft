@@ -286,3 +286,124 @@ export async function sendDueReminders(ctx: AppContext, now = new Date()): Promi
   }
   return queued;
 }
+
+/* ---------- Learning paths ---------- */
+
+async function claimPathNotice(
+  ctx: AppContext,
+  pathAssignmentId: string,
+  userId: string,
+  kind: 'assigned' | 'reminder',
+) {
+  const row = await ctx.db
+    .insertInto('path_notices')
+    .values({ path_assignment_id: pathAssignmentId, user_id: userId, kind })
+    .onConflict((oc) => oc.doNothing())
+    .returning('user_id')
+    .executeTakeFirst();
+  return !!row;
+}
+
+/** Steps of a path and, per learner, how many of them are still not completed. */
+async function openSteps(ctx: AppContext, pathId: string, users: string[]) {
+  const steps = await ctx.db
+    .selectFrom('path_steps')
+    .select('library_item_id')
+    .where('path_id', '=', pathId)
+    .execute();
+  const itemIds = steps.map((s) => s.library_item_id);
+  const done = new Map<string, Set<string>>();
+  if (itemIds.length && users.length) {
+    const rows = await ctx.db
+      .selectFrom('registrations')
+      .select(['user_id', 'library_item_id'])
+      .where('library_item_id', 'in', itemIds)
+      .where('user_id', 'in', users)
+      .where('completion', '=', 'completed')
+      .execute();
+    for (const r of rows) done.set(r.user_id, (done.get(r.user_id) ?? new Set()).add(r.library_item_id));
+  }
+  return { steps: itemIds.length, open: (userId: string) => itemIds.length - (done.get(userId)?.size ?? 0) };
+}
+
+/** "You have a new learning path" for every learner of the given path assignments, once each. */
+export async function notifyPathAssigned(ctx: AppContext, pathAssignmentIds: string[]): Promise<number> {
+  if (!pathAssignmentIds.length || !(await mailEnabled(ctx))) return 0;
+  const rows = await ctx.db
+    .selectFrom('path_assignments')
+    .innerJoin('learning_paths', 'learning_paths.id', 'path_assignments.path_id')
+    .select([
+      'path_assignments.id',
+      'path_assignments.path_id',
+      'path_assignments.user_id',
+      'path_assignments.group_id',
+      'path_assignments.due_at',
+      'learning_paths.title',
+    ])
+    .where('path_assignments.id', 'in', pathAssignmentIds)
+    .execute();
+  let queued = 0;
+  for (const a of rows) {
+    const users = await recipients(ctx, a);
+    const { steps } = await openSteps(ctx, a.path_id, []);
+    for (const userId of users) {
+      if (!(await claimPathNotice(ctx, a.id, userId, 'assigned'))) continue;
+      await queueMail(ctx, {
+        kind: 'pathAssigned',
+        userId,
+        params: {
+          title: a.title,
+          steps: String(steps),
+          link: learnLink(ctx),
+          ...(a.due_at ? { dueAt: a.due_at.toISOString() } : {}),
+        },
+      });
+      queued += 1;
+    }
+  }
+  return queued;
+}
+
+/** Reminders for learning paths due within the next days with open steps; once per learner. */
+export async function sendPathReminders(ctx: AppContext, now = new Date()): Promise<number> {
+  if (!(await mailEnabled(ctx))) return 0;
+  const until = new Date(now.getTime() + REMINDER_HOURS * 3_600_000);
+  const due = await ctx.db
+    .selectFrom('path_assignments')
+    .innerJoin('learning_paths', 'learning_paths.id', 'path_assignments.path_id')
+    .select([
+      'path_assignments.id',
+      'path_assignments.path_id',
+      'path_assignments.user_id',
+      'path_assignments.group_id',
+      'path_assignments.due_at',
+      'learning_paths.title',
+    ])
+    .where('learning_paths.status', '=', 'active')
+    .where('path_assignments.due_at', '>', now)
+    .where('path_assignments.due_at', '<=', until)
+    .execute();
+  let queued = 0;
+  for (const a of due) {
+    const users = await recipients(ctx, a);
+    if (!users.length) continue;
+    const progress = await openSteps(ctx, a.path_id, users);
+    for (const userId of users) {
+      const open = progress.open(userId);
+      if (open === 0 || !(await claimPathNotice(ctx, a.id, userId, 'reminder'))) continue;
+      await queueMail(ctx, {
+        kind: 'pathReminder',
+        userId,
+        params: {
+          title: a.title,
+          steps: String(progress.steps),
+          open: String(open),
+          link: learnLink(ctx),
+          dueAt: a.due_at?.toISOString() ?? '',
+        },
+      });
+      queued += 1;
+    }
+  }
+  return queued;
+}

@@ -20,6 +20,7 @@ import * as m0015 from './0015-tenancy.js';
 import * as m0016 from './0016-group-managers.js';
 import * as m0017 from './0017-tenant-quotas.js';
 import * as m0018 from './0018-course-exports.js';
+import * as m0019 from './0019-path-notices.js';
 
 /** Ordered list of all migrations. Released migrations never change. */
 export const MIGRATIONS: Readonly<Record<string, Migration>> = {
@@ -41,6 +42,7 @@ export const MIGRATIONS: Readonly<Record<string, Migration>> = {
   '0016-group-managers': m0016,
   '0017-tenant-quotas': m0017,
   '0018-course-exports': m0018,
+  '0019-path-notices': m0019,
 };
 
 /**

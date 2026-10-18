@@ -75,7 +75,7 @@ export function AssignDialog({
           userIds: [...users],
           groupIds: [...groups],
           dueAt: due ? new Date(`${due}T23:59:00`).toISOString() : null,
-          notify: base === '/api/library' && notify,
+          notify,
         },
       });
       setUsers(new Set());
@@ -131,13 +131,11 @@ export function AssignDialog({
           </div>
         </FormRow>
         <TextField label={t('library.dueDate')} type="date" value={due} onChange={setDue} />
-        {base === '/api/library' ? (
-          <FormRow label="">
-            <Checkbox isSelected={notify} onChange={setNotify}>
-              {t('library.notify')}
-            </Checkbox>
-          </FormRow>
-        ) : null}
+        <FormRow label="">
+          <Checkbox isSelected={notify} onChange={setNotify}>
+            {t('library.notify')}
+          </Checkbox>
+        </FormRow>
       </FormGrid>
       <h3 className={styles.sectionTitle}>{t('library.current')}</h3>
       <DataTable
