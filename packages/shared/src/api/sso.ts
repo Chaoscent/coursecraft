@@ -2,7 +2,7 @@
 import { z } from 'zod';
 import { uuidSchema } from './common.js';
 
-export const SSO_KINDS = ['oidc', 'saml', 'ldap'] as const;
+export const SSO_KINDS = ['oidc', 'saml', 'ldap', 'proxy'] as const;
 export const SSO_ROLES = ['learner', 'author', 'trainer'] as const;
 /** Reasons the login page can show after a failed single sign-on. */
 export const SSO_ERRORS = [
@@ -141,7 +141,49 @@ const ldapInput = z
     message: 'Passwords are only sent over ldaps:// or StartTLS',
   });
 
-export const ssoProviderInputSchema = z.discriminatedUnion('kind', [oidcInput, samlInput, ldapInput]);
+const headerName = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .regex(/^[a-z][a-z0-9-]{0,63}$/);
+
+const proxyInput = z
+  .object({
+    kind: z.literal('proxy'),
+    ...common,
+    /** Header in which the reverse proxy passes the authenticated Windows account. */
+    header: headerName,
+    /** Addresses or networks (CIDR) of the reverse proxies; requests from elsewhere are refused. */
+    trustedProxies: z
+      .array(
+        z
+          .string()
+          .trim()
+          .regex(/^[0-9a-fA-F:.]+(\/\d{1,3})?$/),
+      )
+      .min(1)
+      .max(20),
+    /** Header that must carry the shared secret (empty = no secret check). */
+    secretHeader: z.union([z.literal(''), headerName]),
+    /** New shared secret; omitted keeps the stored one, null removes it. */
+    sharedSecret: z.string().min(16).max(500).nullable().optional(),
+    /** `user@REALM` and `DOMAIN\\user` become `user`. */
+    stripRealm: z.boolean(),
+    /** Directory provider that supplies e-mail, name and groups for the account (optional). */
+    directoryProviderId: uuidSchema.nullable(),
+  })
+  .strict()
+  .refine((v) => v.secretHeader === '' || v.sharedSecret !== null, {
+    path: ['sharedSecret'],
+    message: 'A secret header needs a shared secret',
+  });
+
+export const ssoProviderInputSchema = z.discriminatedUnion('kind', [
+  oidcInput,
+  samlInput,
+  ldapInput,
+  proxyInput,
+]);
 export type SsoProviderInput = z.infer<typeof ssoProviderInputSchema>;
 
 export const ssoProviderSchema = z.object({

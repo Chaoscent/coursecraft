@@ -13,6 +13,7 @@ import * as m0008 from './0008-certificates.js';
 import * as m0009 from './0009-paths.js';
 import * as m0010 from './0010-sso.js';
 import * as m0011 from './0011-ldap.js';
+import * as m0012 from './0012-proxy-auth.js';
 
 /** Ordered list of all migrations. Released migrations never change. */
 export const MIGRATIONS: Readonly<Record<string, Migration>> = {
@@ -27,6 +28,7 @@ export const MIGRATIONS: Readonly<Record<string, Migration>> = {
   '0009-paths': m0009,
   '0010-sso': m0010,
   '0011-ldap': m0011,
+  '0012-proxy-auth': m0012,
 };
 
 /**

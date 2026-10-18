@@ -16,6 +16,7 @@ import type { AppContext } from '../../http/context.js';
 import { AppError } from '../../http/errors.js';
 import { startSession } from '../auth/routes.js';
 import { ldapLogin } from './ldap.js';
+import { proxyLogin } from './proxy.js';
 import {
   deleteProvider,
   finishOidc,
@@ -100,6 +101,15 @@ export function ssoRoutes(app: FastifyInstance, ctx: AppContext): void {
       });
       return { status: 'ok' as const, session };
     },
+  );
+
+  r.get(
+    '/api/auth/proxy/:id/login',
+    {
+      config: { permission: 'public', rateLimit: rate },
+      schema: { params: idParamSchema },
+    },
+    async (request, reply) => conclude(request, reply, await proxyLogin(ctx, request.params.id, request)),
   );
 
   r.get(

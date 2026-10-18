@@ -25,7 +25,7 @@ export const metadataUrl = (ctx: AppContext, id: string) =>
 
 export type Row = {
   id: string;
-  kind: 'oidc' | 'saml' | 'ldap';
+  kind: 'oidc' | 'saml' | 'ldap' | 'proxy';
   name: string;
   enabled: boolean;
   config: Record<string, unknown>;
@@ -49,7 +49,14 @@ const toProvider = (ctx: AppContext, r: Row): SsoProvider => ({
   emailTrusted: r.email_trusted,
   config: r.config,
   secret: { set: r.secret !== null, last4: r.secret_last4 },
-  callbackUrl: r.kind === 'saml' ? acsUrl(ctx) : r.kind === 'ldap' ? '' : callbackUrl(ctx),
+  callbackUrl:
+    r.kind === 'saml'
+      ? acsUrl(ctx)
+      : r.kind === 'proxy'
+        ? new URL(`/api/auth/proxy/${r.id}/login`, ctx.config.publicUrl).toString()
+        : r.kind === 'ldap'
+          ? ''
+          : callbackUrl(ctx),
   metadataUrl: r.kind === 'saml' ? metadataUrl(ctx, r.id) : null,
   updatedAt: r.updated_at.toISOString(),
 });
@@ -80,6 +87,14 @@ function providerConfig(input: SsoProviderInput): Record<string, unknown> {
         idpCert: input.idpCert,
         spEntityId: input.spEntityId,
       };
+    case 'proxy':
+      return {
+        header: input.header,
+        trustedProxies: input.trustedProxies,
+        secretHeader: input.secretHeader,
+        stripRealm: input.stripRealm,
+        directoryProviderId: input.directoryProviderId,
+      };
     case 'ldap':
       return {
         url: input.url,
@@ -107,7 +122,13 @@ export async function saveProvider(
 ): Promise<string> {
   const config = providerConfig(input);
   const secret =
-    input.kind === 'oidc' ? input.clientSecret : input.kind === 'ldap' ? input.bindPassword : undefined;
+    input.kind === 'oidc'
+      ? input.clientSecret
+      : input.kind === 'ldap'
+        ? input.bindPassword
+        : input.kind === 'proxy'
+          ? input.sharedSecret
+          : undefined;
   const fields = {
     kind: input.kind,
     name: input.name,
@@ -216,7 +237,7 @@ async function oidcConfiguration(ctx: AppContext, row: Row): Promise<client.Conf
 export async function enabledProvider(
   ctx: AppContext,
   id: string,
-  kind: 'oidc' | 'saml' | 'ldap',
+  kind: 'oidc' | 'saml' | 'ldap' | 'proxy',
 ): Promise<Row> {
   const row = await ctx.db
     .selectFrom('sso_providers')
@@ -471,7 +492,7 @@ export async function startLogin(ctx: AppContext, reply: FastifyReply, providerI
     .where('id', '=', providerId)
     .where('enabled', '=', true)
     .executeTakeFirst();
-  if (!row || row.kind === 'ldap') throw notFound('Provider not found');
+  if (!row || row.kind === 'ldap' || row.kind === 'proxy') throw notFound('Provider not found');
   return row.kind === 'saml' ? startSaml(ctx, reply, providerId) : startOidc(ctx, reply, providerId);
 }
 

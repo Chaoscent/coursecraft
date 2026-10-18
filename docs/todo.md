@@ -33,7 +33,9 @@ issue once the repository is published.
 
 - [ ] Map OIDC/SAML provider groups or claims to Coursecraft roles (done for
       LDAP) and map directory groups to Coursecraft groups.
-- [ ] Kerberos/SPNEGO single sign-on for domain computers (GPO-managed browsers).
+- [ ] In-app Kerberos/SPNEGO (no reverse proxy); the proxy variant is done
+      (`docs/windows-sso.md`) but untested against a real domain.
+- [ ] Automatic redirect to Windows sign-in for domain computers.
 - [ ] Scheduled directory sync (deactivate accounts that left the directory);
       per-account sign-in throttle for directory logins.
 - [ ] Option to restrict local password sign-in to administrators.

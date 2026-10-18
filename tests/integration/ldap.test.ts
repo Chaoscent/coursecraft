@@ -173,4 +173,51 @@ describe('directory sign-in', () => {
     const other = await configure({ name: 'Falsche CA', caCert: '' });
     expect((await signIn(other, 'fry', 'fry')).statusCode).toBe(401);
   });
+
+  it('signs in a proxy-authenticated account with e-mail, name and groups from the directory', async () => {
+    const directory = await configure({
+      name: 'Verzeichnis für Proxy',
+      groupRoles: [{ group: `cn=admin_staff,${BASE}`, role: 'trainer' }],
+    });
+    const proxy = await t.request(admin, 'POST', '/api/sso/providers', {
+      kind: 'proxy',
+      name: 'Windows',
+      enabled: true,
+      header: 'x-remote-user',
+      trustedProxies: ['10.9.8.7'],
+      secretHeader: '',
+      stripRealm: true,
+      directoryProviderId: directory,
+      allowedDomains: [],
+      autoCreate: true,
+      defaultRole: 'learner',
+      emailTrusted: false,
+    });
+    expect(proxy.statusCode, proxy.body).toBe(200);
+    const proxyId = proxy.json<{ id: string }>().id;
+    const res = await t.app.inject({
+      method: 'GET',
+      url: `/api/auth/proxy/${proxyId}/login`,
+      remoteAddress: '10.9.8.7',
+      headers: { 'x-remote-user': 'PLANETEXPRESS\\professor' },
+    });
+    expect(res.headers.location, res.body).toBe('/');
+    const session = res.cookies.find((c) => c.name === SESSION_COOKIE)?.value ?? '';
+    const me = await t.app.inject({
+      method: 'GET',
+      url: '/api/session',
+      cookies: { [SESSION_COOKIE]: session },
+    });
+    const user = me.json<{ session: { user: { email: string; displayName: string; roles: string[] } } }>()
+      .session.user;
+    expect(user).toMatchObject({ email: 'professor@planetexpress.com', displayName: 'Hubert J. Farnsworth' });
+    expect([...user.roles].sort()).toEqual(['learner', 'trainer']);
+    const unknown = await t.app.inject({
+      method: 'GET',
+      url: `/api/auth/proxy/${proxyId}/login`,
+      remoteAddress: '10.9.8.7',
+      headers: { 'x-remote-user': 'nobody@PLANETEXPRESS.COM' },
+    });
+    expect(unknown.cookies.find((c) => c.name === SESSION_COOKIE)).toBeUndefined();
+  });
 });

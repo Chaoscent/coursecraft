@@ -154,7 +154,11 @@ export function LoginPage() {
             <span className={styles.ssoLabel}>{t('login.sso.or')}</span>
             {redirects.map((p) => (
               // A full page navigation: the provider's pages replace ours and send the browser back.
-              <a key={p.id} className={styles.ssoLink} href={`/api/auth/sso/${p.id}/start`}>
+              <a
+                key={p.id}
+                className={styles.ssoLink}
+                href={p.kind === 'proxy' ? `/api/auth/proxy/${p.id}/login` : `/api/auth/sso/${p.id}/start`}
+              >
                 {t('login.sso.with', { name: p.name })}
               </a>
             ))}

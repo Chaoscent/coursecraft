@@ -71,7 +71,23 @@ export async function ldapLogin(
 ): Promise<Outcome> {
   // An empty password would be an unauthenticated bind, which many servers accept.
   if (!password || !username) return { error: 'denied' };
-  const row = await enabledProvider(ctx, providerId, 'ldap');
+  return directorySignIn(ctx, await enabledProvider(ctx, providerId, 'ldap'), username, password);
+}
+
+/**
+ * The same, for a person a trusted reverse proxy has already authenticated
+ * (Kerberos): the directory only supplies the profile and the groups.
+ */
+export function directoryLookup(ctx: AppContext, row: Row, username: string): Promise<Outcome> {
+  return directorySignIn(ctx, row, username, null);
+}
+
+async function directorySignIn(
+  ctx: AppContext,
+  row: Row,
+  username: string,
+  password: string | null,
+): Promise<Outcome> {
   const c = row.config as unknown as LdapConfig;
   const client = clientFor(c);
   try {
@@ -90,11 +106,13 @@ export async function ldapLogin(
     // Zero hits: unknown name. Several hits: the filter is ambiguous, so nobody gets in.
     const [entry] = searchEntries;
     if (!entry || searchEntries.length !== 1) return { error: 'denied' };
-    try {
-      await client.bind(entry.dn, password);
-    } catch (error) {
-      if (error instanceof InvalidCredentialsError) return { error: 'denied' };
-      throw error;
+    if (password !== null) {
+      try {
+        await client.bind(entry.dn, password);
+      } catch (error) {
+        if (error instanceof InvalidCredentialsError) return { error: 'denied' };
+        throw error;
+      }
     }
     const groups = texts(entry[c.groupAttribute]).map((g) => g.toLowerCase());
     if (c.requiredGroup && !groups.includes(c.requiredGroup.toLowerCase())) return { error: 'denied' };

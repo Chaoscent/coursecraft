@@ -616,6 +616,14 @@ TOTP secrets, OIDC client secrets, and SMTP passwords. The API returns only
   (administrator is never mapped). `tests/integration/ldap.test.ts` runs
   against an OpenLDAP container over LDAPS.
 
+- Windows sign-in (`modules/sso/proxy.ts`, kind `proxy`, migration 0012): a
+  reverse proxy authenticates with Kerberos and passes the account in a header
+  to `GET /api/auth/proxy/:id/login`. The header counts only from the
+  configured proxy addresses (TCP peer, never `X-Forwarded-For`) and, if set,
+  with the shared secret. With a directory provider chosen, e-mail, name and
+  groups come from LDAP and the identity equals the password login's. Setup:
+  `docs/windows-sso.md`.
+
 ## 12e. Performance (Phase 8)
 
 - Pages for authors and administrators are loaded on demand (route-level code

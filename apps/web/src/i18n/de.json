@@ -1189,7 +1189,8 @@
     "kinds": {
       "oidc": "OpenID Connect",
       "saml": "SAML 2.0",
-      "ldap": "LDAP / Active Directory"
+      "ldap": "LDAP / Active Directory",
+      "proxy": "Windows-Anmeldung (Reverse-Proxy)"
     },
     "entryPoint": "Single-Sign-on-URL des Anbieters",
     "entryPointHint": "Dorthin wird der Browser zum Anmelden geschickt (HTTP-Redirect).",
@@ -1225,6 +1226,19 @@
     "groupRoles": "Gruppen und Rollen",
     "groupRolesHint": "Eine Zeile je Zuordnung: Gruppen-DN => Rolle (learner, author, trainer). Wirkt bei jeder Anmeldung. Administrator wird nie vergeben.",
     "ldapNote": "Coursecraft prüft Passwörter direkt am Verzeichnisserver und speichert sie nicht. Konten werden über die E-Mail-Adresse verknüpft.",
-    "groupRolesInvalid": "Ungültige Zeile in den Gruppenzuordnungen: {{line}}"
+    "groupRolesInvalid": "Ungültige Zeile in den Gruppenzuordnungen: {{line}}",
+    "proxyNote": "Ein vorgeschalteter Webserver (Apache mit mod_auth_gssapi, IIS) authentifiziert per Kerberos und übergibt das Konto in einem Header. Nur der Pfad /api/auth/proxy/… darf dort geschützt sein.",
+    "proxyUrl": "Diesen Pfad am Proxy schützen: {{url}}",
+    "proxyHeader": "Header mit dem Konto",
+    "proxyHeaderHint": "Der Proxy muss ihn immer selbst setzen und Werte von Clients überschreiben.",
+    "trustedProxies": "Vertrauenswürdige Proxys",
+    "trustedProxiesHint": "Adressen oder Netze (CIDR), eine pro Zeile. Anfragen von anderen Adressen werden abgelehnt. Die App darf nur über den Proxy erreichbar sein.",
+    "secretHeader": "Header für das gemeinsame Geheimnis",
+    "secretHeaderHint": "Zusätzliche Absicherung; der Proxy sendet das Geheimnis in diesem Header. Leer = keine Prüfung.",
+    "sharedSecret": "Gemeinsames Geheimnis",
+    "sharedSecretHint": "Mindestens 16 Zeichen. Wird verschlüsselt gespeichert.",
+    "stripRealm": "Domäne entfernen (user@REALM und DOMÄNE\\\\user werden zu user)",
+    "directory": "Verzeichnis für E-Mail, Name und Gruppen",
+    "noDirectory": "Keines (Konto als E-Mail-Adresse verwenden)"
   }
 }

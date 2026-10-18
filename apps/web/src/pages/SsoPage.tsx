@@ -47,6 +47,11 @@ function parseGroupRoles(text: string): { group: string; role: (typeof SSO_ROLES
     });
 }
 
+const listOf = (p: SsoProvider | null, key: string): string => {
+  const value = p?.config[key];
+  return Array.isArray(value) ? value.join('\n') : '';
+};
+
 const cfg = (p: SsoProvider | null, key: string, fallback = ''): string => {
   const value = p?.config[key];
   return typeof value === 'string' ? value : fallback;
@@ -54,10 +59,12 @@ const cfg = (p: SsoProvider | null, key: string, fallback = ''): string => {
 
 function ProviderDialog({
   provider,
+  directories,
   onClose,
   onSaved,
 }: {
   provider: SsoProvider | null;
+  directories: SsoProvider[];
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -90,6 +97,11 @@ function ProviderDialog({
   const [groupAttribute, setGroupAttribute] = useState(cfg(provider, 'groupAttribute', 'memberOf'));
   const [requiredGroup, setRequiredGroup] = useState(cfg(provider, 'requiredGroup'));
   const [groupRoles, setGroupRoles] = useState(groupRolesText(provider));
+  const [header, setHeader] = useState(cfg(provider, 'header', 'x-remote-user'));
+  const [trustedProxies, setTrustedProxies] = useState(listOf(provider, 'trustedProxies'));
+  const [secretHeader, setSecretHeader] = useState(cfg(provider, 'secretHeader', 'x-proxy-secret'));
+  const [stripRealm, setStripRealm] = useState(provider?.config['stripRealm'] !== false);
+  const [directoryId, setDirectoryId] = useState(cfg(provider, 'directoryProviderId', 'none'));
   const [enabled, setEnabled] = useState(provider?.enabled ?? true);
   const [error, setError] = useState<string | null>(null);
 
@@ -111,33 +123,45 @@ function ProviderDialog({
       const body =
         kind === 'saml'
           ? { kind, ...shared, entryPoint, idpIssuer, idpCert, spEntityId }
-          : kind === 'ldap'
+          : kind === 'proxy'
             ? {
                 kind,
                 ...shared,
-                url: ldapUrl,
-                startTls,
-                caCert,
-                tlsServerName,
-                bindDn,
-                userBase,
-                userFilter,
-                subjectAttribute,
-                emailAttribute,
-                nameAttribute,
-                groupAttribute,
-                requiredGroup,
-                groupRoles: parseGroupRoles(groupRoles),
-                ...secretField('bindPassword'),
+                header,
+                trustedProxies: trustedProxies.split(/[\s,;]+/).filter(Boolean),
+                // The header name only means something together with a secret.
+                secretHeader: !removeSecret && (secret || provider?.secret.set) ? secretHeader : '',
+                stripRealm,
+                directoryProviderId: directoryId === 'none' ? null : directoryId,
+                ...secretField('sharedSecret'),
               }
-            : {
-                kind,
-                ...shared,
-                issuer,
-                clientId,
-                scopes,
-                ...secretField('clientSecret'),
-              };
+            : kind === 'ldap'
+              ? {
+                  kind,
+                  ...shared,
+                  url: ldapUrl,
+                  startTls,
+                  caCert,
+                  tlsServerName,
+                  bindDn,
+                  userBase,
+                  userFilter,
+                  subjectAttribute,
+                  emailAttribute,
+                  nameAttribute,
+                  groupAttribute,
+                  requiredGroup,
+                  groupRoles: parseGroupRoles(groupRoles),
+                  ...secretField('bindPassword'),
+                }
+              : {
+                  kind,
+                  ...shared,
+                  issuer,
+                  clientId,
+                  scopes,
+                  ...secretField('clientSecret'),
+                };
       if (provider) await api(idParamSchema, `/api/sso/providers/${provider.id}`, { method: 'PUT', body });
       else await api(idParamSchema, '/api/sso/providers', { method: 'POST', body });
       onSaved();
@@ -169,6 +193,11 @@ function ProviderDialog({
       {error ? <Notice tone="danger">{error}</Notice> : null}
       {kind === 'ldap' ? (
         <Notice tone="info">{t('sso.ldapNote')}</Notice>
+      ) : kind === 'proxy' ? (
+        <Notice tone="info">
+          {t('sso.proxyNote')}
+          {provider ? ` ${t('sso.proxyUrl', { url: provider.callbackUrl })}` : ''}
+        </Notice>
       ) : provider ? (
         <Notice tone="info">
           {t(kind === 'saml' ? 'sso.acsHint' : 'sso.callbackHint', { url: provider.callbackUrl })}
@@ -224,6 +253,64 @@ function ProviderDialog({
               </FormRow>
             ) : null}
             <TextField label={t('sso.scopes')} value={scopes} onChange={setScopes} />
+          </>
+        ) : kind === 'proxy' ? (
+          <>
+            <TextField
+              label={t('sso.proxyHeader')}
+              value={header}
+              onChange={setHeader}
+              isRequired
+              description={t('sso.proxyHeaderHint')}
+            />
+            <TextField
+              label={t('sso.trustedProxies')}
+              multiline
+              value={trustedProxies}
+              onChange={setTrustedProxies}
+              isRequired
+              description={t('sso.trustedProxiesHint')}
+            />
+            <TextField
+              label={t('sso.secretHeader')}
+              value={secretHeader}
+              onChange={setSecretHeader}
+              description={t('sso.secretHeaderHint')}
+            />
+            <TextField
+              label={t('sso.sharedSecret')}
+              type="password"
+              autoComplete="off"
+              value={secret}
+              onChange={setSecret}
+              isDisabled={removeSecret}
+              description={
+                provider?.secret.set
+                  ? t('sso.secretStored', { last4: provider.secret.last4 ?? '' })
+                  : t('sso.sharedSecretHint')
+              }
+            />
+            {provider?.secret.set ? (
+              <FormRow label="">
+                <Checkbox isSelected={removeSecret} onChange={setRemoveSecret}>
+                  {t('sso.removeSecret')}
+                </Checkbox>
+              </FormRow>
+            ) : null}
+            <FormRow label="">
+              <Checkbox isSelected={stripRealm} onChange={setStripRealm}>
+                {t('sso.stripRealm')}
+              </Checkbox>
+            </FormRow>
+            <SelectField
+              label={t('sso.directory')}
+              value={directoryId}
+              onChange={setDirectoryId}
+              options={[
+                { id: 'none', label: t('sso.noDirectory') },
+                ...directories.map((d) => ({ id: d.id, label: d.name })),
+              ]}
+            />
           </>
         ) : kind === 'ldap' ? (
           <>
@@ -370,7 +457,7 @@ function ProviderDialog({
           onChange={setDomains}
           description={t('sso.domainsHint')}
         />
-        {kind !== 'saml' ? (
+        {kind === 'oidc' || kind === 'ldap' ? (
           <FormRow label="">
             <Checkbox isSelected={emailTrusted} onChange={setEmailTrusted}>
               {t('sso.emailTrusted')}
@@ -456,7 +543,7 @@ export function SsoPage() {
             {
               id: 'issuer',
               label: t('sso.issuer'),
-              render: (p) => cfg(p, 'issuer') || cfg(p, 'entryPoint') || cfg(p, 'url'),
+              render: (p) => cfg(p, 'issuer') || cfg(p, 'entryPoint') || cfg(p, 'url') || cfg(p, 'header'),
             },
             {
               id: 'create',
@@ -474,10 +561,20 @@ export function SsoPage() {
         />
       </div>
       {dialog === 'new' ? (
-        <ProviderDialog provider={null} onClose={() => setDialog(null)} onSaved={done} />
+        <ProviderDialog
+          provider={null}
+          directories={providers.filter((p) => p.kind === 'ldap')}
+          onClose={() => setDialog(null)}
+          onSaved={done}
+        />
       ) : null}
       {dialog === 'edit' && current ? (
-        <ProviderDialog provider={current} onClose={() => setDialog(null)} onSaved={done} />
+        <ProviderDialog
+          provider={current}
+          directories={providers.filter((p) => p.kind === 'ldap')}
+          onClose={() => setDialog(null)}
+          onSaved={done}
+        />
       ) : null}
       {dialog === 'delete' && current ? (
         <ConfirmDialog

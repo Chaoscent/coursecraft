@@ -1189,7 +1189,8 @@
     "kinds": {
       "oidc": "OpenID Connect",
       "saml": "SAML 2.0",
-      "ldap": "LDAP / Active Directory"
+      "ldap": "LDAP / Active Directory",
+      "proxy": "Windows sign-in (reverse proxy)"
     },
     "entryPoint": "Provider sign-on URL",
     "entryPointHint": "The browser is sent here to sign in (HTTP-Redirect).",
@@ -1225,6 +1226,19 @@
     "groupRoles": "Groups and roles",
     "groupRolesHint": "One mapping per line: group DN => role (learner, author, trainer). Applied at every sign-in. Administrator is never granted.",
     "ldapNote": "Coursecraft checks passwords directly against the directory server and never stores them. Accounts are linked by e-mail address.",
-    "groupRolesInvalid": "Invalid line in the group mappings: {{line}}"
+    "groupRolesInvalid": "Invalid line in the group mappings: {{line}}",
+    "proxyNote": "A web server in front (Apache with mod_auth_gssapi, IIS) authenticates with Kerberos and passes the account in a header. Protect only the path /api/auth/proxy/… there.",
+    "proxyUrl": "Protect this path at the proxy: {{url}}",
+    "proxyHeader": "Header carrying the account",
+    "proxyHeaderHint": "The proxy must always set it and overwrite values sent by clients.",
+    "trustedProxies": "Trusted proxies",
+    "trustedProxiesHint": "Addresses or networks (CIDR), one per line. Requests from other addresses are refused. The app must only be reachable through the proxy.",
+    "secretHeader": "Header for the shared secret",
+    "secretHeaderHint": "Extra protection; the proxy sends the secret in this header. Empty = no check.",
+    "sharedSecret": "Shared secret",
+    "sharedSecretHint": "At least 16 characters. Stored encrypted.",
+    "stripRealm": "Remove the domain (user@REALM and DOMAIN\\\\user become user)",
+    "directory": "Directory for e-mail, name and groups",
+    "noDirectory": "None (use the account as e-mail address)"
   }
 }

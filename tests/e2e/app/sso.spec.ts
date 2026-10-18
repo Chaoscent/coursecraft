@@ -89,3 +89,40 @@ test('a directory provider adds a sign-in method to the login page without chang
   await expect(page.getByRole('row', { name: new RegExp(name) })).toHaveCount(0);
   expect(problems.filter((p) => !p.includes('401'))).toEqual([]);
 });
+
+test('a Windows sign-in provider adds a link to the protected proxy path', async ({
+  page,
+  baseURL,
+  browserName,
+}) => {
+  const problems = watchPage(page, baseURL ?? '');
+  const name = `Windows ${browserName} ${Date.now()}`;
+  await login(page, ADMIN.email, ADMIN.password);
+  await page.getByRole('link', { name: 'Single Sign-on' }).click();
+  await page.getByRole('button', { name: 'Neuer Anbieter …' }).click();
+  const form = page.getByRole('dialog');
+  await form.getByRole('button', { name: /Protokoll/ }).click();
+  await page.getByRole('option', { name: 'Windows-Anmeldung (Reverse-Proxy)' }).click();
+  await form.getByLabel('Name', { exact: true }).fill(name);
+  await form.getByLabel('Vertrauenswürdige Proxys').fill('10.0.0.5\n192.168.0.0/16');
+  await form.getByRole('button', { name: 'Speichern' }).click();
+  await expect(page.getByRole('row', { name: new RegExp(name) })).toBeVisible();
+
+  await page.context().clearCookies();
+  await page.goto('/login');
+  await expect(page.getByRole('link', { name: `Anmelden mit ${name}` })).toHaveAttribute(
+    'href',
+    /^\/api\/auth\/proxy\/[0-9a-f-]{36}\/login$/,
+  );
+  // Reached directly, without the proxy: refused with a reason, never signed in.
+  await page.getByRole('link', { name: `Anmelden mit ${name}` }).click();
+  await expect(page).toHaveURL(/\/login\?sso_error=denied/);
+
+  await login(page, ADMIN.email, ADMIN.password);
+  await page.goto('/admin/sso');
+  await page.getByRole('row', { name: new RegExp(name) }).click();
+  await page.getByRole('button', { name: 'Löschen' }).first().click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Löschen' }).click();
+  await expect(page.getByRole('row', { name: new RegExp(name) })).toHaveCount(0);
+  expect(problems.filter((p) => !p.includes('401'))).toEqual([]);
+});

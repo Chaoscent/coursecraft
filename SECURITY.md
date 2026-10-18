@@ -303,6 +303,20 @@ change:
   groups are not expanded by `memberOf`; use the in-chain matching rule in the
   search filter for that.
 
+## 5g. Windows sign-in through a reverse proxy
+
+- The account header is trusted only if the **TCP peer address** is in the
+  configured list (the address of the socket, so `X-Forwarded-For` cannot
+  forge it) and the shared secret header matches (constant-time compare).
+  Anything else is refused and logged. Several header values, control
+  characters or an empty value are refused too.
+- The risk is operational: if the application port is reachable by users and
+  the proxy list contains their network, anyone can claim any account. The
+  documentation requires the port to be reachable only from the proxy and
+  recommends the shared secret as a second factor of trust.
+- Roles from directory groups are applied as for the password login;
+  administrator is never granted.
+
 ## 8. Known limitations
 
 - Third-party packages run arbitrary JavaScript on the content origin. They
