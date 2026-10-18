@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+# TLS in front of the E2E stack, as in production: all browser engines test
+# over HTTPS (WebKit stores Secure cookies only there).
+{
+	admin off
+	skip_install_trust
+}
+
+localhost:{$E2E_PORT} {
+	tls internal
+	reverse_proxy 127.0.0.1:{$APP_PORT}
+}
+
+localhost:{$E2E_CONTENT_PORT} {
+	tls internal
+	reverse_proxy 127.0.0.1:{$APP_CONTENT_PORT}
+}

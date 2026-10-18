@@ -5,13 +5,6 @@
 import { expect, test } from '@playwright/test';
 import { ADMIN, login, watchPage } from '../support.js';
 
-test.beforeEach(({ browserName, baseURL }) => {
-  test.skip(
-    browserName === 'webkit' && !!baseURL?.startsWith('http://'),
-    'WebKit needs HTTPS for secure cookies on localhost',
-  );
-});
-
 test('administrator sets up a provider; the login page offers it and shows why a sign-in failed', async ({
   page,
   baseURL,

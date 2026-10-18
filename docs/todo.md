@@ -28,8 +28,8 @@ issue once the repository is published.
 - [ ] Tests against a real Active Directory and the Kerberos proxy.
 - [ ] Operation on a cloud provider (AWS/Azure) and with an NFS volume.
 - [ ] External penetration test; trademark search.
-- [ ] Conformance run against a real LMS (Moodle) and the ADL test suite
-      (possible without money, needs time: see Exports below).
+- [x] Conformance run against a real LMS (Moodle 4.5, SCORM 1.2 and 2004):
+      `scripts/ci/test-moodle.sh`, weekly in CI.
 
 ## Kubernetes and SaaS
 
@@ -38,9 +38,6 @@ issue once the repository is published.
 - [x] Payment by Stripe subscription (optional, docs/billing.md).
 - [ ] Self-service sign-up (optional; the operator creates tenants and sends
       the payment link today).
-- [ ] S3 object storage with Docker Compose: pass the S3 settings to app,
-      converter and operator (the converter has no outside network there);
-      today S3 is set up through Helm.
 
 - [ ] Multipart upload for objects above 5 GB (single PUT limit); today the
       upload limit (`COURSECRAFT_UPLOAD_MAX_MB`, package limits) stays below it.
@@ -57,8 +54,9 @@ issue once the repository is published.
 ## Exports
 
 - [x] Run exports as background jobs (pg-boss); archives kept for a day.
-- [ ] Nightly conformance run in a disposable Moodle container (SCORM 1.2/2004)
-      and the ADL LRS test suite (Phase 5).
+- [x] Conformance run in a disposable Moodle (SCORM 1.2/2004), weekly.
+- [ ] cmi5 in an LMS (Moodle needs a plugin for cmi5). The ADL LRS test suite
+      targets a full public LRS, which Coursecraft does not offer (see LMS).
 - [ ] Some LMS require the ADL/IMS XSD files next to `imsmanifest.xml`; check
       their license and add them if needed.
 
@@ -128,8 +126,8 @@ issue once the repository is published.
 
 ## Testing
 
-- [ ] Run the WebKit E2E project over HTTPS (Caddy with `tls internal` in the
-      E2E stack). Over plain HTTP WebKit rejects the secure session cookie.
+- [x] Run the E2E stack over HTTPS (Caddy with `tls internal`), so WebKit
+      runs every test.
 
 ## Local tooling
 

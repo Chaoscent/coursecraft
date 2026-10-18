@@ -2,13 +2,6 @@
 import { expect, test } from '@playwright/test';
 import { ADMIN, login, watchPage } from '../support.js';
 
-test.beforeEach(({ browserName, baseURL }) => {
-  test.skip(
-    browserName === 'webkit' && !!baseURL?.startsWith('http://'),
-    'WebKit needs HTTPS for secure cookies on localhost',
-  );
-});
-
 test('author creates, edits and saves a course; changes survive a reload', async ({
   page,
   browserName,

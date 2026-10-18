@@ -348,10 +348,12 @@ HttpOnly; SameSite=Lax`.
 - **Deleted immediately** (all sessions of the user): deactivation, deletion,
   password reset by an admin. Own password change and "sign out everywhere"
   delete all other sessions. Logout deletes the current one.
-- HTTPS only. `http://localhost` is the development exception. Verified by
-  E2E tests: Chromium and Firefox keep the `__Host-`/`Secure` cookie on
-  `http://localhost`; **WebKit (Safari) does not**. Workaround for Safari:
-  a local reverse proxy with TLS (`docs/reverse-proxy/README.md`).
+- HTTPS only. `http://localhost` is the development exception: Chromium and
+  Firefox keep the `__Host-`/`Secure` cookie there, **WebKit (Safari) does
+  not**; for Safari use a local reverse proxy with TLS
+  (`docs/reverse-proxy/README.md`). The E2E stack runs behind Caddy with a
+  local CA (`tests/e2e/stack/`), so Chromium, Firefox and WebKit are all
+  tested over HTTPS, as in production.
 - IP stored as HMAC-SHA-256 with a server pepper.
 
 ### 7.3 CSRF
@@ -478,9 +480,11 @@ TOTP secrets, OIDC client secrets, and SMTP passwords. The API returns only
   get large media): load course → migrate format → resolve assets → player
   bundle → `course.js` → manifest per target (`imsmanifest.xml` for SCORM 1.2
   and 2004 3rd/4th, `tincan.xml`, `cmi5.xml`) → ZIP.
-- Conformance: scorm-again harness in Playwright on every PR. Nightly: exports
-  in a disposable Moodle container (GPL, test-only, never distributed) and the
-  ADL LRS conformance suite against the built-in LRS.
+- Conformance: scorm-again harness in Playwright on every PR. Weekly
+  (`scripts/ci/test-moodle.sh`): SCORM 1.2 and 2004 exports uploaded,
+  played and checked in a disposable Moodle 4.5 (GPL, only used as a test
+  system through its CLI, web pages and database, never distributed; no
+  code of ours runs inside it).
 - Package import: yauzl with limits (entries, total size, ratio, normalized
   paths, no symlinks) → manifest parse → extraction into `data/packages/<id>`.
 - PPTX import (`modules/pptx`): the app parses OOXML into nodes: text with

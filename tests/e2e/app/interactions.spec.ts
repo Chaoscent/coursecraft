@@ -5,13 +5,6 @@ import { expect, test, type Page } from '@playwright/test';
 import { solidPng } from '../../support/png.js';
 import { ADMIN, login, watchPage } from '../support.js';
 
-test.beforeEach(({ browserName, baseURL }) => {
-  test.skip(
-    browserName === 'webkit' && !!baseURL?.startsWith('http://'),
-    'WebKit needs HTTPS for secure cookies on localhost',
-  );
-});
-
 async function newCourse(page: Page, name: string): Promise<void> {
   await page.getByRole('link', { name: 'Kurse', exact: true }).click();
   await page.getByRole('button', { name: 'Neuer Kurs …' }).click();
@@ -129,6 +122,14 @@ test('author records the screen, trims the clip and inserts it as MP4 + WebM wit
   await page.getByRole('tab', { name: 'Einfügen' }).click();
   await page.getByRole('button', { name: 'Bildschirm', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Bildschirmaufnahme' });
+  if (browserName === 'webkit') {
+    // Playwright's WebKit build has no MediaRecorder (like Safari on iPhone and iPad without
+    // screen capture): the dialog says so and offers a file instead.
+    await expect(dialog.getByText('kann den Bildschirm nicht aufnehmen')).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Videodatei wählen …' })).toBeVisible();
+    expect(problems).toEqual([]);
+    return;
+  }
   await dialog.getByText('Mikrofon aufnehmen').click();
   await dialog.getByRole('button', { name: 'Aufnahme starten' }).click();
   await expect(dialog.getByRole('status').filter({ hasText: /Aufnahme läuft: [2-9]/ })).toBeVisible({

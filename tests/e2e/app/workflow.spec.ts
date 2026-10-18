@@ -4,13 +4,6 @@
 import { expect, test } from '@playwright/test';
 import { ADMIN, login, watchPage } from '../support.js';
 
-test.beforeEach(({ browserName, baseURL }) => {
-  test.skip(
-    browserName === 'webkit' && !!baseURL?.startsWith('http://'),
-    'WebKit needs HTTPS for secure cookies on localhost',
-  );
-});
-
 test('the ribbon offers quiz, survey, interaction and dialog; Ctrl+M adds a slide', async ({
   page,
   baseURL,

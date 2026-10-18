@@ -8,13 +8,6 @@ import { sineWav } from '../../support/wav.js';
 import { unzip } from '../support-export.js';
 import { ADMIN, login, watchPage } from '../support.js';
 
-test.beforeEach(({ browserName, baseURL }) => {
-  test.skip(
-    browserName === 'webkit' && !!baseURL?.startsWith('http://'),
-    'WebKit needs HTTPS for secure cookies on localhost',
-  );
-});
-
 const PPTX_TYPE = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
 
 function presentation(): Promise<Buffer> {

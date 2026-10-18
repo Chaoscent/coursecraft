@@ -10,6 +10,7 @@ exec docker run --rm --ipc=host --init \
   --user "$(id -u):$(id -g)" -e HOME=/tmp -e CI="${CI:-}" \
   -e E2E_BASE_URL="${E2E_BASE_URL:-}" -e E2E_CONTENT_URL="${E2E_CONTENT_URL:-}" -e E2E_SETUP_TOKEN="${E2E_SETUP_TOKEN:-}" \
   -e E2E_OPERATOR_URL="${E2E_OPERATOR_URL:-}" -e E2E_OPERATOR_PASSWORD="${E2E_OPERATOR_PASSWORD:-}" \
+  -e E2E_MOODLE_URL="${E2E_MOODLE_URL:-}" \
   --network host \
   -v "$PWD:/work" -w /work \
   "mcr.microsoft.com/playwright:v${VERSION}-noble" \

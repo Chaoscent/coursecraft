@@ -4,13 +4,6 @@ import { expect, test } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { ADMIN, login, watchPage } from '../support.js';
 
-test.beforeEach(({ browserName, baseURL }) => {
-  test.skip(
-    browserName === 'webkit' && !!baseURL?.startsWith('http://'),
-    'WebKit needs HTTPS for secure cookies on localhost',
-  );
-});
-
 test('author exports XLIFF, a translator fills the targets, the import adds the language', async ({
   page,
   baseURL,

@@ -10,6 +10,7 @@ const BROWSERS = {
   webkit: 'Desktop Safari',
 } as const;
 const appUrl = process.env['E2E_BASE_URL'];
+const moodleUrl = process.env['E2E_MOODLE_URL'];
 
 export default defineConfig({
   testDir: 'tests/e2e',
@@ -31,7 +32,7 @@ export default defineConfig({
           {
             name: 'app-setup',
             testMatch: /setup\.spec\.ts/,
-            use: { ...devices['Desktop Chrome'], baseURL: appUrl },
+            use: { ...devices['Desktop Chrome'], baseURL: appUrl, ignoreHTTPSErrors: true },
           },
           ...Object.entries(BROWSERS).map(([name, device]) => ({
             name: `app-${name}`,
@@ -40,6 +41,8 @@ export default defineConfig({
             use: {
               ...devices[device],
               baseURL: appUrl,
+              // The E2E stack's proxy uses its own local CA.
+              ignoreHTTPSErrors: true,
               // Synthetic microphone for the narration recording test.
               ...(name === 'chromium'
                 ? {
@@ -50,6 +53,23 @@ export default defineConfig({
                 : {}),
             },
           })),
+          ...(moodleUrl
+            ? [
+                {
+                  name: 'moodle',
+                  testMatch: /moodle\/.*\.spec\.ts/,
+                  dependencies: ['app-setup'],
+                  use: {
+                    ...devices['Desktop Chrome'],
+                    baseURL: appUrl,
+                    ignoreHTTPSErrors: true,
+                    locale: 'en-US',
+                    // Moodle's player sits below its course header: room for the whole package.
+                    viewport: { width: 1600, height: 1400 },
+                  },
+                },
+              ]
+            : []),
         ]
       : []),
   ],

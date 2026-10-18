@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import type { APIRequestContext, Page } from '@playwright/test';
+import { expect, type APIRequestContext, type FrameLocator, type Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import yauzl from 'yauzl';
 
@@ -97,7 +97,22 @@ export async function createCourse(
   return { id: created.id, headers: h };
 }
 
-/** Creates a course and downloads an export. */
+/** Creates a course and downloads an export as the zip archive. */
+export async function exportPackage(
+  request: APIRequestContext,
+  baseURL: string,
+  email: string,
+  password: string,
+  format: Format,
+  withQuiz = false,
+): Promise<Buffer> {
+  const { id } = await createCourse(request, baseURL, email, password, `Export ${format}`, withQuiz);
+  const zip = await request.get(`/api/courses/${id}/export?format=${format}`);
+  if (!zip.ok()) throw new Error(`export failed: ${zip.status()} ${await zip.text()}`);
+  return zip.body();
+}
+
+/** Creates a course and downloads an export, unpacked. */
 export async function exportCourse(
   request: APIRequestContext,
   baseURL: string,
@@ -106,10 +121,7 @@ export async function exportCourse(
   format: Format,
   withQuiz = false,
 ) {
-  const { id } = await createCourse(request, baseURL, email, password, `Export ${format}`, withQuiz);
-  const zip = await request.get(`/api/courses/${id}/export?format=${format}`);
-  if (!zip.ok()) throw new Error(`export failed: ${zip.status()} ${await zip.text()}`);
-  return unzip(await zip.body());
+  return unzip(await exportPackage(request, baseURL, email, password, format, withQuiz));
 }
 
 export function unzip(buffer: Buffer): Promise<Map<string, Buffer>> {
@@ -225,4 +237,24 @@ export async function serveLrs(
     return route.fulfill({ status: 200, body, contentType: TYPES[ext] ?? 'application/octet-stream' });
   });
   return lrs;
+}
+
+/** Goes to the quiz, answers q1 and q2 correctly and q3 wrong (2 of 3 → 67 %, passed at 50 %). */
+export async function takeQuiz(course: FrameLocator | Page) {
+  await course.getByRole('button', { name: 'Weiter' }).click();
+  await course.getByRole('button', { name: 'Weiter' }).click();
+  await course.getByRole('button', { name: 'Quiz starten' }).click();
+  await course.getByRole('radio', { name: '112' }).check();
+  await course.getByRole('button', { name: 'Antworten' }).click();
+  await expect(course.getByText('Richtig.')).toBeVisible();
+  await course.getByRole('button', { name: 'Nächste Frage' }).click();
+  await course.getByRole('radio', { name: 'Wahr' }).check();
+  await course.getByRole('button', { name: 'Antworten' }).click();
+  await course.getByRole('button', { name: 'Nächste Frage' }).click();
+  await course.getByRole('textbox', { name: 'Lücke 1' }).fill('Bahnhof');
+  await course.getByRole('button', { name: 'Antworten' }).click();
+  await expect(course.getByText('Leider falsch.')).toBeVisible();
+  await course.getByRole('button', { name: 'Nächste Frage' }).click();
+  await expect(course.getByText('67 %')).toBeVisible();
+  await expect(course.getByText('Bestanden.')).toBeVisible();
 }

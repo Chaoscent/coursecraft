@@ -9,7 +9,13 @@ export function watchPage(page: Page, origin: string, ...allowed: string[]): str
   page.on('console', (m) => {
     // A missing xAPI state document is a 404 by specification (first launch, nothing to resume).
     const expected404 = m.text().includes('404') && m.location().url.includes('/xapi/activities/state');
-    if (m.type() === 'error' && !m.text().includes('401') && !expected404)
+    // WebKit reports its own native <select> rendering (inline styles of the browser's internal
+    // shadow tree) as a style-src violation, even for a bare <select>. Nothing is blocked
+    // visibly; real violations from our code still fail in Chromium and Firefox.
+    const webkitSelect =
+      page.context().browser()?.browserType().name() === 'webkit' &&
+      m.text().startsWith('Refused to apply a stylesheet because its hash, its nonce,');
+    if (m.type() === 'error' && !m.text().includes('401') && !expected404 && !webkitSelect)
       problems.push(`console: ${m.text()}`);
   });
   page.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`));

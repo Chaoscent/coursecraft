@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: Apache-2.0
+# A disposable Moodle (4.5 LTS) for the SCORM conformance run
+# (scripts/ci/test-moodle.sh). Moodle is only used here, never shipped.
+name: coursecraft-moodle
+
+services:
+  db:
+    image: postgres:17-trixie
+    environment:
+      POSTGRES_DB: moodle
+      POSTGRES_USER: moodle
+      POSTGRES_PASSWORD: moodle
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U moodle -d moodle']
+      interval: 2s
+      retries: 30
+
+  moodle:
+    image: moodlehq/moodle-php-apache:8.3
+    depends_on:
+      db: { condition: service_healthy }
+    volumes:
+      - ${MOODLE_DIR:?}:/var/www/html:ro
+    tmpfs:
+      - /var/www/moodledata:uid=33,gid=33,mode=0770
+    ports:
+      - '127.0.0.1:${MOODLE_PORT:-3200}:80'

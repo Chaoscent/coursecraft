@@ -4,40 +4,8 @@ import { ADMIN, login, watchPage } from '../support.js';
 
 test.describe.configure({ mode: 'serial' });
 
-const plainHttp = (baseURL?: string) => !!baseURL?.startsWith('http://');
-
-/**
- * WebKit does not store `Secure` cookies for http://localhost (Chromium and
- * Firefox do). Documented workaround: HTTPS via a local reverse proxy
- * (docs/reverse-proxy/README.md). This test pins the behavior so the docs
- * get updated if WebKit changes.
- */
-test('WebKit rejects the secure session cookie on plain-http localhost', async ({
-  page,
-  context,
-  browserName,
-  baseURL,
-}) => {
-  test.skip(browserName !== 'webkit' || !plainHttp(baseURL), 'only WebKit over http');
-  await page.goto('/login');
-  await page.getByLabel('E-Mail').fill(ADMIN.email);
-  await page.getByLabel('Passwort').fill(ADMIN.password);
-  // The server sets the cookie; WebKit drops it. What the page shows next depends on timing.
-  const answered = page.waitForResponse((r) => r.url().endsWith('/api/auth/login') && r.ok());
-  await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
-  expect(await (await answered).headerValue('set-cookie')).toContain('__Host-cc_session');
-  expect((await context.cookies()).some((c) => c.name === '__Host-cc_session')).toBe(false);
-});
-
 test.describe('application', () => {
-  test.beforeEach(({ browserName, baseURL }) => {
-    test.skip(
-      browserName === 'webkit' && plainHttp(baseURL),
-      'WebKit needs HTTPS for secure cookies on localhost',
-    );
-  });
-
-  test('session cookie is hardened and works on http://localhost', async ({ page, context, baseURL }) => {
+  test('session cookie is hardened and survives a reload', async ({ page, context, baseURL }) => {
     const problems = watchPage(page, baseURL ?? '');
     await login(page, ADMIN.email, ADMIN.password);
     const cookie = (await context.cookies()).find((c) => c.name === '__Host-cc_session');

@@ -4,13 +4,6 @@
 import { expect, test } from '@playwright/test';
 import { ADMIN, login, watchPage } from '../support.js';
 
-test.beforeEach(({ browserName, baseURL }) => {
-  test.skip(
-    browserName === 'webkit' && !!baseURL?.startsWith('http://'),
-    'WebKit needs HTTPS for secure cookies on localhost',
-  );
-});
-
 test('the reset page answers the same for any address; an administrator saves SMTP settings', async ({
   page,
   baseURL,
@@ -25,7 +18,8 @@ test('the reset page answers the same for any address; an administrator saves SM
   ).toBeVisible();
 
   // A link with a token shows the password form and keeps the token out of the address sent to the server.
-  await page.goto('/login');
+  // Settled first: WebKit reports requests cut off by a navigation as page errors.
+  await page.goto('/login', { waitUntil: 'networkidle' });
   await page.goto('/reset-password#' + 'x'.repeat(43));
   await expect(page.getByRole('heading', { name: 'Neues Passwort festlegen' })).toBeVisible();
   await page.getByRole('textbox', { name: 'Neues Passwort', exact: true }).fill('a long new password');

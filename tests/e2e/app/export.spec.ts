@@ -5,13 +5,6 @@ import { dirname, join } from 'node:path';
 import { ADMIN } from '../support.js';
 import { exportCourse, serveLms } from '../support-export.js';
 
-test.beforeEach(({ browserName, baseURL }) => {
-  test.skip(
-    browserName === 'webkit' && !!baseURL?.startsWith('http://'),
-    'WebKit needs HTTPS for secure cookies on localhost',
-  );
-});
-
 test('SCORM 1.2 package reports progress and completion to the LMS', async ({ page, request, baseURL }) => {
   const files = await exportCourse(request, baseURL ?? '', ADMIN.email, ADMIN.password, 'scorm12');
   const external = await serveLms(page, files);

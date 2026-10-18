@@ -1,34 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import { expect, test, type FrameLocator, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { ADMIN } from '../support.js';
-import { exportCourse, serveLms, serveLrs } from '../support-export.js';
-
-test.beforeEach(({ browserName, baseURL }) => {
-  test.skip(
-    browserName === 'webkit' && !!baseURL?.startsWith('http://'),
-    'WebKit needs HTTPS for secure cookies on localhost',
-  );
-});
-
-/** Goes to the quiz, answers q1 and q2 correctly and q3 wrong (2 of 3 → 67 %, passed at 50 %). */
-async function takeQuiz(course: FrameLocator | Page) {
-  await course.getByRole('button', { name: 'Weiter' }).click();
-  await course.getByRole('button', { name: 'Weiter' }).click();
-  await course.getByRole('button', { name: 'Quiz starten' }).click();
-  await course.getByRole('radio', { name: '112' }).check();
-  await course.getByRole('button', { name: 'Antworten' }).click();
-  await expect(course.getByText('Richtig.')).toBeVisible();
-  await course.getByRole('button', { name: 'Nächste Frage' }).click();
-  await course.getByRole('radio', { name: 'Wahr' }).check();
-  await course.getByRole('button', { name: 'Antworten' }).click();
-  await course.getByRole('button', { name: 'Nächste Frage' }).click();
-  await course.getByRole('textbox', { name: 'Lücke 1' }).fill('Bahnhof');
-  await course.getByRole('button', { name: 'Antworten' }).click();
-  await expect(course.getByText('Leider falsch.')).toBeVisible();
-  await course.getByRole('button', { name: 'Nächste Frage' }).click();
-  await expect(course.getByText('67 %')).toBeVisible();
-  await expect(course.getByText('Bestanden.')).toBeVisible();
-}
+import { exportCourse, serveLms, serveLrs, takeQuiz } from '../support-export.js';
 
 test('SCORM 2004 package reports score, success and interactions', async ({ page, request, baseURL }) => {
   const files = await exportCourse(request, baseURL ?? '', ADMIN.email, ADMIN.password, 'scorm2004-4', true);

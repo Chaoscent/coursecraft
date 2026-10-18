@@ -8,11 +8,7 @@ import { ADMIN, login, watchPage } from '../support.js';
 
 const CONTENT = process.env['E2E_CONTENT_URL'] ?? '';
 
-test.beforeEach(({ browserName, baseURL }) => {
-  test.skip(
-    browserName === 'webkit' && !!baseURL?.startsWith('http://'),
-    'WebKit needs HTTPS for secure cookies on localhost',
-  );
+test.beforeEach(() => {
   test.skip(!CONTENT, 'Needs the content origin of the E2E stack');
 });
 
