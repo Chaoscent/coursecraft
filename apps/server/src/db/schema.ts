@@ -411,6 +411,14 @@ export interface SsoProvidersTable {
   updated_at: DefaultedTimestamp;
 }
 
+export interface DirectoryAttemptsTable {
+  provider_id: string;
+  account_hash: string;
+  failures: ColumnType<number, number | undefined, number>;
+  locked_until: Timestamp | null;
+  updated_at: DefaultedTimestamp;
+}
+
 export interface SsoStatesTable {
   state_hash: string;
   provider_id: string;
@@ -467,5 +475,6 @@ export interface Database {
   path_assignments: PathAssignmentsTable;
   sso_providers: SsoProvidersTable;
   sso_states: SsoStatesTable;
+  directory_attempts: DirectoryAttemptsTable;
   user_identities: UserIdentitiesTable;
 }

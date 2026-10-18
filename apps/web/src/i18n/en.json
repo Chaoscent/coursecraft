@@ -1239,6 +1239,16 @@
     "sharedSecretHint": "At least 16 characters. Stored encrypted.",
     "stripRealm": "Remove the domain (user@REALM and DOMAIN\\\\user become user)",
     "directory": "Directory for e-mail, name and groups",
-    "noDirectory": "None (use the account as e-mail address)"
+    "noDirectory": "None (use the account as e-mail address)",
+    "syncEnabled": "Deactivate accounts that are no longer in the directory (hourly)",
+    "syncFilter": "Filter for the sync",
+    "syncFilterHint": "All accounts that may use Coursecraft. Empty = the search filter with * instead of the name. To exclude accounts disabled in AD: (!(userAccountControl:1.2.840.113556.1.4.803:=2)). Administrators are never deactivated.",
+    "syncNow": "Sync now",
+    "syncDone": "Sync finished: {{count}} accounts deactivated.",
+    "syncSkipped": {
+      "empty": "Sync aborted: the directory returned no accounts. Check the search base and filter.",
+      "too_many": "Sync aborted: an unusually large number of accounts would be deactivated. Check the filter."
+    },
+    "adminOnly": "Allow local password sign-in for administrators only (emergency access)"
   }
 }

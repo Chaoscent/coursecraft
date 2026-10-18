@@ -36,9 +36,8 @@ issue once the repository is published.
 - [ ] In-app Kerberos/SPNEGO (no reverse proxy); the proxy variant is done
       (`docs/windows-sso.md`) but untested against a real domain.
 - [ ] Automatic redirect to Windows sign-in for domain computers.
-- [ ] Scheduled directory sync (deactivate accounts that left the directory);
-      per-account sign-in throttle for directory logins.
-- [ ] Option to restrict local password sign-in to administrators.
+- [ ] Re-activate accounts that return to the directory; sync of changed
+      names and e-mail addresses.
 - [ ] Single logout and back-channel logout; encrypted SAML assertions.
 - [ ] E2E run against a real provider container (Keycloak) in a nightly job.
 - [ ] Per-provider button icons.

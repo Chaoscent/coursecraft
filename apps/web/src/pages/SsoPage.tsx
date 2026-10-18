@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 import {
+  directorySyncResultSchema,
   idParamSchema,
   okSchema,
+  ssoPolicySchema,
   SSO_KINDS,
   SSO_ROLES,
   ssoProvidersResponseSchema,
@@ -97,6 +99,8 @@ function ProviderDialog({
   const [groupAttribute, setGroupAttribute] = useState(cfg(provider, 'groupAttribute', 'memberOf'));
   const [requiredGroup, setRequiredGroup] = useState(cfg(provider, 'requiredGroup'));
   const [groupRoles, setGroupRoles] = useState(groupRolesText(provider));
+  const [syncEnabled, setSyncEnabled] = useState(provider?.config['syncEnabled'] === true);
+  const [syncFilter, setSyncFilter] = useState(cfg(provider, 'syncFilter'));
   const [header, setHeader] = useState(cfg(provider, 'header', 'x-remote-user'));
   const [trustedProxies, setTrustedProxies] = useState(listOf(provider, 'trustedProxies'));
   const [secretHeader, setSecretHeader] = useState(cfg(provider, 'secretHeader', 'x-proxy-secret'));
@@ -151,6 +155,8 @@ function ProviderDialog({
                   nameAttribute,
                   groupAttribute,
                   requiredGroup,
+                  syncEnabled,
+                  syncFilter,
                   groupRoles: parseGroupRoles(groupRoles),
                   ...secretField('bindPassword'),
                 }
@@ -410,6 +416,18 @@ function ProviderDialog({
               onChange={setRequiredGroup}
               description={t('sso.requiredGroupHint')}
             />
+            <FormRow label="">
+              <Checkbox isSelected={syncEnabled} onChange={setSyncEnabled}>
+                {t('sso.syncEnabled')}
+              </Checkbox>
+            </FormRow>
+            <TextField
+              label={t('sso.syncFilter')}
+              value={syncFilter}
+              onChange={setSyncFilter}
+              isDisabled={!syncEnabled}
+              description={t('sso.syncFilterHint')}
+            />
             <TextField
               label={t('sso.groupRoles')}
               multiline
@@ -492,6 +510,9 @@ export function SsoPage() {
   const [selected, setSelected] = useState<Selection>(new Set());
   const [dialog, setDialog] = useState<null | 'new' | 'edit' | 'delete'>(null);
   const [actionError, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const policyFetcher = useCallback(() => api(ssoPolicySchema, '/api/sso/policy'), []);
+  const { data: policy, reload: reloadPolicy } = useApi(policyFetcher);
   const fetcher = useCallback(
     () => api(ssoProvidersResponseSchema, '/api/sso/providers').then((r) => r.items),
     [],
@@ -503,6 +524,22 @@ export function SsoPage() {
     const [id] = [...selected];
     return providers.find((p) => p.id === id) ?? null;
   }, [selected, providers]);
+  const setAdminOnly = (localLoginAdminOnly: boolean) =>
+    void api(okSchema, '/api/sso/policy', { method: 'PUT', body: { localLoginAdminOnly } })
+      .then(reloadPolicy)
+      .catch((e: unknown) => setError(errorMessage(e)));
+  const syncNow = () => {
+    if (!current) return;
+    setError(null);
+    setMessage(null);
+    void api(directorySyncResultSchema, `/api/sso/providers/${current.id}/sync`, { method: 'POST' })
+      .then((r) =>
+        setMessage(
+          r.skipped ? t(`sso.syncSkipped.${r.skipped}`) : t('sso.syncDone', { count: r.deactivated }),
+        ),
+      )
+      .catch((e: unknown) => setError(errorMessage(e)));
+  };
   const done = () => {
     setDialog(null);
     reload();
@@ -524,11 +561,23 @@ export function SsoPage() {
           <ToolButton icon="trash-2" isDisabled={!current} onPress={() => setDialog('delete')}>
             {t('sso.delete')}
           </ToolButton>
+          <ToolbarSeparator />
+          <ToolButton
+            icon="refresh-cw"
+            isDisabled={!current || current.kind !== 'ldap' || !current.enabled}
+            onPress={syncNow}
+          >
+            {t('sso.syncNow')}
+          </ToolButton>
         </>
       }
     >
       <div className={styles.stack}>
         <Notice tone="info">{t('sso.privacyNote')}</Notice>
+        {message ? <Notice tone="success">{message}</Notice> : null}
+        <Checkbox isSelected={policy?.localLoginAdminOnly ?? false} onChange={setAdminOnly}>
+          {t('sso.adminOnly')}
+        </Checkbox>
         {(actionError ?? loadError) ? <Notice tone="danger">{actionError ?? loadError}</Notice> : null}
         <DataTable
           label={t('sso.title')}

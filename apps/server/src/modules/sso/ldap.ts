@@ -2,13 +2,14 @@
 import { Client, InvalidCredentialsError } from 'ldapts';
 import { SSO_ROLES } from '@coursecraft/shared';
 import type { AppContext } from '../../http/context.js';
+import { clearFailures, isLocked, recordFailure } from './throttle.js';
 import { enabledProvider, resolveUser, secretAad, type Outcome, type Row } from './service.js';
 
 type Role = (typeof SSO_ROLES)[number];
 
 const TIMEOUT_MS = 10_000;
 
-interface LdapConfig {
+export interface LdapConfig {
   url: string;
   startTls: boolean;
   caCert: string;
@@ -35,21 +36,21 @@ const texts = (value: unknown): string[] =>
   );
 
 /** Directory identifiers such as objectGUID are binary; those become hex, text stays text. */
-function subjectOf(value: unknown): string | null {
+export function subjectOf(value: unknown): string | null {
   const first: unknown = Array.isArray(value) ? value[0] : value;
   if (Buffer.isBuffer(first))
     return /^[\x20-\x7e]+$/.test(first.toString('latin1')) ? first.toString('latin1') : first.toString('hex');
   return typeof first === 'string' && first ? first : null;
 }
 
-const tlsOptionsFor = (c: LdapConfig) => ({
+export const tlsOptionsFor = (c: LdapConfig) => ({
   rejectUnauthorized: true,
   minVersion: 'TLSv1.2' as const,
   ...(c.caCert ? { ca: c.caCert } : {}),
   ...(c.tlsServerName ? { servername: c.tlsServerName } : {}),
 });
 
-const clientFor = (c: LdapConfig): Client =>
+export const clientFor = (c: LdapConfig): Client =>
   new Client({
     url: c.url,
     timeout: TIMEOUT_MS,
@@ -71,7 +72,13 @@ export async function ldapLogin(
 ): Promise<Outcome> {
   // An empty password would be an unauthenticated bind, which many servers accept.
   if (!password || !username) return { error: 'denied' };
-  return directorySignIn(ctx, await enabledProvider(ctx, providerId, 'ldap'), username, password);
+  const row = await enabledProvider(ctx, providerId, 'ldap');
+  // A locked name is refused without asking the directory, so its own lockout is not triggered.
+  if (await isLocked(ctx, row.id, username)) return { error: 'denied' };
+  const outcome = await directorySignIn(ctx, row, username, password);
+  if ('userId' in outcome) await clearFailures(ctx, row.id, username);
+  else if (outcome.error === 'denied') await recordFailure(ctx, row.id, username);
+  return outcome;
 }
 
 /**

@@ -9,6 +9,8 @@ import { bossQueue, createBoss } from './jobs/queue.js';
 import { expireStale, handleConvertDone } from './modules/conversions/service.js';
 import { handleMailJob, sendDueReminders } from './modules/mail/service.js';
 import { issueSetupToken } from './modules/setup/service.js';
+import { syncAllDirectories } from './modules/sso/sync.js';
+import { purgeOldAttempts } from './modules/sso/throttle.js';
 
 const CLEANUP_INTERVAL_MS = 15 * 60_000;
 const CONVERSION_SWEEP_MS = 60_000;
@@ -48,7 +50,10 @@ if (setup) {
 const cleanup = setInterval(() => {
   ctx.sessions
     .deleteExpired()
-    .then((n) => n && app.log.info({ deleted: n }, 'expired sessions removed'))
+    .then(async (n) => {
+      if (n) app.log.info({ deleted: n }, 'expired sessions removed');
+      await purgeOldAttempts(ctx);
+    })
     .catch((error: unknown) => app.log.error({ err: error }, 'session cleanup failed'));
 }, CLEANUP_INTERVAL_MS);
 const sweep = setInterval(() => {
@@ -63,11 +68,18 @@ const reminders = setInterval(() => {
     .catch((error: unknown) => app.log.error({ err: error }, 'reminder run failed'));
 }, REMINDER_INTERVAL_MS);
 
+const directorySync = setInterval(() => {
+  syncAllDirectories(ctx)
+    .then((n) => n && app.log.warn({ deactivated: n }, 'accounts deactivated: gone from the directory'))
+    .catch((error: unknown) => app.log.error({ err: error }, 'directory sync run failed'));
+}, REMINDER_INTERVAL_MS);
+
 const shutdown = async (signal: string) => {
   app.log.info({ signal }, 'shutting down');
   clearInterval(cleanup);
   clearInterval(sweep);
   clearInterval(reminders);
+  clearInterval(directorySync);
   await app.close();
   await contentApp?.close();
   await boss.stop({ graceful: true, timeout: 20_000 });

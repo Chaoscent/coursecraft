@@ -109,6 +109,8 @@ function providerConfig(input: SsoProviderInput): Record<string, unknown> {
         nameAttribute: input.nameAttribute,
         groupAttribute: input.groupAttribute,
         requiredGroup: input.requiredGroup,
+        syncEnabled: input.syncEnabled,
+        syncFilter: input.syncFilter,
         groupRoles: input.groupRoles,
       };
   }

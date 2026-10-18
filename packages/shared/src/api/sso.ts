@@ -130,6 +130,10 @@ const ldapInput = z
     groupAttribute: attribute,
     /** Distinguished name of a group; only its members may sign in (empty = everyone found). */
     requiredGroup: z.string().trim().max(500),
+    /** Deactivate accounts that no longer appear in the directory (hourly and on demand). */
+    syncEnabled: z.boolean(),
+    /** Filter listing every account that may use Coursecraft; empty derives it from the user filter. */
+    syncFilter: z.string().trim().max(500),
     /** Directory group (distinguished name) to Coursecraft role; never administrator. */
     groupRoles: z
       .array(z.object({ group: z.string().trim().min(1).max(500), role: z.enum(SSO_ROLES) }))
@@ -206,6 +210,21 @@ export const ssoProviderSchema = z.object({
 });
 export type SsoProvider = z.infer<typeof ssoProviderSchema>;
 export const ssoProvidersResponseSchema = z.object({ items: z.array(ssoProviderSchema) });
+
+/** Rules for signing in with a local password. */
+export const ssoPolicySchema = z.object({
+  /** Only administrators (the break-glass accounts) may use a local password. */
+  localLoginAdminOnly: z.boolean(),
+});
+export type SsoPolicy = z.infer<typeof ssoPolicySchema>;
+
+export const directorySyncResultSchema = z.object({
+  checked: z.number().int(),
+  deactivated: z.number().int(),
+  /** Why nothing was changed (the directory answered with too few accounts), or null. */
+  skipped: z.enum(['empty', 'too_many']).nullable(),
+});
+export type DirectorySyncResult = z.infer<typeof directorySyncResultSchema>;
 
 export const ldapLoginRequestSchema = z
   .object({

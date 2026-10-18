@@ -624,6 +624,11 @@ TOTP secrets, OIDC client secrets, and SMTP passwords. The API returns only
   groups come from LDAP and the identity equals the password login's. Setup:
   `docs/windows-sso.md`.
 
+- Directory upkeep (`modules/sso/{throttle,sync,policy}.ts`, migration 0013):
+  per-account failure counters (keyed hash) in front of LDAP, an hourly and
+  on-demand sync that deactivates accounts gone from the directory, and the
+  `sso_policy` setting that limits local password sign-in to administrators.
+
 ## 12e. Performance (Phase 8)
 
 - Pages for authors and administrators are loaded on demand (route-level code

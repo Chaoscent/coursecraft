@@ -295,10 +295,20 @@ change:
 - The password is checked by binding as the found entry; unknown name and
   wrong password give the same answer. Only after a correct password does the
   person learn about account problems (no account, disabled, domain).
-- Throttled by the sign-in rate limit per client address. Directory lockout
-  policies still apply; Coursecraft adds no counter per account, so a
-  directory that locks accounts after a few failures can be locked by someone
-  guessing from several addresses.
+- Throttled twice: by the sign-in rate limit per client address, and per
+  account (provider + keyed hash of the typed name, unknown names included):
+  after 5 failures the name is refused for 15 minutes **without contacting the
+  directory**, so guessing from many addresses cannot trigger the directory's
+  own lockout for a real person. The table holds no account names and is
+  purged after a day. Parallel in-flight attempts can overshoot the counter by
+  a few.
+- Accounts that disappear from the directory are deactivated by an hourly
+  sync (switchable per provider): never deleted, never administrators, and a
+  result that is empty or would remove more than half of the accounts (and
+  more than five) is refused as a probable filter mistake.
+- An optional rule limits local password sign-in to administrators, so
+  directory or SSO accounts cannot fall back to a stale local password; the
+  administrators stay as break-glass access.
 - Group mappings run at every sign-in and never grant administrator. Nested
   groups are not expanded by `memberOf`; use the in-chain matching rule in the
   search filter for that.

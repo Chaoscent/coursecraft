@@ -1239,6 +1239,16 @@
     "sharedSecretHint": "Mindestens 16 Zeichen. Wird verschlüsselt gespeichert.",
     "stripRealm": "Domäne entfernen (user@REALM und DOMÄNE\\\\user werden zu user)",
     "directory": "Verzeichnis für E-Mail, Name und Gruppen",
-    "noDirectory": "Keines (Konto als E-Mail-Adresse verwenden)"
+    "noDirectory": "Keines (Konto als E-Mail-Adresse verwenden)",
+    "syncEnabled": "Konten deaktivieren, die nicht mehr im Verzeichnis stehen (stündlich)",
+    "syncFilter": "Filter für den Abgleich",
+    "syncFilterHint": "Alle Konten, die Coursecraft nutzen dürfen. Leer = Suchfilter mit * statt Name. AD-deaktivierte Konten ausschließen: (!(userAccountControl:1.2.840.113556.1.4.803:=2)). Administratoren werden nie deaktiviert.",
+    "syncNow": "Jetzt abgleichen",
+    "syncDone": "Abgleich beendet: {{count}} Konten deaktiviert.",
+    "syncSkipped": {
+      "empty": "Abgleich abgebrochen: Das Verzeichnis lieferte keine Konten. Prüfen Sie Suchbasis und Filter.",
+      "too_many": "Abgleich abgebrochen: Es würden auffällig viele Konten deaktiviert. Prüfen Sie den Filter."
+    },
+    "adminOnly": "Lokale Passwort-Anmeldung nur für Administratoren erlauben (Notfallzugang)"
   }
 }

@@ -4,6 +4,7 @@ import type { AppContext } from '../../http/context.js';
 import { hashToken, randomToken } from '../../crypto/tokens.js';
 import { verifyPassword } from '../../auth/passwords.js';
 import type { SealedJson } from '../../db/schema.js';
+import { getSsoPolicy } from '../sso/policy.js';
 
 const MAX_FAILURES = 10;
 const LOCK_MINUTES = 15;
@@ -15,7 +16,11 @@ const TOTP_TOLERANCE_SECONDS = 30;
 export type LoginOutcome =
   | { kind: 'ok'; userId: string }
   | { kind: 'totp'; challenge: string; userId: string }
-  | { kind: 'failed'; userId: string | null; reason: 'password' | 'locked' | 'disabled' | 'unknown' };
+  | {
+      kind: 'failed';
+      userId: string | null;
+      reason: 'password' | 'locked' | 'disabled' | 'unknown' | 'local_disabled';
+    };
 
 export const totpAad = (userId: string) => `totp:${userId}`;
 
@@ -33,6 +38,16 @@ export function checkTotp(secret: string, code: string, lastStep: string | null)
   const step = result.timeStep;
   if (lastStep !== null && step <= Number(lastStep)) return null;
   return step;
+}
+
+async function isAdministrator(ctx: AppContext, userId: string): Promise<boolean> {
+  const row = await ctx.db
+    .selectFrom('user_roles')
+    .select('user_id')
+    .where('user_id', '=', userId)
+    .where('role', '=', 'admin')
+    .executeTakeFirst();
+  return !!row;
 }
 
 export async function passwordLogin(ctx: AppContext, email: string, password: string): Promise<LoginOutcome> {
@@ -62,6 +77,8 @@ export async function passwordLogin(ctx: AppContext, email: string, password: st
     return { kind: 'failed', userId: user.id, reason: 'password' };
   }
   if (user.status !== 'active') return { kind: 'failed', userId: user.id, reason: 'disabled' };
+  if ((await getSsoPolicy(ctx)).localLoginAdminOnly && !(await isAdministrator(ctx, user.id)))
+    return { kind: 'failed', userId: user.id, reason: 'local_disabled' };
 
   await ctx.db
     .updateTable('users')

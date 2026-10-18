@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 import {
   idParamSchema,
+  directorySyncResultSchema,
   ldapLoginRequestSchema,
   loginResponseSchema,
   okSchema,
   publicSsoProvidersSchema,
+  ssoPolicySchema,
   ssoProviderInputSchema,
   ssoProvidersResponseSchema,
 } from '@coursecraft/shared';
@@ -16,7 +18,9 @@ import type { AppContext } from '../../http/context.js';
 import { AppError } from '../../http/errors.js';
 import { startSession } from '../auth/routes.js';
 import { ldapLogin } from './ldap.js';
+import { getSsoPolicy, saveSsoPolicy } from './policy.js';
 import { proxyLogin } from './proxy.js';
+import { syncDirectory } from './sync.js';
 import {
   deleteProvider,
   finishOidc,
@@ -27,6 +31,7 @@ import {
   providerMetadata,
   startLogin,
   BINDER_COOKIE,
+  enabledProvider,
   type Outcome,
 } from './service.js';
 
@@ -178,6 +183,39 @@ export function ssoRoutes(app: FastifyInstance, ctx: AppContext): void {
     );
     done();
   });
+
+  r.get('/api/sso/policy', { config: admin, schema: { response: { 200: ssoPolicySchema } } }, async () =>
+    getSsoPolicy(ctx),
+  );
+
+  r.put(
+    '/api/sso/policy',
+    { config: admin, schema: { body: ssoPolicySchema, response: { 200: okSchema } } },
+    async (request) => {
+      await saveSsoPolicy(ctx, requireAuth(request), request.body);
+      return { ok: true as const };
+    },
+  );
+
+  r.post(
+    '/api/sso/providers/:id/sync',
+    {
+      config: admin,
+      schema: { params: idParamSchema, response: { 200: directorySyncResultSchema } },
+    },
+    async (request) => {
+      const auth = requireAuth(request);
+      const result = await syncDirectory(ctx, await enabledProvider(ctx, request.params.id, 'ldap'));
+      await ctx.audit.record({
+        actorUserId: auth.userId,
+        action: 'sso.directory_synced',
+        targetType: 'sso_provider',
+        targetId: request.params.id,
+        meta: { ...result },
+      });
+      return result;
+    },
+  );
 
   r.get(
     '/api/sso/providers',

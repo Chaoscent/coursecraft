@@ -46,6 +46,8 @@ const body = (extra: Record<string, unknown> = {}) => ({
   nameAttribute: 'cn',
   groupAttribute: 'memberOf',
   requiredGroup: '',
+  syncEnabled: false,
+  syncFilter: '',
   groupRoles: [],
   allowedDomains: [],
   autoCreate: true,
@@ -219,5 +221,82 @@ describe('directory sign-in', () => {
       headers: { 'x-remote-user': 'nobody@PLANETEXPRESS.COM' },
     });
     expect(unknown.cookies.find((c) => c.name === SESSION_COOKIE)).toBeUndefined();
+  });
+
+  it('stops contacting the directory for a name after repeated failures and unlocks on a good password', async () => {
+    const id = await configure({ name: 'Mit Sperre' });
+    for (let i = 0; i < 5; i += 1) expect((await signIn(id, 'leela', `wrong${i}`)).statusCode).toBe(401);
+    // Even the right password is refused now, without asking the directory.
+    expect((await signIn(id, 'leela', 'leela')).statusCode).toBe(401);
+    // Another name is not affected, and unknown names are counted like known ones.
+    expect((await signIn(id, 'amy', 'amy')).statusCode).toBe(200);
+    for (let i = 0; i < 5; i += 1) await signIn(id, 'does-not-exist', 'x');
+    const rows = await t.ctx.db
+      .selectFrom('directory_attempts')
+      .select('account_hash')
+      .where('provider_id', '=', id)
+      .execute();
+    expect(JSON.stringify(rows)).not.toContain('leela');
+    const audit = await t.ctx.db
+      .selectFrom('audit_log')
+      .select('action')
+      .where('action', '=', 'auth.directory_locked')
+      .execute();
+    expect(audit.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('deactivates accounts that left the directory, never administrators, and refuses suspicious results', async () => {
+    const id = await configure({ name: 'Abgleich', syncEnabled: true, syncFilter: '' });
+    const names = ['amy', 'bender', 'fry', 'hermes', 'leela', 'professor', 'zoidberg'];
+    for (const n of names) expect((await signIn(id, n, n)).statusCode, n).toBe(200);
+    const sync = () => t.request(admin, 'POST', `/api/sso/providers/${id}/sync`);
+    expect((await sync()).json()).toEqual({ checked: 7, deactivated: 0, skipped: null });
+
+    // A filter that matches nobody must never empty the system.
+    await t.request(
+      admin,
+      'PUT',
+      `/api/sso/providers/${id}`,
+      body({ name: 'Abgleich', syncEnabled: true, syncFilter: '(uid=nobody-here)' }),
+    );
+    expect((await sync()).json()).toEqual({ checked: 7, deactivated: 0, skipped: 'empty' });
+    // A filter that would remove six of seven at once is treated as a mistake.
+    await t.request(
+      admin,
+      'PUT',
+      `/api/sso/providers/${id}`,
+      body({ name: 'Abgleich', syncEnabled: true, syncFilter: '(uid=fry)' }),
+    );
+    expect((await sync()).json()).toEqual({ checked: 7, deactivated: 0, skipped: 'too_many' });
+
+    // Two people leave and one administrator is missing from the list: only the two go.
+    const hermes = await t.ctx.db
+      .selectFrom('users')
+      .select('id')
+      .where('email', '=', 'hermes@planetexpress.com')
+      .executeTakeFirstOrThrow();
+    await t.ctx.db.insertInto('user_roles').values({ user_id: hermes.id, role: 'admin' }).execute();
+    await t.request(
+      admin,
+      'PUT',
+      `/api/sso/providers/${id}`,
+      body({
+        name: 'Abgleich',
+        syncEnabled: true,
+        syncFilter: '(&(objectClass=inetOrgPerson)(!(|(uid=leela)(uid=bender)(uid=hermes))))',
+      }),
+    );
+    expect((await sync()).json()).toEqual({ checked: 7, deactivated: 2, skipped: null });
+    const state = await t.ctx.db
+      .selectFrom('users')
+      .select(['email', 'status'])
+      .where('email', 'like', '%@planetexpress.com')
+      .execute();
+    const byMail = Object.fromEntries(state.map((u) => [u.email, u.status]));
+    expect(byMail['leela@planetexpress.com']).toBe('disabled');
+    expect(byMail['bender@planetexpress.com']).toBe('disabled');
+    // The administrator stays, although the directory no longer lists them.
+    expect(byMail['hermes@planetexpress.com']).toBe('active');
+    expect((await signIn(id, 'leela', 'leela')).statusCode).toBe(403);
   });
 });

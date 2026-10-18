@@ -32,6 +32,23 @@ Administration → Single sign-on → New provider → LDAP / Active Directory.
   nested groups use the in-chain filter
   `(&(objectClass=user)(sAMAccountName={username})(memberOf:1.2.840.113556.1.4.1941:=CN=Courses,OU=Groups,DC=example,DC=com))`.
 
+### 1.1 Keeping accounts in step
+
+- **Sync:** switch on "Deactivate accounts that are no longer in the
+  directory" and, if needed, give a filter listing everyone who may use
+  Coursecraft (for example without accounts disabled in AD:
+  `(&(objectClass=user)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))`).
+  It runs hourly and on demand ("Sync now" in the toolbar). Accounts are only
+  deactivated, never deleted; administrators are skipped; an empty answer or
+  one that would remove most accounts is refused.
+- **Guessing protection:** after 5 wrong passwords for a name the directory is
+  not asked again for 15 minutes, so its lockout policy is not triggered by
+  strangers.
+- **Emergency access:** the checkbox "Allow local password sign-in for
+  administrators only" on the same page keeps local passwords for
+  administrators (break-glass) and disables them for everyone else. Reset
+  e-mails still work but cannot be used to sign in.
+
 ## 2. Automatic Windows sign-in (Kerberos through a reverse proxy)
 
 Coursecraft does not speak Kerberos itself. A web server in front of it does,
@@ -142,9 +159,9 @@ that is not a trusted proxy`) and appears in the audit log as a failed
 
 - The application itself negotiating Kerberos (no proxy); needs native
   libraries and a keytab in the image.
-- Scheduled directory sync that deactivates accounts which left the directory.
-- Throttling of sign-in attempts per account (the directory's lockout policy
-  still applies).
+- Re-activating accounts that return to the directory (done by an
+  administrator).
+- Mapping directory groups to Coursecraft groups (roles are mapped).
 
 This guide was written without access to a domain; the Apache, IIS and group
 policy settings follow the vendors' documentation and are not verified
