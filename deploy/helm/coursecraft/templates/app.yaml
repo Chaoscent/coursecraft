@@ -1,0 +1,156 @@
+{{- /* SPDX-License-Identifier: Apache-2.0 */ -}}
+{{- $secret := include "coursecraft.secretName" . }}
+{{- $fs := eq .Values.storage.kind "fs" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "coursecraft.fullname" . }}-app
+  labels: {{- include "coursecraft.labels" . | nindent 4 }}
+    app.kubernetes.io/component: app
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicas.app }}
+  {{- end }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: { maxUnavailable: 0, maxSurge: 1 }
+  selector:
+    matchLabels: {{- include "coursecraft.selector" . | nindent 6 }}
+      app.kubernetes.io/component: app
+  template:
+    metadata:
+      labels: {{- include "coursecraft.labels" . | nindent 8 }}
+        app.kubernetes.io/component: app
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10000
+        {{- if $fs }}
+        fsGroup: 10000
+        {{- end }}
+        seccompProfile: { type: RuntimeDefault }
+      initContainers:
+        # Roles and schema before the first request. Safe with several replicas:
+        # the migrator serialises itself with a lock in the database.
+        - name: migrate
+          image: {{ .Values.image.app }}:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ['/bin/sh', '-c']
+          args:
+            - {{ if .Values.database.bootstrap.enabled }}coursecraft db-bootstrap && {{ end }}coursecraft migrate
+          env:
+            - name: COURSECRAFT_MIGRATOR_PASSWORD
+              valueFrom: { secretKeyRef: { name: {{ $secret }}, key: migratorPassword } }
+            - name: COURSECRAFT_APP_PASSWORD
+              valueFrom: { secretKeyRef: { name: {{ $secret }}, key: appPassword } }
+            - name: COURSECRAFT_CONVERTER_PASSWORD
+              valueFrom: { secretKeyRef: { name: {{ $secret }}, key: converterPassword } }
+            - name: COURSECRAFT_MIGRATOR_DATABASE_URL
+              value: {{ include "coursecraft.dbUrl" (list "coursecraft_migrator" "COURSECRAFT_MIGRATOR_PASSWORD" .) | quote }}
+            {{- if .Values.database.bootstrap.enabled }}
+            - name: COURSECRAFT_ADMIN_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ required "database.bootstrap.adminSecret is required when bootstrap is enabled" .Values.database.bootstrap.adminSecret }}
+                  key: url
+            {{- end }}
+          {{- include "coursecraft.containerSecurity" . | nindent 10 }}
+          volumeMounts:
+            - { name: tmp, mountPath: /tmp }
+      containers:
+        - name: app
+          image: {{ .Values.image.app }}:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - { name: http, containerPort: 3000 }
+            - { name: content, containerPort: 3001 }
+            {{- if .Values.metrics.enabled }}
+            - { name: metrics, containerPort: {{ .Values.metrics.port }} }
+            {{- end }}
+          env:
+            - name: COURSECRAFT_APP_PASSWORD
+              valueFrom: { secretKeyRef: { name: {{ $secret }}, key: appPassword } }
+            - name: COURSECRAFT_DATABASE_URL
+              value: {{ include "coursecraft.dbUrl" (list "coursecraft_app" "COURSECRAFT_APP_PASSWORD" .) | quote }}
+            - name: COURSECRAFT_MASTER_KEY
+              valueFrom: { secretKeyRef: { name: {{ $secret }}, key: masterKey } }
+            - name: COURSECRAFT_IP_PEPPER
+              valueFrom: { secretKeyRef: { name: {{ $secret }}, key: ipPepper } }
+            - { name: COURSECRAFT_PUBLIC_URL, value: {{ .Values.publicUrl | quote }} }
+            - { name: COURSECRAFT_CONTENT_URL, value: {{ .Values.contentUrl | quote }} }
+            # Behind the ingress controller: the client address comes from X-Forwarded-For.
+            - { name: COURSECRAFT_TRUST_PROXY, value: 'true' }
+            # One limit per client across all replicas.
+            - { name: COURSECRAFT_RATE_LIMIT_STORE, value: database }
+            # Replicas start together: only one of them hands out the setup token.
+            - { name: COURSECRAFT_SETUP_TOKEN_ON_START, value: if-missing }
+            - { name: COURSECRAFT_LOG_LEVEL, value: {{ .Values.config.logLevel | quote }} }
+            - { name: COURSECRAFT_TIME_ZONE, value: {{ .Values.config.timeZone | quote }} }
+            - { name: COURSECRAFT_SESSION_IDLE_MINUTES, value: {{ .Values.config.sessionIdleMinutes | quote }} }
+            - { name: COURSECRAFT_SESSION_ABSOLUTE_HOURS, value: {{ .Values.config.sessionAbsoluteHours | quote }} }
+            - { name: COURSECRAFT_LOGIN_RATE_LIMIT, value: {{ .Values.config.loginRateLimit | quote }} }
+            - { name: COURSECRAFT_UPLOAD_MAX_MB, value: {{ .Values.config.uploadMaxMb | quote }} }
+            - { name: COURSECRAFT_AI_ENABLED, value: {{ .Values.config.aiEnabled | quote }} }
+            {{- if .Values.metrics.enabled }}
+            - { name: COURSECRAFT_METRICS_PORT, value: {{ .Values.metrics.port | quote }} }
+            {{- end }}
+            {{- range $name, $value := .Values.config.extraEnv }}
+            - { name: {{ $name }}, value: {{ $value | quote }} }
+            {{- end }}
+            {{- include "coursecraft.storageEnv" . | nindent 12 }}
+            {{- if eq .Values.storage.kind "s3" }}
+            - name: COURSECRAFT_S3_ACCESS_KEY_ID
+              valueFrom: { secretKeyRef: { name: {{ required "storage.s3.secret is required" .Values.storage.s3.secret }}, key: accessKeyId } }
+            - name: COURSECRAFT_S3_SECRET_ACCESS_KEY
+              valueFrom: { secretKeyRef: { name: {{ .Values.storage.s3.secret }}, key: secretAccessKey } }
+            {{- end }}
+          readinessProbe:
+            httpGet: { path: /readyz, port: http }
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet: { path: /healthz, port: http }
+            initialDelaySeconds: 20
+            periodSeconds: 15
+          startupProbe:
+            httpGet: { path: /healthz, port: http }
+            periodSeconds: 3
+            failureThreshold: 40
+          resources: {{- toYaml .Values.resources.app | nindent 12 }}
+          {{- include "coursecraft.containerSecurity" . | nindent 10 }}
+          volumeMounts:
+            - { name: tmp, mountPath: /tmp }
+            {{- if $fs }}
+            - { name: data, mountPath: /data }
+            - { name: work, mountPath: /work }
+            {{- end }}
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: tmp
+          emptyDir: { sizeLimit: 512Mi }
+        {{- if $fs }}
+        - name: data
+          persistentVolumeClaim: { claimName: {{ default (printf "%s-data" (include "coursecraft.fullname" .)) .Values.storage.fs.existingDataClaim }} }
+        - name: work
+          persistentVolumeClaim: { claimName: {{ default (printf "%s-work" (include "coursecraft.fullname" .)) .Values.storage.fs.existingWorkClaim }} }
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 50
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels: {{- include "coursecraft.selector" . | nindent 20 }}
+                    app.kubernetes.io/component: app

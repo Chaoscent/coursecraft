@@ -5,3 +5,4 @@ apps/web/src/assets/
 LICENSE
 test-results/
 playwright-report/
+deploy/helm/*/templates/

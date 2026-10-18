@@ -5,6 +5,7 @@ import { basename, join } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { S3BlobStore } from '@coursecraft/storage';
 import { backup, restore } from './cli/backup.js';
+import { bootstrapDatabase } from './cli/db-bootstrap.js';
 import { initSecrets } from './cli/init-secrets.js';
 import { migrate } from './cli/migrate.js';
 import { createDatabase } from './db/connection.js';
@@ -44,6 +45,8 @@ const USAGE = `Usage: coursecraft <command>
 Commands:
   migrate               Apply database migrations and create job queues
   init-secrets <dir>    Create missing secrets for all services (first start)
+  db-bootstrap          Create the service roles in an existing database (managed PostgreSQL);
+                        needs COURSECRAFT_ADMIN_DATABASE_URL and the three role passwords
   setup-token           Create a new one-time setup token (invalidates the previous one)
   backup                Write database and data volume to /data/backups (app container);
                         with object storage: database only, uploaded to backups/ in the bucket
@@ -73,6 +76,15 @@ async function run(args: string[]): Promise<number> {
         chown: process.getuid?.() === 0,
       });
       console.log(created.length ? `Created: ${created.join(', ')}` : 'All secrets present.');
+      return 0;
+    }
+    case 'db-bootstrap': {
+      await bootstrapDatabase(secretFromEnv('COURSECRAFT_ADMIN_DATABASE_URL'), {
+        migrator: secretFromEnv('COURSECRAFT_MIGRATOR_PASSWORD'),
+        app: secretFromEnv('COURSECRAFT_APP_PASSWORD'),
+        converter: secretFromEnv('COURSECRAFT_CONVERTER_PASSWORD'),
+      });
+      console.log('Database roles are in place.');
       return 0;
     }
     case 'setup-token': {

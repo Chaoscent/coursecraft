@@ -1,0 +1,35 @@
+{{- /* SPDX-License-Identifier: Apache-2.0 */ -}}
+{{- if .Values.ingress.enabled }}
+{{- $app := (urlParse .Values.publicUrl).host }}
+{{- $content := (urlParse .Values.contentUrl).host }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "coursecraft.fullname" . }}
+  labels: {{- include "coursecraft.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations: {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with .Values.ingress.className }}
+  ingressClassName: {{ . }}
+  {{- end }}
+  tls:
+    - hosts: [{{ $app | quote }}]
+      secretName: {{ .Values.ingress.tls.app }}
+    - hosts: [{{ $content | quote }}]
+      secretName: {{ .Values.ingress.tls.content }}
+  rules:
+    - host: {{ $app | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend: { service: { name: {{ include "coursecraft.fullname" . }}-app, port: { name: http } } }
+    - host: {{ $content | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend: { service: { name: {{ include "coursecraft.fullname" . }}-app, port: { name: content } } }
+{{- end }}

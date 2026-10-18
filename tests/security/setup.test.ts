@@ -45,6 +45,24 @@ describe('first-run setup', () => {
     expect(res.statusCode).toBe(403);
   });
 
+  it('replicas starting together do not invalidate the first token', async () => {
+    await t.ctx.db.deleteFrom('setup_state').execute();
+    const first = await issueSetupToken(t.ctx.db, { onlyIfMissing: true });
+    expect(first).not.toBeNull();
+    // The second replica gets nothing and leaves the first token valid.
+    expect(await issueSetupToken(t.ctx.db, { onlyIfMissing: true })).toBeNull();
+    // An expired token is replaced.
+    await t.ctx.db
+      .updateTable('setup_state')
+      .set({ token_expires_at: new Date(Date.now() - 1000) })
+      .execute();
+    const renewed = await issueSetupToken(t.ctx.db, { onlyIfMissing: true });
+    expect(renewed).not.toBeNull();
+    expect((await t.request(null, 'POST', '/api/setup', { ...admin, token: first?.token })).statusCode).toBe(
+      403,
+    );
+  });
+
   it('creates the first admin with a valid token and signs them in', async () => {
     const setup = await issueSetupToken(t.ctx.db);
     const res = await t.request(null, 'POST', '/api/setup', { ...admin, token: setup?.token });

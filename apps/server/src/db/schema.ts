@@ -419,6 +419,17 @@ export interface DirectoryAttemptsTable {
   updated_at: DefaultedTimestamp;
 }
 
+export interface RateLimitsTable {
+  key: string;
+  count: number;
+  reset_at: Timestamp;
+}
+
+export interface PeriodicJobsTable {
+  name: string;
+  locked_until: Timestamp;
+}
+
 export interface SsoStatesTable {
   state_hash: string;
   provider_id: string;
@@ -476,5 +487,7 @@ export interface Database {
   sso_providers: SsoProvidersTable;
   sso_states: SsoStatesTable;
   directory_attempts: DirectoryAttemptsTable;
+  rate_limits: RateLimitsTable;
+  periodic_jobs: PeriodicJobsTable;
   user_identities: UserIdentitiesTable;
 }

@@ -10,6 +10,16 @@ third-party services.
 > AI adapter, mail, certificates, learning paths, SSO, backup/restore). See
 > [docs/phases.md](docs/phases.md) and [docs/todo.md](docs/todo.md).
 
+## Deployment options
+
+- **One server:** Docker Compose (below). Files on a volume, everything on one host.
+- **Kubernetes:** Helm chart in `deploy/helm/coursecraft`, several app
+  replicas, files in S3-compatible object storage. See
+  [docs/kubernetes.md](docs/kubernetes.md).
+- **Company network:** sign-in with Active Directory / LDAP and automatic
+  Windows sign-in through a Kerberos reverse proxy. See
+  [docs/windows-sso.md](docs/windows-sso.md).
+
 ## Quick start
 
 Requirements: Docker Engine 26+ with Compose 2.30+, 2 GB RAM, amd64 or arm64.

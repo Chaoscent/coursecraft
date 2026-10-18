@@ -1,0 +1,89 @@
+{{- /* SPDX-License-Identifier: Apache-2.0 */ -}}
+{{- $secret := include "coursecraft.secretName" . }}
+{{- $fs := eq .Values.storage.kind "fs" }}
+{{- $s3Secret := default .Values.storage.s3.secret .Values.storage.s3.converterSecret }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "coursecraft.fullname" . }}-converter
+  labels: {{- include "coursecraft.labels" . | nindent 4 }}
+    app.kubernetes.io/component: converter
+spec:
+  replicas: {{ .Values.replicas.converter }}
+  selector:
+    matchLabels: {{- include "coursecraft.selector" . | nindent 6 }}
+      app.kubernetes.io/component: converter
+  template:
+    metadata:
+      labels: {{- include "coursecraft.labels" . | nindent 8 }}
+        app.kubernetes.io/component: converter
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10002
+        runAsGroup: 10000
+        {{- if $fs }}
+        fsGroup: 10000
+        {{- end }}
+        seccompProfile: { type: RuntimeDefault }
+      initContainers:
+        # The queue schema comes from the app's migration; start the converter once it exists.
+        - name: wait-for-queue
+          image: {{ .Values.image.app }}:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ['/bin/sh', '-c']
+          args:
+            - until psql -qtA "$COURSECRAFT_CONVERTER_DATABASE_URL" -c 'select 1 from pgboss.queue limit 1' >/dev/null 2>&1; do echo waiting for the job queue; sleep 3; done
+          env:
+            - name: COURSECRAFT_CONVERTER_PASSWORD
+              valueFrom: { secretKeyRef: { name: {{ $secret }}, key: converterPassword } }
+            - name: COURSECRAFT_CONVERTER_DATABASE_URL
+              value: {{ include "coursecraft.dbUrl" (list "coursecraft_converter" "COURSECRAFT_CONVERTER_PASSWORD" .) | quote }}
+          {{- include "coursecraft.containerSecurity" . | nindent 10 }}
+          volumeMounts:
+            - { name: tmp, mountPath: /tmp }
+      containers:
+        - name: converter
+          image: {{ .Values.image.converter }}:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: COURSECRAFT_CONVERTER_PASSWORD
+              valueFrom: { secretKeyRef: { name: {{ $secret }}, key: converterPassword } }
+            - name: COURSECRAFT_CONVERTER_DATABASE_URL
+              value: {{ include "coursecraft.dbUrl" (list "coursecraft_converter" "COURSECRAFT_CONVERTER_PASSWORD" .) | quote }}
+            {{- include "coursecraft.storageEnv" . | nindent 12 }}
+            {{- if eq .Values.storage.kind "s3" }}
+            - name: COURSECRAFT_S3_ACCESS_KEY_ID
+              valueFrom: { secretKeyRef: { name: {{ required "storage.s3.secret is required" $s3Secret }}, key: accessKeyId } }
+            - name: COURSECRAFT_S3_SECRET_ACCESS_KEY
+              valueFrom: { secretKeyRef: { name: {{ $s3Secret }}, key: secretAccessKey } }
+            {{- end }}
+          livenessProbe:
+            exec: { command: [node, /converter/dist/healthcheck.js] }
+            initialDelaySeconds: 30
+            periodSeconds: 15
+          resources: {{- toYaml .Values.resources.converter | nindent 12 }}
+          {{- include "coursecraft.containerSecurity" . | nindent 10 }}
+          volumeMounts:
+            - { name: tmp, mountPath: /tmp }
+            {{- if $fs }}
+            - { name: work, mountPath: /work }
+            {{- end }}
+      terminationGracePeriodSeconds: 60
+      volumes:
+        - name: tmp
+          emptyDir: { sizeLimit: 4Gi }
+        {{- if $fs }}
+        - name: work
+          persistentVolumeClaim: { claimName: {{ default (printf "%s-work" (include "coursecraft.fullname" .)) .Values.storage.fs.existingWorkClaim }} }
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+      {{- end }}

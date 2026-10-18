@@ -1,0 +1,16 @@
+{{- /* SPDX-License-Identifier: Apache-2.0 */ -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "coursecraft.fullname" . }}-app
+  labels: {{- include "coursecraft.labels" . | nindent 4 }}
+    app.kubernetes.io/component: app
+spec:
+  selector: {{- include "coursecraft.selector" . | nindent 4 }}
+    app.kubernetes.io/component: app
+  ports:
+    - { name: http, port: 3000, targetPort: http }
+    - { name: content, port: 3001, targetPort: content }
+    {{- if .Values.metrics.enabled }}
+    - { name: metrics, port: {{ .Values.metrics.port }}, targetPort: metrics }
+    {{- end }}

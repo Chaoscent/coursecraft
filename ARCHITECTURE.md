@@ -651,6 +651,14 @@ test:db` starts an S3 server container (Scality CloudServer) besides
   PostgreSQL. The tests that emulate the converter through a directory are
   skipped there; `work-exchange.test.ts` covers the object storage variant.
 
+- Several replicas: request counters in the database
+  (`COURSECRAFT_RATE_LIMIT_STORE=database`, migration 0014), periodic jobs
+  behind a lease row per job (`jobs/lease.ts`), setup token handed out by the
+  first replica only (`COURSECRAFT_SETUP_TOKEN_ON_START=if-missing`), metrics
+  on a separate listener (`COURSECRAFT_METRICS_PORT`), service roles for a
+  managed database via `coursecraft db-bootstrap`. Helm chart and tests:
+  `docs/kubernetes.md`.
+
 ## 12e. Performance (Phase 8)
 
 - Pages for authors and administrators are loaded on demand (route-level code

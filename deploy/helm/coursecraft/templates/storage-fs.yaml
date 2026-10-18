@@ -1,0 +1,30 @@
+{{- /* SPDX-License-Identifier: Apache-2.0 */ -}}
+{{- if eq .Values.storage.kind "fs" }}
+{{- if not .Values.storage.fs.existingDataClaim }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "coursecraft.fullname" . }}-data
+  labels: {{- include "coursecraft.labels" . | nindent 4 }}
+spec:
+  accessModes: [ReadWriteMany]
+  {{- with .Values.storage.fs.storageClass }}
+  storageClassName: {{ . }}
+  {{- end }}
+  resources: { requests: { storage: {{ .Values.storage.fs.dataSize }} } }
+---
+{{- end }}
+{{- if not .Values.storage.fs.existingWorkClaim }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "coursecraft.fullname" . }}-work
+  labels: {{- include "coursecraft.labels" . | nindent 4 }}
+spec:
+  accessModes: [ReadWriteMany]
+  {{- with .Values.storage.fs.storageClass }}
+  storageClassName: {{ . }}
+  {{- end }}
+  resources: { requests: { storage: {{ .Values.storage.fs.workSize }} } }
+{{- end }}
+{{- end }}

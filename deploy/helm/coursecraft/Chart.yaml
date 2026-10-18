@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+apiVersion: v2
+name: coursecraft
+description: Chardsoft Coursecraft - self-hosted e-learning authoring suite and LMS
+type: application
+version: 0.1.0
+appVersion: '0.0.0'
+keywords: [e-learning, lms, scorm, xapi]
+home: https://chardsoft.com

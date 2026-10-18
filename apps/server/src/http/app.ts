@@ -12,6 +12,8 @@ import { z } from 'zod';
 import fastifyCookie from '@fastify/cookie';
 import fastifyMultipart from '@fastify/multipart';
 import fastifyRateLimit from '@fastify/rate-limit';
+import { Metrics } from './metrics.js';
+import { databaseRateLimitStore } from './rate-limit-store.js';
 import { registerAuth } from '../auth/plugin.js';
 import type { AppConfig } from '../config/env.js';
 import { accountRoutes } from '../modules/account/routes.js';
@@ -54,6 +56,7 @@ export interface AppDeps {
 export interface BuiltApp {
   app: FastifyInstance;
   routes: RegisteredRoute[];
+  metrics: Metrics;
 }
 
 const REDACT = [
@@ -116,6 +119,8 @@ export async function buildApp(deps: AppDeps): Promise<BuiltApp> {
   await registerSecurityHeaders(app, config);
 
   installErrorHandling(app);
+  const metrics = new Metrics();
+  metrics.attach(app);
 
   app.get(
     '/healthz',
@@ -153,7 +158,10 @@ export async function buildApp(deps: AppDeps): Promise<BuiltApp> {
     app.removeContentTypeParser('text/plain');
     app.addContentTypeParser('text/csv', { parseAs: 'string' }, (_request, body, done) => done(null, body));
     await app.register(fastifyCookie);
-    await app.register(fastifyRateLimit, { global: false });
+    await app.register(fastifyRateLimit, {
+      global: false,
+      ...(config.rateLimitStore === 'database' ? { store: databaseRateLimitStore(ctx.db) } : {}),
+    });
     await app.register(fastifyMultipart, {
       limits: { fileSize: config.uploadMaxMb * 1024 * 1024, files: 1, fields: 5, parts: 6 },
     });
@@ -180,5 +188,5 @@ export async function buildApp(deps: AppDeps): Promise<BuiltApp> {
     if (config.webDir) await registerWebApp(app, config.webDir, config);
   }
 
-  return { app, routes };
+  return { app, routes, metrics };
 }

@@ -59,6 +59,12 @@ const configSchema = z
       .max(24 * 30)
       .default(12),
     /** Sign-in, setup and 2FA attempts per client address and minute. */
+    /** `if-missing`: with several replicas, only the first start prints a setup token. */
+    setupTokenOnStart: z.enum(['always', 'if-missing']).default('always'),
+    /** Port of the separate metrics listener (Prometheus); off when unset. */
+    metricsPort: z.coerce.number().int().min(1).max(65535).optional(),
+    /** Where request counters live: per process, or in the database (several replicas). */
+    rateLimitStore: z.enum(['memory', 'database']).default('memory'),
     loginRateLimit: z.coerce.number().int().min(1).max(10_000).default(10),
     /** Directory with the built player (player.js, player.css, fonts/). */
     playerDir: z.string().optional(),
@@ -136,6 +142,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     webDir: env['COURSECRAFT_WEB_DIR'] || undefined,
     sessionIdleMinutes: env['COURSECRAFT_SESSION_IDLE_MINUTES'],
     sessionAbsoluteHours: env['COURSECRAFT_SESSION_ABSOLUTE_HOURS'],
+    setupTokenOnStart: env['COURSECRAFT_SETUP_TOKEN_ON_START'],
+    metricsPort: env['COURSECRAFT_METRICS_PORT'] || undefined,
+    rateLimitStore: env['COURSECRAFT_RATE_LIMIT_STORE'],
     loginRateLimit: env['COURSECRAFT_LOGIN_RATE_LIMIT'],
     playerDir: env['COURSECRAFT_PLAYER_DIR'] || undefined,
     uploadMaxMb: env['COURSECRAFT_UPLOAD_MAX_MB'],

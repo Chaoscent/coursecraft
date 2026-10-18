@@ -1,0 +1,66 @@
+{{- /* SPDX-License-Identifier: Apache-2.0 */ -}}
+{{- if .Values.backup.enabled }}
+{{- $secret := include "coursecraft.secretName" . }}
+{{- $fs := eq .Values.storage.kind "fs" }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "coursecraft.fullname" . }}-backup
+  labels: {{- include "coursecraft.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.backup.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels: {{- include "coursecraft.labels" . | nindent 12 }}
+            app.kubernetes.io/component: backup
+        spec:
+          restartPolicy: OnFailure
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            runAsGroup: 10000
+            {{- if $fs }}
+            fsGroup: 10000
+            {{- end }}
+            seccompProfile: { type: RuntimeDefault }
+          containers:
+            - name: backup
+              image: {{ .Values.image.app }}:{{ .Values.image.tag }}
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              command: [coursecraft, backup]
+              env:
+                - name: COURSECRAFT_APP_PASSWORD
+                  valueFrom: { secretKeyRef: { name: {{ $secret }}, key: appPassword } }
+                - name: COURSECRAFT_DATABASE_URL
+                  value: {{ include "coursecraft.dbUrl" (list "coursecraft_app" "COURSECRAFT_APP_PASSWORD" .) | quote }}
+                {{- if $fs }}
+                - { name: COURSECRAFT_DATA_DIR, value: /data }
+                {{- end }}
+                {{- include "coursecraft.storageEnv" . | nindent 16 }}
+                {{- if eq .Values.storage.kind "s3" }}
+                - name: COURSECRAFT_S3_ACCESS_KEY_ID
+                  valueFrom: { secretKeyRef: { name: {{ required "storage.s3.secret is required" .Values.storage.s3.secret }}, key: accessKeyId } }
+                - name: COURSECRAFT_S3_SECRET_ACCESS_KEY
+                  valueFrom: { secretKeyRef: { name: {{ .Values.storage.s3.secret }}, key: secretAccessKey } }
+                {{- end }}
+              {{- include "coursecraft.containerSecurity" . | nindent 14 }}
+              volumeMounts:
+                - { name: tmp, mountPath: /tmp }
+                {{- if $fs }}
+                - { name: data, mountPath: /data }
+                {{- end }}
+          volumes:
+            - name: tmp
+              emptyDir: { sizeLimit: 2Gi }
+            {{- if $fs }}
+            - name: data
+              persistentVolumeClaim: { claimName: {{ default (printf "%s-data" (include "coursecraft.fullname" .)) .Values.storage.fs.existingDataClaim }} }
+            {{- end }}
+{{- end }}

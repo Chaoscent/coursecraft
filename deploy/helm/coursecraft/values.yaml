@@ -1,0 +1,125 @@
+# SPDX-License-Identifier: Apache-2.0
+# Chardsoft Coursecraft on Kubernetes. See docs/kubernetes.md.
+
+image:
+  # Build and push with docker/Dockerfile (targets "app" and "converter").
+  app: coursecraft/app
+  converter: coursecraft/converter
+  tag: local
+  pullPolicy: IfNotPresent
+imagePullSecrets: []
+
+# Public address of the application and the second origin that plays courses.
+# Both need DNS names that point at the ingress and TLS certificates.
+publicUrl: https://courses.example.com
+contentUrl: https://courses-content.example.com
+
+replicas:
+  app: 2
+  converter: 1
+
+# How the application is configured (see .env.example).
+config:
+  logLevel: info
+  timeZone: Europe/Berlin
+  sessionIdleMinutes: 60
+  sessionAbsoluteHours: 12
+  loginRateLimit: 10
+  uploadMaxMb: 500
+  aiEnabled: false
+  # Extra COURSECRAFT_* variables for the app, as name: value pairs.
+  extraEnv: {}
+
+database:
+  # PostgreSQL 15 or newer, outside the chart (managed service, CloudNativePG, ...).
+  host: ''
+  port: 5432
+  name: coursecraft
+  # "require" for managed services; "disable" only inside a trusted network.
+  sslmode: require
+  # Create the three service roles and their privileges before migrating.
+  # Needs an administrator account in a Secret with the key "url"
+  # (postgres://user:password@host:5432/dbname).
+  bootstrap:
+    enabled: true
+    adminSecret: ''
+
+# Files: "s3" (object storage, any number of replicas) or "fs"
+# (a ReadWriteMany volume shared by app and converter pods).
+storage:
+  kind: s3
+  s3:
+    endpoint: ''
+    region: us-east-1
+    bucket: ''
+    keyPrefix: ''
+    # Secret with the keys "accessKeyId" and "secretAccessKey".
+    secret: ''
+    # Optional second secret for the converter, restricted to the prefix "work/".
+    converterSecret: ''
+    virtualHostedStyle: false
+  fs:
+    storageClass: ''
+    dataSize: 50Gi
+    workSize: 10Gi
+    # An existing ReadWriteMany claim instead of creating one.
+    existingDataClaim: ''
+    existingWorkClaim: ''
+
+# Generated once and kept across upgrades unless an existing Secret is named.
+# Keys: masterKey, ipPepper (32 random bytes, base64), migratorPassword,
+# appPassword, converterPassword.
+secrets:
+  existingSecret: ''
+
+ingress:
+  enabled: true
+  className: ''
+  annotations:
+    # Course packages and recordings can be large.
+    nginx.ingress.kubernetes.io/proxy-body-size: 600m
+  tls:
+    app: courses-tls
+    content: courses-content-tls
+
+resources:
+  app:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { memory: 768Mi }
+  converter:
+    requests: { cpu: 500m, memory: 1Gi }
+    limits: { cpu: '2', memory: 4Gi }
+
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
+
+podDisruptionBudget:
+  enabled: true
+
+networkPolicy:
+  # Deny all traffic except from the ingress controller (label match below) and
+  # allow the egress the pods need. Adjust to your cluster.
+  enabled: false
+  ingressControllerNamespace: ingress-nginx
+
+metrics:
+  enabled: true
+  port: 9464
+  serviceMonitor:
+    enabled: false
+    interval: 30s
+
+backup:
+  # Nightly database backup. With object storage it is uploaded to "backups/"
+  # in the bucket; with a shared volume it lands in /data/backups.
+  enabled: true
+  schedule: '17 2 * * *'
+  # Backups kept in the bucket or on the volume are not pruned by the chart;
+  # use a lifecycle rule on the bucket.
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

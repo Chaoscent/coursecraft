@@ -1,0 +1,17 @@
+Chardsoft Coursecraft is being installed.
+
+  App:      {{ .Values.publicUrl }}
+  Content:  {{ .Values.contentUrl }}
+
+The first start prints a one-time setup token in the log of ONE of the app pods:
+
+  kubectl logs -l app.kubernetes.io/component=app -c app --prefix | grep "Setup token"
+
+To get a fresh token (this invalidates the previous one):
+
+  kubectl exec deploy/{{ include "coursecraft.fullname" . }}-app -c app -- coursecraft setup-token
+
+Open {{ .Values.publicUrl }}/setup with that token to create the administrator.
+
+Keep the Secret "{{ include "coursecraft.secretName" . }}": the master key in it seals
+data in the database (SSO secrets, SMTP password, AI keys).

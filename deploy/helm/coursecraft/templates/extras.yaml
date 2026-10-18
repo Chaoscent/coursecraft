@@ -1,0 +1,87 @@
+{{- /* SPDX-License-Identifier: Apache-2.0 */ -}}
+{{- if .Values.podDisruptionBudget.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "coursecraft.fullname" . }}-app
+  labels: {{- include "coursecraft.labels" . | nindent 4 }}
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels: {{- include "coursecraft.selector" . | nindent 6 }}
+      app.kubernetes.io/component: app
+---
+{{- end }}
+{{- if .Values.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "coursecraft.fullname" . }}-app
+  labels: {{- include "coursecraft.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "coursecraft.fullname" . }}-app
+  minReplicas: {{ .Values.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target: { type: Utilization, averageUtilization: {{ .Values.autoscaling.targetCPUUtilizationPercentage }} }
+---
+{{- end }}
+{{- if and .Values.metrics.enabled .Values.metrics.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "coursecraft.fullname" . }}
+  labels: {{- include "coursecraft.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels: {{- include "coursecraft.selector" . | nindent 6 }}
+      app.kubernetes.io/component: app
+  endpoints:
+    - port: metrics
+      interval: {{ .Values.metrics.serviceMonitor.interval }}
+---
+{{- end }}
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "coursecraft.fullname" . }}-app
+  labels: {{- include "coursecraft.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels: {{- include "coursecraft.selector" . | nindent 6 }}
+      app.kubernetes.io/component: app
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.networkPolicy.ingressControllerNamespace }}
+      ports:
+        - { port: 3000 }
+        - { port: 3001 }
+    {{- if .Values.metrics.enabled }}
+    - from:
+        - namespaceSelector: {}
+      ports:
+        - { port: {{ .Values.metrics.port }} }
+    {{- end }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "coursecraft.fullname" . }}-converter
+  labels: {{- include "coursecraft.labels" . | nindent 4 }}
+spec:
+  # The converter handles untrusted files: nothing may connect to it.
+  podSelector:
+    matchLabels: {{- include "coursecraft.selector" . | nindent 6 }}
+      app.kubernetes.io/component: converter
+  policyTypes: [Ingress]
+{{- end }}

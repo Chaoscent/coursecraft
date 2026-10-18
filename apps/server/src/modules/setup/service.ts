@@ -21,18 +21,29 @@ export async function isSetupRequired(ctx: { db: Kysely<Database> }): Promise<bo
  */
 export async function issueSetupToken(
   db: Kysely<Database>,
+  options: { onlyIfMissing?: boolean } = {},
 ): Promise<{ token: string; expiresAt: Date } | null> {
   if (!(await isSetupRequired({ db }))) return null;
   const token = randomToken();
-  const expiresAt = new Date(Date.now() + SETUP_TOKEN_HOURS * 3_600_000);
-  await db
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + SETUP_TOKEN_HOURS * 3_600_000);
+  const values = { token_hash: hashToken(token), token_expires_at: expiresAt };
+  const row = await db
     .insertInto('setup_state')
-    .values({ id: 1, token_hash: hashToken(token), token_expires_at: expiresAt })
-    .onConflict((oc) =>
-      oc.column('id').doUpdateSet({ token_hash: hashToken(token), token_expires_at: expiresAt }),
-    )
-    .execute();
-  return { token, expiresAt };
+    .values({ id: 1, ...values })
+    .onConflict((oc) => {
+      const update = oc.column('id').doUpdateSet(values);
+      // Several replicas start together: only the first one hands out a token, the
+      // others must not invalidate it (the database holds nothing but its hash).
+      return options.onlyIfMissing
+        ? update.where((eb) =>
+            eb.or([eb('setup_state.token_hash', 'is', null), eb('setup_state.token_expires_at', '<=', now)]),
+          )
+        : update;
+    })
+    .returning('id')
+    .executeTakeFirst();
+  return row ? { token, expiresAt } : null;
 }
 
 /** Consumes the setup token inside the given transaction; false if invalid. */
