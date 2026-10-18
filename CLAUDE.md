@@ -68,7 +68,7 @@ pnpm check:install-scripts  # dependency lifecycle scripts decided and justified
 9. **Untrusted files** (PPTX rendering, media) are processed only in
    `apps/converter`. The app validates converter outputs before ingesting
    them. Job payloads contain ids, file names, and parameters only.
-10. **No outbound requests** except in `modules/ai` and `modules/mail`. No CDN
+10. **No outbound requests** except in `modules/ai`, `modules/mail`, `modules/sso` and `packages/storage` (object storage, only when configured). No CDN
     URLs, no external fonts or scripts. Absolute `http(s)://` URLs in shipped
     code need an entry in the allowlist of the URL check.
 11. **Secrets** never in logs, responses, fixtures, or commits. Use the secret

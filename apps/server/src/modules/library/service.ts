@@ -13,7 +13,7 @@ import { readManifest, type PackageManifest } from './manifest.js';
 import { PACKAGE_LIMITS, PackageStore } from './packages.js';
 
 export function packageStore(ctx: AppContext): PackageStore {
-  return new PackageStore(ctx.config.dataDir);
+  return new PackageStore(ctx.blobs);
 }
 
 async function storePackage(

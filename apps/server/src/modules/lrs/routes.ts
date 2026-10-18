@@ -86,7 +86,7 @@ const WRAPPER_CSS =
 export async function launchRoutes(app: FastifyInstance, ctx: AppContext, options: { sameOrigin: boolean }) {
   const appOrigin = ctx.config.publicUrl.origin;
   const frameAncestor = options.sameOrigin ? "'self'" : appOrigin;
-  const packages = new PackageStore(ctx.config.dataDir);
+  const packages = new PackageStore(ctx.blobs);
 
   await app.register((scope) => {
     // Documents are opaque bytes; statements are parsed by the handler.
@@ -264,9 +264,9 @@ export async function launchRoutes(app: FastifyInstance, ctx: AppContext, option
           .status(206)
           .header('Content-Range', `bytes ${start}-${end}/${file.size}`)
           .header('Content-Length', String(end - start + 1))
-          .send(createReadStream(file.path, { start, end }));
+          .send(await file.open({ start, end }));
       }
-      return reply.header('Content-Length', String(file.size)).send(createReadStream(file.path));
+      return reply.header('Content-Length', String(file.size)).send(await file.open());
     });
     return Promise.resolve();
   });

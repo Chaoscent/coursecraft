@@ -6,7 +6,8 @@ import type { AppConfig } from '../config/env.js';
 import type { SecretBox } from '../crypto/secret-box.js';
 import type { Database } from '../db/schema.js';
 import type { JobQueue } from '../jobs/queue.js';
-import type { WorkDir } from '../jobs/work-dir.js';
+import type { WorkExchange } from '../jobs/work-dir.js';
+import type { BlobStore } from '@coursecraft/storage';
 import type { AssetStore } from '../modules/assets/store.js';
 import type { AuditService } from '../modules/audit/service.js';
 
@@ -18,8 +19,10 @@ export interface AppContext {
   sessions: SessionService;
   audit: AuditService;
   assets: AssetStore;
+  /** All stored files (assets, extracted packages, converter exchange) behind one interface. */
+  blobs: BlobStore;
   jobs: JobQueue;
-  work: WorkDir;
+  work: WorkExchange;
   /** Replaced by the HTTP server's logger once it exists. */
   log: Logger;
 }

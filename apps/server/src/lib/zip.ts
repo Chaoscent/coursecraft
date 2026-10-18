@@ -1,8 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { createWriteStream } from 'node:fs';
-import { mkdir } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
-import { pipeline } from 'node:stream/promises';
+import { Transform, pipeline, type Readable } from 'node:stream';
 import yauzl from 'yauzl';
 import { AppError } from '../http/errors.js';
 
@@ -118,28 +115,36 @@ export class ZipArchive {
   }
 
   /**
-   * Writes every entry below `dir`, streaming (large media never sit in
-   * memory). Paths were validated when the archive was opened.
+   * Hands every entry to `write` as a stream of known length (large media
+   * never sit in memory). Paths were validated when the archive was opened.
    */
-  async extractTo(dir: string): Promise<number> {
+  async extractInto(
+    write: (path: string, source: { stream: Readable; size: number }) => Promise<void>,
+  ): Promise<number> {
     let total = 0;
     for (const [path, entry] of this.#entries) {
-      const target = join(dir, path);
-      await mkdir(dirname(target), { recursive: true });
-      total += await new Promise<number>((resolve, reject) => {
-        this.#zip.openReadStream(entry, (error, stream) => {
+      const stream = await new Promise<Readable>((resolve, reject) => {
+        this.#zip.openReadStream(entry, (error, opened) => {
           if (error) return reject(invalid('Corrupt ZIP entry'));
-          let size = 0;
-          const out = createWriteStream(target, { flags: 'wx', mode: 0o640 });
-          stream.on('data', (chunk: Buffer) => {
-            size += chunk.length;
-            if (size > this.#limits.maxEntryBytes) stream.destroy(invalid('File in archive too large'));
-          });
-          pipeline(stream, out)
-            .then(() => resolve(size))
-            .catch(() => reject(invalid('Corrupt ZIP entry')));
+          resolve(opened);
         });
       });
+      // Counting happens in a transform, so nothing is read before the writer starts.
+      let size = 0;
+      const counted = new Transform({
+        transform: (chunk: Buffer, _encoding, done) => {
+          size += chunk.length;
+          done(size > this.#limits.maxEntryBytes ? invalid('File in archive too large') : null, chunk);
+        },
+      });
+      pipeline(stream, counted, () => undefined);
+      try {
+        await write(path, { stream: counted, size: entry.uncompressedSize });
+      } catch (error) {
+        counted.destroy();
+        throw error instanceof AppError ? error : invalid('Corrupt ZIP entry');
+      }
+      total += size;
     }
     return total;
   }

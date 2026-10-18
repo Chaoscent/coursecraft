@@ -629,6 +629,28 @@ TOTP secrets, OIDC client secrets, and SMTP passwords. The API returns only
   on-demand sync that deactivates accounts gone from the directory, and the
   `sso_policy` setting that limits local password sign-in to administrators.
 
+## 12f. Storage (Kubernetes readiness)
+
+- `packages/storage` defines `BlobStore` (stat, read with ranges, atomic put,
+  remove, list) with two implementations: files below one directory
+  (`COURSECRAFT_STORAGE=fs`, default, Docker Compose) and S3-compatible object
+  storage (`COURSECRAFT_STORAGE=s3`, own Signature V4 client on `fetch`, no
+  SDK; checked against the signature example of the AWS documentation and a
+  real S3 server). Assets (`assets/aa/<sha>`), extracted packages
+  (`packages/<id>/…`) and the converter exchange (`work/<job>/in|out/…`) all
+  go through it; the app serves files by streaming them, with ranges.
+- The converter exchange has two variants: the shared `work` directory, or
+  object storage, where the converter fetches the input into a scratch
+  directory and uploads the outputs before reporting the job done. Output
+  names, sizes and ids are validated as before.
+- Backups: with object storage the archive holds the database only and is
+  uploaded to `backups/`; the bucket itself is protected by the provider
+  (versioning, replication).
+- The whole database suite runs against both: `CC_TEST_STORAGE=s3 pnpm
+test:db` starts an S3 server container (Scality CloudServer) besides
+  PostgreSQL. The tests that emulate the converter through a directory are
+  skipped there; `work-exchange.test.ts` covers the object storage variant.
+
 ## 12e. Performance (Phase 8)
 
 - Pages for authors and administrators are loaded on demand (route-level code

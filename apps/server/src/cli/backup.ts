@@ -7,6 +7,7 @@
  * volume). Restore runs in the maintenance container with the migrator
  * role, which owns the schema; the app must be stopped meanwhile.
  */
+import { tmpdir } from 'node:os';
 import { spawn } from 'node:child_process';
 import {
   existsSync,
@@ -94,12 +95,17 @@ function run(
 
 const stamp = () => new Date().toISOString().replace(/[:.]/g, '-');
 
+/**
+ * `dataDir` is null when files live in object storage: the archive then holds
+ * the database only, and the bucket is protected by its own means
+ * (versioning, replication, provider backups).
+ */
 export async function backup(options: {
   databaseUrl: string;
-  dataDir: string;
+  dataDir: string | null;
   outDir?: string;
 }): Promise<string> {
-  const outDir = options.outDir ?? join(options.dataDir, 'backups');
+  const outDir = options.outDir ?? join(options.dataDir ?? tmpdir(), 'backups');
   mkdirSync(outDir, { recursive: true, mode: 0o750 });
   const work = join(outDir, `.work-${stamp()}`);
   mkdirSync(work, { mode: 0o700 });
@@ -117,9 +123,10 @@ export async function backup(options: {
     };
     writeFileSync(join(work, 'manifest.json'), JSON.stringify(manifest, null, 2));
     const file = join(outDir, `coursecraft-${stamp()}.tar`);
-    const dataEntries = existsSync(options.dataDir)
-      ? readdirSync(options.dataDir).filter((n) => !SKIPPED.has(n) && !n.startsWith('.'))
-      : [];
+    const dataEntries =
+      options.dataDir && existsSync(options.dataDir)
+        ? readdirSync(options.dataDir).filter((n) => !SKIPPED.has(n) && !n.startsWith('.'))
+        : [];
     await run('tar', [
       '--create',
       `--file=${file}.part`,
@@ -127,7 +134,7 @@ export async function backup(options: {
       'manifest.json',
       'database.dump',
     ]);
-    if (dataEntries.length) {
+    if (options.dataDir && dataEntries.length) {
       await run('tar', [
         '--append',
         `--file=${file}.part`,
@@ -166,12 +173,12 @@ export function checkListing(verbose: string): void {
 export async function restore(options: {
   file: string;
   databaseUrl: string;
-  dataDir: string;
+  dataDir: string | null;
 }): Promise<BackupManifest> {
   const file = resolve(options.file);
   if (!existsSync(file) || !statSync(file).isFile()) throw new Error(`No such backup file: ${file}`);
   checkListing(await run('tar', ['--list', '--verbose', '--numeric-owner', `--file=${file}`]));
-  const work = join(options.dataDir, `.restore-${stamp()}`);
+  const work = join(options.dataDir ?? tmpdir(), `.restore-${stamp()}`);
   mkdirSync(work, { mode: 0o700 });
   try {
     await run('tar', [
@@ -206,13 +213,16 @@ export async function restore(options: {
       env,
     );
     // Replace the data volume contents (except backups) with the archived ones.
-    for (const name of readdirSync(options.dataDir)) {
-      if (SKIPPED.has(name) || name.startsWith('.')) continue;
-      rmSync(join(options.dataDir, name), { recursive: true, force: true });
-    }
-    const restored = join(work, 'data');
-    if (existsSync(restored)) {
-      for (const name of readdirSync(restored)) renameSync(join(restored, name), join(options.dataDir, name));
+    if (options.dataDir) {
+      for (const name of readdirSync(options.dataDir)) {
+        if (SKIPPED.has(name) || name.startsWith('.')) continue;
+        rmSync(join(options.dataDir, name), { recursive: true, force: true });
+      }
+      const restored = join(work, 'data');
+      if (existsSync(restored)) {
+        for (const name of readdirSync(restored))
+          renameSync(join(restored, name), join(options.dataDir, name));
+      }
     }
     return manifest;
   } finally {

@@ -15,6 +15,7 @@
   "dependencies": {
     "@coursecraft/course-model": "workspace:*",
     "@coursecraft/shared": "workspace:*",
+    "@coursecraft/storage": "workspace:*",
     "@fastify/cookie": "^11.1.3",
     "@fastify/helmet": "^13.2.0",
     "@fastify/multipart": "^10.1.4",

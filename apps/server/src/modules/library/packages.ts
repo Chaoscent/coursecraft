@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-import { constants } from 'node:fs';
-import { lstat, mkdir, open, rm } from 'node:fs/promises';
-import { join, sep } from 'node:path';
+import type { Readable } from 'node:stream';
+import type { BlobRange, BlobStore } from '@coursecraft/storage';
 import { safeEntryPath, type ZipArchive, type ZipLimits } from '../../lib/zip.js';
 
 export const PACKAGE_LIMITS: ZipLimits = {
@@ -52,32 +51,31 @@ export function contentType(path: string): string {
 }
 
 export interface PackageFile {
-  path: string;
   size: number;
   type: string;
+  open(range?: BlobRange): Promise<Readable>;
 }
 
 /**
- * Extracted learning packages: `<data>/packages/<id>/…`. Served only on the
+ * Extracted learning packages: `packages/<id>/…`. Served only on the
  * content origin, after the launch token was checked.
  */
 export class PackageStore {
-  readonly #root: string;
+  readonly #blobs: BlobStore;
 
-  constructor(dataDir: string) {
-    this.#root = join(dataDir, 'packages');
+  constructor(blobs: BlobStore) {
+    this.#blobs = blobs;
   }
 
-  dir(id: string): string {
+  #prefix(id: string): string {
     if (!ID.test(id)) throw new Error('Invalid package id');
-    return join(this.#root, id);
+    return `packages/${id}`;
   }
 
   async extract(id: string, zip: ZipArchive): Promise<number> {
-    const dir = this.dir(id);
-    await mkdir(dir, { recursive: true, mode: 0o750 });
+    const prefix = this.#prefix(id);
     try {
-      return await zip.extractTo(dir);
+      return await zip.extractInto((path, source) => this.#blobs.put(`${prefix}/${path}`, source));
     } catch (error) {
       await this.remove(id);
       throw error;
@@ -85,7 +83,7 @@ export class PackageStore {
   }
 
   async remove(id: string): Promise<void> {
-    await rm(this.dir(id), { recursive: true, force: true });
+    await this.#blobs.removePrefix(this.#prefix(id));
   }
 
   /** A regular file inside the package, or null (missing, directory, symlink, unsafe path). */
@@ -98,15 +96,11 @@ export class PackageStore {
     }
     const safe = safeEntryPath(decoded);
     if (!safe) return null;
-    const full = join(this.dir(id), safe);
-    if (!full.startsWith(this.dir(id) + sep)) return null;
+    const key = `${this.#prefix(id)}/${safe}`;
     try {
-      const stat = await lstat(full);
-      if (!stat.isFile()) return null;
-      // Refuse symlinks anywhere on the way (none are extracted, but be strict).
-      const handle = await open(full, constants.O_RDONLY | constants.O_NOFOLLOW);
-      await handle.close();
-      return { path: full, size: stat.size, type: contentType(safe) };
+      const stat = await this.#blobs.stat(key);
+      if (!stat) return null;
+      return { size: stat.size, type: contentType(safe), open: (range) => this.#blobs.read(key, range) };
     } catch {
       return null;
     }

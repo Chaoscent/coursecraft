@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { Readable } from 'node:stream';
 import { assetFileName, CourseFormatError, loadCourse, type Course } from '@coursecraft/course-model';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -84,6 +85,10 @@ function playerFiles(playerDir: string): Map<string, Buffer> {
   return files;
 }
 
+async function* streamOf(store: AssetStore, sha: string): AsyncGenerator<Buffer> {
+  for await (const chunk of await store.open(sha)) yield chunk as Buffer;
+}
+
 /**
  * Builds a self-contained package: the player, the validated course data and
  * all referenced media. Nothing in it loads from outside the package.
@@ -118,7 +123,7 @@ export async function buildExport(
     sha,
   ]);
   for (const [, sha] of assetPaths) {
-    if (!store.has(sha)) throw badRequest('A file used by the course is missing');
+    if (!(await store.has(sha))) throw badRequest('A file used by the course is missing');
   }
   const files = [...entries.keys(), ...assetPaths.map(([path]) => path)];
   const title = courseTitle(course);
@@ -135,7 +140,10 @@ export async function buildExport(
 
   const zip = new ZipFile();
   for (const [path, bytes] of entries) zip.addBuffer(bytes, path, { mtime: new Date(0) });
-  for (const [path, sha] of assetPaths) zip.addReadStream(store.open(sha), path, { mtime: new Date(0) });
+  // Opened one after the other as the archive is written, so a course with
+  // hundreds of files does not hold hundreds of connections or file handles.
+  for (const [path, sha] of assetPaths)
+    zip.addReadStream(Readable.from(streamOf(store, sha)), path, { mtime: new Date(0) });
   zip.end();
   const chunks: Buffer[] = [];
   for await (const chunk of zip.outputStream) chunks.push(chunk as Buffer);

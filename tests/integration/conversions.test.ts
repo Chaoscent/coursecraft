@@ -3,7 +3,7 @@ import { QUEUES } from '@coursecraft/shared';
 import { existsSync, mkdtempSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
 import type { RecordingQueue } from '../../apps/server/src/jobs/queue.js';
 import { expireStale, handleConvertDone } from '../../apps/server/src/modules/conversions/service.js';
 import { getDoc, openCourse, uploadTo } from '../support/courses.js';
@@ -78,7 +78,10 @@ const WEBM = Buffer.concat([
   Buffer.alloc(64),
 ]);
 
-describe('PPTX import', () => {
+// These emulate the converter through a shared directory; object storage has its own test.
+const onDisk = inject('s3') ? describe.skip : describe;
+
+onDisk('PPTX import', () => {
   it('parses at once, queues rendering and creates the course with rendered slides', async () => {
     const id = await startImport();
     const job = sent().find(
@@ -204,7 +207,7 @@ describe('PPTX import', () => {
   });
 });
 
-describe('media conversion', () => {
+onDisk('media conversion', () => {
   it('queues a recording and attaches the converted audio to the course', async () => {
     const { id: courseId } = await openCourse(t, author);
     const res = await uploadTo(

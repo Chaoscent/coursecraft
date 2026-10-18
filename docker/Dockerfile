@@ -15,6 +15,7 @@ COPY apps/server/package.json apps/server/
 COPY apps/converter/package.json apps/converter/
 COPY apps/web/package.json apps/web/
 COPY packages/shared/package.json packages/shared/
+COPY packages/storage/package.json packages/storage/
 COPY packages/course-model/package.json packages/course-model/
 COPY packages/player/package.json packages/player/
 COPY packages/eslint-config/package.json packages/eslint-config/

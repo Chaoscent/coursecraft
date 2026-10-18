@@ -30,7 +30,7 @@ export async function storeAsset(
   userId: string | null,
 ): Promise<StoredAsset> {
   const clean = await sanitizeUpload(bytes);
-  const sha256 = store.put(clean.bytes);
+  const sha256 = await store.put(clean.bytes);
   await db
     .insertInto('assets')
     .values({ sha256, mime: clean.mime, size: clean.bytes.length, created_by: userId })

@@ -1,5 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-import { readFileSync } from 'node:fs';
+import { createReadStream, createWriteStream, readFileSync, rmSync, statSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { basename, join } from 'node:path';
+import { pipeline } from 'node:stream/promises';
+import { S3BlobStore } from '@coursecraft/storage';
 import { backup, restore } from './cli/backup.js';
 import { initSecrets } from './cli/init-secrets.js';
 import { migrate } from './cli/migrate.js';
@@ -13,15 +17,39 @@ function secretFromEnv(name: string): string {
   return value;
 }
 
+/** Object storage from the environment, or null when files live on the data volume. */
+function objectStore(): S3BlobStore | null {
+  if (process.env['COURSECRAFT_STORAGE'] !== 's3') return null;
+  const required = (name: string): string => {
+    const value = process.env[name];
+    if (!value) throw new Error(`${name} must be set when COURSECRAFT_STORAGE=s3`);
+    return value;
+  };
+  return new S3BlobStore({
+    endpoint: required('COURSECRAFT_S3_ENDPOINT'),
+    region: process.env['COURSECRAFT_S3_REGION'] ?? 'us-east-1',
+    bucket: required('COURSECRAFT_S3_BUCKET'),
+    accessKeyId: secretFromEnv('COURSECRAFT_S3_ACCESS_KEY_ID'),
+    secretAccessKey: secretFromEnv('COURSECRAFT_S3_SECRET_ACCESS_KEY'),
+    keyPrefix: process.env['COURSECRAFT_S3_KEY_PREFIX'] ?? '',
+    virtualHostedStyle: process.env['COURSECRAFT_S3_VIRTUAL_HOSTED_STYLE'] === 'true',
+  });
+}
+
+const dataDir = (): string | null =>
+  objectStore() ? null : (process.env['COURSECRAFT_DATA_DIR'] ?? '/data');
+
 const USAGE = `Usage: coursecraft <command>
 
 Commands:
   migrate               Apply database migrations and create job queues
   init-secrets <dir>    Create missing secrets for all services (first start)
   setup-token           Create a new one-time setup token (invalidates the previous one)
-  backup                Write database and data volume to /data/backups (app container)
+  backup                Write database and data volume to /data/backups (app container);
+                        with object storage: database only, uploaded to backups/ in the bucket
   restore <file>        Replace database and data with a backup (maintenance container,
-                        app stopped), then apply newer migrations
+                        app stopped), then apply newer migrations; <file> may be
+                        s3:backups/<name>.tar with object storage
 `;
 
 async function run(args: string[]): Promise<number> {
@@ -64,9 +92,15 @@ async function run(args: string[]): Promise<number> {
     case 'backup': {
       const file = await backup({
         databaseUrl: secretFromEnv('COURSECRAFT_DATABASE_URL'),
-        dataDir: process.env['COURSECRAFT_DATA_DIR'] ?? '/data',
+        dataDir: dataDir(),
       });
-      console.log(`Backup written: ${file}`);
+      const store = objectStore();
+      if (store) {
+        const key = `backups/${basename(file)}`;
+        await store.put(key, { stream: createReadStream(file), size: statSync(file).size });
+        rmSync(file, { force: true });
+        console.log(`Backup uploaded: ${key} (database only; the bucket itself is not part of it)`);
+      } else console.log(`Backup written: ${file}`);
       return 0;
     }
     case 'restore': {
@@ -76,10 +110,15 @@ async function run(args: string[]): Promise<number> {
         return 2;
       }
       const url = secretFromEnv('COURSECRAFT_MIGRATOR_DATABASE_URL');
-      const manifest = await restore({
-        file,
-        databaseUrl: url,
-        dataDir: process.env['COURSECRAFT_DATA_DIR'] ?? '/data',
+      const store = objectStore();
+      let local = file;
+      if (file.startsWith('s3:')) {
+        if (!store) throw new Error('s3: backups need COURSECRAFT_STORAGE=s3');
+        local = join(tmpdir(), `restore-${basename(file)}`);
+        await pipeline(await store.read(file.slice(3)), createWriteStream(local, { mode: 0o600 }));
+      }
+      const manifest = await restore({ file: local, databaseUrl: url, dataDir: dataDir() }).finally(() => {
+        if (local !== file) rmSync(local, { force: true });
       });
       const { applied } = await migrate(url);
       console.log(`Restored backup from ${manifest.createdAt} (${manifest.migration}).`);

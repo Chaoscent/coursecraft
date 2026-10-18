@@ -341,7 +341,7 @@ export function courseRoutes(
         .where('course_assets.course_id', '=', request.params.id)
         .where('course_assets.sha256', '=', request.params.sha256)
         .executeTakeFirst();
-      if (!asset || !store.has(request.params.sha256)) throw notFound('File not found');
+      if (!asset || !(await store.has(request.params.sha256))) throw notFound('File not found');
       return sendAsset(reply, store, request.params.sha256, asset.mime, request.headers.range);
     },
   );
@@ -505,14 +505,14 @@ export function courseRoutes(
 }
 
 /** Streams a stored file; supports byte ranges (needed for media seeking). */
-export function sendAsset(
+export async function sendAsset(
   reply: FastifyReply,
   store: AssetStore,
   sha256: string,
   mime: string,
   rangeHeader: string | undefined,
 ) {
-  const size = store.size(sha256);
+  const size = await store.size(sha256);
   void reply
     .header('Content-Type', mime)
     .header('Accept-Ranges', 'bytes')
@@ -531,7 +531,7 @@ export function sendAsset(
       .status(206)
       .header('Content-Range', `bytes ${start}-${end}/${size}`)
       .header('Content-Length', String(end - start + 1))
-      .send(store.open(sha256, { start, end }));
+      .send(await store.open(sha256, { start, end }));
   }
-  return reply.header('Content-Length', String(size)).send(store.open(sha256));
+  return reply.header('Content-Length', String(size)).send(await store.open(sha256));
 }

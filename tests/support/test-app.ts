@@ -56,6 +56,7 @@ export function sessionCookie(res: LightMyRequestResponse): string | undefined {
 
 export async function createTestApp(env: Record<string, string> = {}): Promise<TestApp> {
   const pg = inject('pg');
+  const s3 = inject('s3');
   const { url, drop } = await createTestDatabase(pg);
   const config = loadConfig({
     COURSECRAFT_PUBLIC_URL: ORIGIN,
@@ -65,6 +66,18 @@ export async function createTestApp(env: Record<string, string> = {}): Promise<T
     COURSECRAFT_LOG_LEVEL: 'fatal',
     COURSECRAFT_DATA_DIR: mkdtempSync(join(tmpdir(), 'cc-data-')),
     COURSECRAFT_PLAYER_DIR: new URL('../../packages/player/dist/', import.meta.url).pathname,
+    // With CC_TEST_STORAGE=s3 the same suite runs against object storage, one key prefix per app.
+    ...(s3
+      ? {
+          COURSECRAFT_STORAGE: 's3',
+          COURSECRAFT_S3_ENDPOINT: s3.endpoint,
+          COURSECRAFT_S3_REGION: s3.region,
+          COURSECRAFT_S3_BUCKET: s3.bucket,
+          COURSECRAFT_S3_ACCESS_KEY_ID: s3.accessKeyId,
+          COURSECRAFT_S3_SECRET_ACCESS_KEY: s3.secretAccessKey,
+          COURSECRAFT_S3_KEY_PREFIX: `test-${randomBytes(6).toString('hex')}`,
+        }
+      : {}),
     ...env,
   });
   const ctx = createContext(config);

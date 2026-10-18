@@ -63,8 +63,21 @@ const configSchema = z
     /** Directory with the built player (player.js, player.css, fonts/). */
     playerDir: z.string().optional(),
     uploadMaxMb: z.coerce.number().int().min(1).max(4096).default(500),
-    /** Shared with the converter: `<id>/in/` and `<id>/out/` per conversion. */
+    /** Shared with the converter: `<id>/in/` and `<id>/out/` per conversion (file system storage). */
     workDir: z.string().default('/work'),
+    /** Where files live: on disk (one host) or in S3-compatible object storage (several replicas). */
+    storage: z.enum(['fs', 's3']).default('fs'),
+    s3Endpoint: z.url().optional(),
+    s3Region: z.string().min(1).default('us-east-1'),
+    s3Bucket: z.string().min(1).optional(),
+    s3AccessKeyId: z.string().min(1).optional(),
+    s3SecretAccessKey: z.string().min(1).optional(),
+    /** Several installations can share one bucket by using different prefixes. */
+    s3KeyPrefix: z.string().default(''),
+    s3VirtualHostedStyle: z
+      .enum(['true', 'false'])
+      .default('false')
+      .transform((value) => value === 'true'),
     /** Pending conversions older than this are given up (converter missing or stuck). */
     conversionTimeoutMinutes: z.coerce
       .number()
@@ -93,6 +106,13 @@ const configSchema = z
         }
       }, 'Unknown time zone'),
   })
+  .refine(
+    (c) => c.storage !== 's3' || (c.s3Endpoint && c.s3Bucket && c.s3AccessKeyId && c.s3SecretAccessKey),
+    {
+      message: 'S3 storage needs an endpoint, a bucket and access keys',
+      path: ['storage'],
+    },
+  )
   .refine((c) => !c.contentUrl || c.contentUrl.origin !== c.publicUrl.origin, {
     message: 'Content origin must differ from the public origin (host or port)',
     path: ['contentUrl'],
@@ -120,6 +140,14 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     playerDir: env['COURSECRAFT_PLAYER_DIR'] || undefined,
     uploadMaxMb: env['COURSECRAFT_UPLOAD_MAX_MB'],
     workDir: env['COURSECRAFT_WORK_DIR'],
+    storage: env['COURSECRAFT_STORAGE'],
+    s3Endpoint: env['COURSECRAFT_S3_ENDPOINT'] || undefined,
+    s3Region: env['COURSECRAFT_S3_REGION'],
+    s3Bucket: env['COURSECRAFT_S3_BUCKET'] || undefined,
+    s3AccessKeyId: readSecret(env, 'COURSECRAFT_S3_ACCESS_KEY_ID'),
+    s3SecretAccessKey: readSecret(env, 'COURSECRAFT_S3_SECRET_ACCESS_KEY'),
+    s3KeyPrefix: env['COURSECRAFT_S3_KEY_PREFIX'],
+    s3VirtualHostedStyle: env['COURSECRAFT_S3_VIRTUAL_HOSTED_STYLE'],
     conversionTimeoutMinutes: env['COURSECRAFT_CONVERSION_TIMEOUT_MINUTES'],
     aiEnabled: env['COURSECRAFT_AI_ENABLED'],
     aiTimeoutSeconds: env['COURSECRAFT_AI_TIMEOUT_SECONDS'],

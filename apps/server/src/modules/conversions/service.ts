@@ -101,7 +101,7 @@ export async function startPresentationImport(
     })
     .execute();
   try {
-    ctx.work.prepare(id, 'source.pptx', bytes);
+    await ctx.work.prepare(id, 'source.pptx', bytes);
     await ctx.jobs.send(
       QUEUES.pptxRender,
       { jobId: id, widthPx: Math.min(3840, Math.round(payload.canvas.width * 1.5)) },
@@ -110,7 +110,7 @@ export async function startPresentationImport(
   } catch (error) {
     // No work volume or job queue: the course is created without slide images.
     ctx.log.warn({ err: error, conversionId: id }, 'slide rendering not queued');
-    ctx.work.remove(id);
+    await ctx.work.remove(id);
     await finishImport(ctx, id, null, 'render_skipped');
   }
   return id;
@@ -216,7 +216,7 @@ export async function startMediaConversion(
     })
     .execute();
   try {
-    ctx.work.prepare(id, `source.${ext}`, bytes);
+    await ctx.work.prepare(id, `source.${ext}`, bytes);
     await ctx.jobs.send(
       QUEUES.media,
       {
@@ -231,7 +231,7 @@ export async function startMediaConversion(
     );
   } catch (error) {
     ctx.log.warn({ err: error, conversionId: id }, 'media conversion not queued');
-    ctx.work.remove(id);
+    await ctx.work.remove(id);
     await fail(ctx, id, 'unavailable');
     throw new AppError('internal', 'Media conversion is not available');
   }
@@ -254,10 +254,10 @@ function pageIndex(name: string): number | null {
 
 async function ingestPages(ctx: AppContext, job: ConvertDoneJob, totalSlides: number, userId: string) {
   const pages = new Map<number, StoredAsset>();
-  for (const name of ctx.work.outputs(job.jobId)) {
+  for (const name of await ctx.work.outputs(job.jobId)) {
     const index = pageIndex(name);
     if (index === null || index < 0 || index >= totalSlides) continue;
-    const bytes = ctx.work.readOutput(job.jobId, name, MAX_PAGE_BYTES);
+    const bytes = await ctx.work.readOutput(job.jobId, name, MAX_PAGE_BYTES);
     if (!bytes) continue;
     try {
       const asset = await storeAsset(ctx.db, ctx.assets, bytes, `slide-${index + 1}.png`, userId);
@@ -276,7 +276,7 @@ async function ingestMedia(
 ) {
   const target = row.payload['target'] === 'video' ? 'video' : 'audio';
   const file = target === 'audio' ? CONVERTER_OUTPUT.audio : CONVERTER_OUTPUT.videoMp4;
-  const bytes = ctx.work.readOutput(job.jobId, file, ctx.config.uploadMaxMb * 1024 * 1024);
+  const bytes = await ctx.work.readOutput(job.jobId, file, ctx.config.uploadMaxMb * 1024 * 1024);
   if (!bytes || !row.course_id) return null;
   const base = row.input_name.replace(/\.[^.]+$/, '') || 'media';
   const asset = await storeAsset(
@@ -302,7 +302,7 @@ async function ingestVideoExtras(ctx: AppContext, job: ConvertDoneJob, base: str
   ] as const;
   for (const [key, file, mime, name, limit] of files) {
     if (!job.outputs.includes(file)) continue;
-    const bytes = ctx.work.readOutput(job.jobId, file, limit);
+    const bytes = await ctx.work.readOutput(job.jobId, file, limit);
     if (!bytes) continue;
     try {
       const stored = await storeAsset(ctx.db, ctx.assets, bytes, name, userId);
@@ -345,7 +345,7 @@ export async function handleConvertDone(ctx: AppContext, job: ConvertDoneJob): P
       .where('status', '=', 'pending')
       .execute();
   } finally {
-    ctx.work.remove(job.jobId);
+    await ctx.work.remove(job.jobId);
   }
 }
 
@@ -361,7 +361,7 @@ export async function expireStale(ctx: AppContext): Promise<number> {
   for (const row of stale) {
     if (row.kind === 'pptx-import') await finishImport(ctx, row.id, null, 'render_failed');
     else await fail(ctx, row.id, 'timeout');
-    ctx.work.remove(row.id);
+    await ctx.work.remove(row.id);
   }
   return stale.length;
 }

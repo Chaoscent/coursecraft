@@ -12,6 +12,7 @@ import { beat, HEARTBEAT_INTERVAL_MS } from './heartbeat.js';
 import { convertMedia, UnsupportedMediaError } from './jobs/media.js';
 import { renderPresentation } from './jobs/pptx-render.js';
 import { ProcessError } from './process.js';
+import { withJobFiles } from './stage.js';
 
 // Outputs must stay deletable by the app, which shares only the group.
 process.umask(0o007);
@@ -47,7 +48,9 @@ await boss.work(QUEUES.pptxRender, options, async ([job]) => {
   if (!parsed.success) return console.error('invalid render job dropped');
   const started = Date.now();
   try {
-    const outputs = await renderPresentation(config.workDir, parsed.data);
+    const { outputs } = await withJobFiles(config, parsed.data.jobId, async (root) => ({
+      outputs: await renderPresentation(root, parsed.data),
+    }));
     console.log(`rendered ${outputs.length} slides in ${Date.now() - started} ms`);
     await report({ jobId: parsed.data.jobId, queue: QUEUES.pptxRender, ok: true, outputs });
   } catch (error) {
@@ -66,7 +69,7 @@ await boss.work(QUEUES.media, options, async ([job]) => {
   const parsed = mediaJobSchema.safeParse(job?.data);
   if (!parsed.success) return console.error('invalid media job dropped');
   try {
-    const result = await convertMedia(config.workDir, parsed.data);
+    const result = await withJobFiles(config, parsed.data.jobId, (root) => convertMedia(root, parsed.data));
     await report({ jobId: parsed.data.jobId, queue: QUEUES.media, ok: true, ...result });
   } catch (error) {
     console.error('media conversion failed', error instanceof Error ? error.message : error);
