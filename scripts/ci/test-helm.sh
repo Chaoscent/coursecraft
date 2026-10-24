@@ -6,12 +6,18 @@ set -eu
 cd "$(dirname "$0")/../.."
 helm() { docker run --rm -v "$PWD/deploy/helm:/charts" alpine/helm:latest "$@"; }
 COMMON="--set database.host=db.example --set database.bootstrap.adminSecret=admin"
-S3="--set storage.s3.endpoint=https://s3.example --set storage.s3.bucket=b --set storage.s3.secret=keys"
+S3="--set storage.s3.endpoint=https://s3.example --set storage.s3.bucket=b --set storage.s3.secret=keys --set storage.s3.converterSecret=converter-keys"
 OUT=$(mktemp -d)
 trap 'rm -rf "$OUT"' EXIT
 helm lint /charts/coursecraft $COMMON $S3
 helm template cc /charts/coursecraft $COMMON $S3 --set networkPolicy.enabled=true --set autoscaling.enabled=true --set operator.enabled=true --set tenancy=multi --set billing.stripeSecret=stripe >"$OUT/s3.yaml"
 helm template cc /charts/coursecraft $COMMON --set storage.kind=fs >"$OUT/fs.yaml"
+# The converter never gets the app's object storage key (SECURITY_AUDIT.md F-04).
+S3_NO_CONVERTER_KEY="--set storage.s3.endpoint=https://s3.example --set storage.s3.bucket=b --set storage.s3.secret=keys"
+if helm template cc /charts/coursecraft $COMMON $S3_NO_CONVERTER_KEY >/dev/null 2>&1; then echo "FAIL: converter without its own S3 key" && exit 1; fi
+if helm template cc /charts/coursecraft $COMMON $S3_NO_CONVERTER_KEY --set storage.s3.converterSecret=keys >/dev/null 2>&1; then echo "FAIL: converter with the app's S3 key" && exit 1; fi
+awk '/component: converter/{c=1} /^---/{c=0} c' "$OUT/s3.yaml" | grep -q 'name: converter-keys' || { echo "FAIL: converter key not used"; exit 1; }
+if awk '/component: converter/{c=1} /^---/{c=0} c' "$OUT/s3.yaml" | grep -q 'name: keys,'; then echo "FAIL: app key in converter"; exit 1; fi
 # Stripe billing: the webhook secret goes to the app, the API key only to the operator console.
 grep -q COURSECRAFT_STRIPE_WEBHOOK_SECRET "$OUT/s3.yaml" && grep -q COURSECRAFT_STRIPE_SECRET_KEY "$OUT/s3.yaml"
 if grep -q STRIPE "$OUT/fs.yaml"; then echo "FAIL: Stripe settings without billing.stripeSecret" && exit 1; fi

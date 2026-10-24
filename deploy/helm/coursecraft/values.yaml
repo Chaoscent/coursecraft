@@ -60,7 +60,8 @@ storage:
     keyPrefix: ''
     # Secret with the keys "accessKeyId" and "secretAccessKey".
     secret: ''
-    # Optional second secret for the converter, restricted to the prefix "work/".
+    # Required with s3: the converter's own key, restricted to "<keyPrefix>work/"
+    # (list, read work/*/in/*, write work/*/out/*). Never the app's key.
     converterSecret: ''
     virtualHostedStyle: false
   fs:
