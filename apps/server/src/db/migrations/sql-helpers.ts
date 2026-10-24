@@ -123,3 +123,48 @@ export async function grantColumnUpdate<DB>(
       db,
     );
 }
+
+/* ---------- Job queue (pg-boss) privileges, SECURITY_AUDIT.md F-01 ---------- */
+
+/**
+ * pg-boss's own deferred commands are single index statements on its job
+ * tables. bam.ts runs a command with the simple query protocol, so a `;`
+ * would allow more statements.
+ */
+const PG_BOSS_COMMAND = String.raw`^\s*(CREATE (UNIQUE )?INDEX|DROP INDEX)[^;]*;?\s*$`;
+
+const queueReady = async <DB>(db: Kysely<DB>): Promise<boolean> => {
+  const result = await sql<{ ok: boolean }>`select to_regclass('pgboss.bam') is not null
+    and exists (select 1 from pg_roles where rolname = 'coursecraft_converter')
+    and exists (select 1 from pg_roles where rolname = 'coursecraft_app') as ok`.execute(db);
+  return result.rows[0]?.ok === true;
+};
+
+/**
+ * Least privilege on the job queue. The converter only works its job rows and
+ * registers itself; neither it nor the app may write pg-boss's maintenance
+ * tables (`bam` commands run as the table owner during migrate). Idempotent;
+ * runs after every migration and after pg-boss created or upgraded its
+ * tables. Skipped while the schema or the roles do not exist.
+ */
+export async function lockDownJobQueue<DB>(db: Kysely<DB>): Promise<void> {
+  if (!(await queueReady(db))) return;
+  await sql`alter default privileges for role coursecraft_migrator in schema pgboss revoke all on tables from coursecraft_converter`.execute(
+    db,
+  );
+  await sql`revoke all on all tables in schema pgboss from coursecraft_converter`.execute(db);
+  await sql`grant select, insert, update on pgboss.job, pgboss.job_common to coursecraft_converter`.execute(
+    db,
+  );
+  await sql`grant select on pgboss.queue, pgboss.version to coursecraft_converter`.execute(db);
+  await sql`grant select, insert, update, delete on pgboss.instance to coursecraft_converter`.execute(db);
+  await sql`revoke insert, update, delete, truncate on pgboss.bam from coursecraft_app`.execute(db);
+}
+
+/** Deletes queued maintenance commands that pg-boss did not write (queued through the old grants). */
+export async function purgeForeignQueueCommands<DB>(db: Kysely<DB>): Promise<number> {
+  if (!(await queueReady(db))) return 0;
+  const result = await sql`delete from pgboss.bam
+    where status <> 'completed' and command !~* ${PG_BOSS_COMMAND}`.execute(db);
+  return Number(result.numAffectedRows ?? 0);
+}

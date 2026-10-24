@@ -33,9 +33,10 @@ ALTER DEFAULT PRIVILEGES FOR ROLE coursecraft_migrator IN SCHEMA public
 CREATE SCHEMA IF NOT EXISTS pgboss AUTHORIZATION coursecraft_migrator;
 GRANT USAGE ON SCHEMA pgboss TO coursecraft_app, coursecraft_converter;
 ALTER DEFAULT PRIVILEGES FOR ROLE coursecraft_migrator IN SCHEMA pgboss
-  GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO coursecraft_app, coursecraft_converter;
+  GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO coursecraft_app;
+-- The converter gets its few table rights from migrate (lockDownJobQueue), never by default.
 ALTER DEFAULT PRIVILEGES FOR ROLE coursecraft_migrator IN SCHEMA pgboss
-  GRANT USAGE, SELECT ON SEQUENCES TO coursecraft_app, coursecraft_converter;
+  GRANT USAGE, SELECT ON SEQUENCES TO coursecraft_app;
 ALTER DEFAULT PRIVILEGES FOR ROLE coursecraft_migrator IN SCHEMA pgboss
   GRANT EXECUTE ON FUNCTIONS TO coursecraft_app, coursecraft_converter;
 `;

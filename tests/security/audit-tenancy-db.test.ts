@@ -5,11 +5,13 @@
 //
 // - "tenant on pooled connections" and "catalog" verify claims of the audit
 //   and are expected to pass.
-// - "F-01" / "F-01b" demonstrate SECURITY_AUDIT.md F-01. They are marked
-//   `it.fails` (expected failure), so the suite is green while the finding is
-//   open. Once the fix lands they start to pass, `it.fails` then reports them
-//   as failing, and the marker must be removed (turning them into regression
-//   tests).
+// - "F-01b" is a regression test for mitigation M-1 (the converter cannot
+//   write pg-boss's maintenance tables, and a foreign bam command is purged
+//   by migrate): it passes.
+// - "F-01" covers what M-1 deliberately does NOT fix (the converter still has
+//   SELECT/INSERT on the shared job table, so it can read payloads and forge a
+//   mail.send job). Those two are marked `it.fails` (expected failure) until
+//   the larger fix (per-queue tables or job signing) lands; then `.fails` goes.
 import { mailJobSchema, PGBOSS_SCHEMA, QUEUES } from '@coursecraft/shared';
 import type { Kysely } from 'kysely';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
@@ -299,20 +301,18 @@ describe('F-01: converter role and app-internal jobs (expected failure until F-0
   });
 });
 
-describe('F-01b: converter role and pg-boss maintenance commands (expected failure until F-01 is fixed)', () => {
-  // F-01 (SECURITY_AUDIT.md): fails today; remove `.fails` once the fix is in.
-  it.fails(
-    'a command queued by the converter is not executed by the migrate step as the table owner',
-    async () => {
-      const converter = createDatabase(converterUrl, { tenancy: 'off', max: 1 });
-      try {
-        const boss = converter.withSchema(PGBOSS_SCHEMA).withTables<{
-          bam: { name: string; version: number; status: string; table_name: string; command: string };
-          version: { bam_on: Date | null };
-        }>();
-        // Copies every organisation's settings (RLS does not apply to the owner) into a table the
-        // converter can read (default privileges on the pgboss schema).
-        await boss
+describe('F-01b: converter role and pg-boss maintenance commands (M-1 applied)', () => {
+  type Boss = {
+    bam: { name: string; version: number; status: string; table_name: string; command: string };
+    version: { bam_on: Date | null };
+  };
+
+  it('the converter cannot queue a bam command or lift the interval gate', async () => {
+    const converter = createDatabase(converterUrl, { tenancy: 'off', max: 1 });
+    try {
+      const boss = converter.withSchema(PGBOSS_SCHEMA).withTables<Boss>();
+      await expect(
+        boss
           .insertInto('bam')
           .values({
             name: 'audit_probe',
@@ -321,28 +321,59 @@ describe('F-01b: converter role and pg-boss maintenance commands (expected failu
             table_name: 'job',
             command: 'CREATE TABLE pgboss.audit_probe AS SELECT tenant_id, key, value FROM public.settings',
           })
-          .execute();
-        // Lifts the interval gate so the next pg-boss start with migrate enabled polls at once.
-        await boss.updateTable('version').set({ bam_on: null }).execute();
-      } finally {
-        await converter.destroy();
-      }
+          .execute(),
+      ).rejects.toThrow(/permission denied/);
+      await expect(boss.updateTable('version').set({ bam_on: null }).execute()).rejects.toThrow(
+        /permission denied/,
+      );
+    } finally {
+      await converter.destroy();
+    }
+  });
 
-      // What every deployment runs on start (Compose `migrate` service, Helm init container).
-      await migrate(migratorUrl);
+  it('a foreign bam command left in the queue is purged by migrate, not executed', async () => {
+    // Insert a foreign command as the owner (what a pre-M-1 compromise could have left behind).
+    const owner = createDatabase(migratorUrl, { tenancy: 'off', max: 1 });
+    try {
+      await owner
+        .withSchema(PGBOSS_SCHEMA)
+        .withTables<Boss>()
+        .insertInto('bam')
+        .values({
+          name: 'audit_probe',
+          version: 0,
+          status: 'pending',
+          table_name: 'job',
+          command: 'CREATE TABLE pgboss.audit_probe AS SELECT tenant_id, key, value FROM public.settings',
+        })
+        .execute();
+    } finally {
+      await owner.destroy();
+    }
 
-      const reader = createDatabase(converterUrl, { tenancy: 'off', max: 1 });
-      try {
-        const leaked = reader
-          .withSchema(PGBOSS_SCHEMA)
-          .withTables<{ audit_probe: { tenant_id: string; key: string } }>()
-          .selectFrom('audit_probe')
-          .select(['tenant_id', 'key'])
-          .execute();
-        await expect(leaked).rejects.toThrow(/does not exist|permission denied/);
-      } finally {
-        await reader.destroy();
-      }
-    },
-  );
+    // What every deployment runs on start (Compose `migrate` service, Helm init container).
+    await migrate(migratorUrl);
+
+    const reader = createDatabase(migratorUrl, { tenancy: 'off', max: 1 });
+    try {
+      const probe = reader
+        .withSchema(PGBOSS_SCHEMA)
+        .withTables<{ audit_probe: { tenant_id: string; key: string } }>()
+        .selectFrom('audit_probe')
+        .select(['tenant_id', 'key'])
+        .execute();
+      // The command was deleted before the bam runner could execute it, so the table never existed.
+      await expect(probe).rejects.toThrow(/does not exist/);
+      const left = await reader
+        .withSchema(PGBOSS_SCHEMA)
+        .withTables<Boss>()
+        .selectFrom('bam')
+        .select('name')
+        .where('name', '=', 'audit_probe')
+        .execute();
+      expect(left).toEqual([]);
+    } finally {
+      await reader.destroy();
+    }
+  });
 });

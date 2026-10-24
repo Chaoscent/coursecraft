@@ -1,15 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-// Security audit (SECURITY_AUDIT.md, F-01 immediate mitigation): applies the
-// DRAFTED privilege changes to a throwaway database (testcontainers) and
-// checks that (1) the converter's real pg-boss client still completes its
-// work, (2) the app's client still works, and (3) the owner-level escalation
-// through pgboss.bam is closed. Never point this at a real installation.
-//
-// The SQL below must stay identical to the draft in SECURITY_AUDIT.md
-// ("F-01 / F-04 immediate mitigation"); once the migration exists, replace
-// MITIGATION with a call to it.
+// Security audit (SECURITY_AUDIT.md, F-01): regression test for mitigation
+// M-1. The throwaway database (testcontainers) is migrated by the real
+// `migrate()` path, which locks down the pg-boss privileges. It checks that
+// (1) the converter's real pg-boss client still completes its work, (2) the
+// app's client still works, and (3) the owner-level escalation through
+// pgboss.bam is closed for both roles. Never point this at a real installation.
 import { PGBOSS_SCHEMA, QUEUES } from '@coursecraft/shared';
-// eslint-disable-next-line no-restricted-imports -- audit test: GRANT/REVOKE need raw SQL; constant statements only
+// eslint-disable-next-line no-restricted-imports -- audit test: the bam-insert probes need raw SQL; constant statements only
 import pg from 'pg';
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
@@ -18,18 +15,6 @@ import { migrate } from '../../apps/server/src/cli/migrate.js';
 import { createBoss } from '../../apps/server/src/jobs/queue.js';
 import { createTestDatabase } from '../support/database.js';
 import { pgUrl } from '../support/postgres.js';
-
-export const MITIGATION = [
-  // Converter: only the job rows themselves, plus read access to the metadata pg-boss reads on start.
-  'REVOKE ALL ON ALL TABLES IN SCHEMA pgboss FROM coursecraft_converter',
-  'GRANT SELECT, INSERT, UPDATE ON pgboss.job, pgboss.job_common TO coursecraft_converter',
-  'GRANT SELECT ON pgboss.queue, pgboss.version TO coursecraft_converter',
-  // pg-boss registers each client (monitoring rows only: host, pid, pool figures; no control data).
-  'GRANT SELECT, INSERT, UPDATE, DELETE ON pgboss.instance TO coursecraft_converter',
-  'ALTER DEFAULT PRIVILEGES FOR ROLE coursecraft_migrator IN SCHEMA pgboss REVOKE ALL ON TABLES FROM coursecraft_converter',
-  // App: pg-boss maintenance never writes bam (only a client started with migrate: true, i.e. the migrator).
-  'REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON pgboss.bam FROM coursecraft_app',
-];
 
 const pgInfo = inject('pg');
 let drop: () => Promise<void>;
@@ -68,14 +53,16 @@ beforeAll(async () => {
   appUrl = created.url;
   migratorUrl = created.migratorUrl;
   converterUrl = pgUrl(pgInfo, 'coursecraft_converter', new URL(appUrl).pathname.slice(1));
-  await run(migratorUrl, MITIGATION);
+  // The cloned template was already migrated; running migrate() here is idempotent and ties
+  // the test to the real lockdown path (migrations/index.ts, migrate.ts, db-bootstrap.ts).
+  await migrate(migratorUrl);
 });
 
 afterAll(async () => {
   await drop?.();
 });
 
-describe('F-01 mitigation draft: pg-boss privileges', () => {
+describe('F-01 mitigation M-1: pg-boss privileges', () => {
   it('the converter still takes a media job, completes it and reports convert.done', async () => {
     const app = createBoss(appUrl);
     const appErrors: Error[] = [];
