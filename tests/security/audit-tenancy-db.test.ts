@@ -8,10 +8,11 @@
 // - "F-01b" is a regression test for mitigation M-1 (the converter cannot
 //   write pg-boss's maintenance tables, and a foreign bam command is purged
 //   by migrate): it passes.
-// - "F-01" covers what M-1 deliberately does NOT fix (the converter still has
-//   SELECT/INSERT on the shared job table, so it can read payloads and forge a
-//   mail.send job). Those two are marked `it.fails` (expected failure) until
-//   the larger fix (per-queue tables or job signing) lands; then `.fails` goes.
+// - "F-01" covered what M-1 left open (the converter could read payloads and
+//   forge a mail.send job on the shared job table). P2 closes it with
+//   row-level security that limits the converter to the convert.* queues, so
+//   those two tests now pass: app-only rows are invisible, and a forged
+//   mail.send insert is rejected by the policy's WITH CHECK.
 import { mailJobSchema, PGBOSS_SCHEMA, QUEUES } from '@coursecraft/shared';
 import type { Kysely } from 'kysely';
 import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest';
@@ -258,28 +259,32 @@ describe('F-01: converter role and app-internal jobs (expected failure until F-0
     }
   });
 
-  // F-01 (SECURITY_AUDIT.md): fails today; remove `.fails` once the fix is in.
-  it.fails(
-    'the converter cannot read payloads of app-internal queues (user and tenant ids of every organisation)',
-    async () => {
-      const converter = createDatabase(converterUrl, { tenancy: 'off', max: 1 });
-      try {
-        const read = converter
-          .withSchema(PGBOSS_SCHEMA)
-          .withTables<{ job: { name: string; data: unknown } }>()
-          .selectFrom('job')
-          .select(['name', 'data'])
-          .where('name', 'in', [QUEUES.mail, QUEUES.exportBuild])
-          .execute();
-        await expect(read).rejects.toThrow(/permission denied/);
-      } finally {
-        await converter.destroy();
-      }
-    },
-  );
+  // F-01 (P2 applied): row-level security hides the app-only queues from the converter.
+  it('the converter cannot read payloads of app-internal queues (user and tenant ids of every organisation)', async () => {
+    const converter = createDatabase(converterUrl, { tenancy: 'off', max: 1 });
+    try {
+      const forbidden = converter
+        .withSchema(PGBOSS_SCHEMA)
+        .withTables<{ job: { name: string; data: unknown } }>()
+        .selectFrom('job')
+        .select(['name', 'data']);
+      // mail.send / export.build rows exist (the app queued them) but are invisible to the converter.
+      const appOnly = await forbidden.where('name', 'in', [QUEUES.mail, QUEUES.exportBuild]).execute();
+      expect(appOnly).toEqual([]);
+      // Its own convert.* rows stay visible, so the policy is not over-broad.
+      const own = await forbidden
+        .clearSelect()
+        .select((eb) => eb.fn.countAll<string>().as('n'))
+        .where('name', 'like', 'convert.%')
+        .executeTakeFirstOrThrow();
+      expect(Number(own.n)).toBeGreaterThanOrEqual(0);
+    } finally {
+      await converter.destroy();
+    }
+  });
 
-  // F-01 (SECURITY_AUDIT.md): fails today; remove `.fails` once the fix is in.
-  it.fails('the converter cannot queue a mail.send job that the app worker would accept', async () => {
+  // F-01 (P2 applied): the WITH CHECK clause rejects a forged job on an app-only queue.
+  it('the converter cannot queue a mail.send job that the app worker would accept', async () => {
     const forged = {
       tenantId: tenants.b,
       kind: 'assigned' as const,
@@ -294,7 +299,7 @@ describe('F-01: converter role and app-internal jobs (expected failure until F-0
     converter.on('error', () => undefined);
     await converter.start();
     try {
-      await expect(converter.send(QUEUES.mail, forged)).rejects.toThrow(/permission denied/);
+      await expect(converter.send(QUEUES.mail, forged)).rejects.toThrow(/row-level security/i);
     } finally {
       await converter.stop({ graceful: false });
     }

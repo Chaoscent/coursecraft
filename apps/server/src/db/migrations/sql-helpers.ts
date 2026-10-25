@@ -174,6 +174,42 @@ export async function lockDownJobQueue<DB>(db: Kysely<DB>): Promise<void> {
   await sql`grant select on pgboss.queue, pgboss.version to coursecraft_converter`.execute(db);
   await sql`grant select, insert, update, delete on pgboss.instance to coursecraft_converter`.execute(db);
   await sql`revoke insert, update, delete, truncate on pgboss.bam from coursecraft_app`.execute(db);
+  await restrictJobQueueRows(db);
+}
+
+/**
+ * Row-level isolation of the shared job table (SECURITY_AUDIT.md F-01). The
+ * converter may only read and write the `convert.*` queues (its own work and
+ * `convert.done`); it can no longer read the payloads of, or forge jobs on,
+ * the app-only queues `mail.send` and `export.build`. The app keeps full
+ * access through its own policy; the migrator owns the tables and bypasses
+ * RLS. Both the partitioned parent `pgboss.job` and its only partition
+ * `pgboss.job_common` carry the policies, so neither access path is open.
+ * Idempotent; skipped until pg-boss has created its tables.
+ */
+export async function restrictJobQueueRows<DB>(db: Kysely<DB>): Promise<void> {
+  const present = await sql<{
+    ok: boolean;
+  }>`select to_regclass('pgboss.job_common') is not null as ok`.execute(db);
+  if (!present.rows[0]?.ok) return;
+  await sql`alter table pgboss.job enable row level security`.execute(db);
+  await sql`alter table pgboss.job_common enable row level security`.execute(db);
+  await sql`drop policy if exists cc_job_app on pgboss.job`.execute(db);
+  await sql`drop policy if exists cc_job_app on pgboss.job_common`.execute(db);
+  await sql`drop policy if exists cc_job_converter on pgboss.job`.execute(db);
+  await sql`drop policy if exists cc_job_converter on pgboss.job_common`.execute(db);
+  await sql`create policy cc_job_app on pgboss.job to coursecraft_app using (true) with check (true)`.execute(
+    db,
+  );
+  await sql`create policy cc_job_app on pgboss.job_common to coursecraft_app using (true) with check (true)`.execute(
+    db,
+  );
+  await sql`create policy cc_job_converter on pgboss.job to coursecraft_converter using (name like 'convert.%') with check (name like 'convert.%')`.execute(
+    db,
+  );
+  await sql`create policy cc_job_converter on pgboss.job_common to coursecraft_converter using (name like 'convert.%') with check (name like 'convert.%')`.execute(
+    db,
+  );
 }
 
 /** Deletes queued maintenance commands that pg-boss did not write (queued through the old grants). */
