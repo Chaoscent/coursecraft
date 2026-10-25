@@ -50,7 +50,7 @@ done
 helm install cc /charts/coursecraft -n cc --wait --timeout 300s \
   --set image.app=coursecraft/app --set image.converter=coursecraft/converter --set image.tag=local --set image.pullPolicy=Never --set publicUrl=http://localhost:8080 --set contentUrl=http://localhost:8081 \
   --set database.host=pg.cc.svc --set database.sslmode=disable --set database.bootstrap.adminSecret=admin-db \
-  --set storage.s3.endpoint="http://$S3IP:8000" --set storage.s3.bucket=coursecraft --set storage.s3.secret=s3-keys \
+  --set storage.s3.endpoint="http://$S3IP:8000" --set storage.s3.bucket=coursecraft --set storage.s3.secret=s3-keys --set storage.s3.converterSecret=s3-converter-keys \
   --set ingress.enabled=false >/dev/null
 [ "$(k -n cc get deploy cc-app -o jsonpath='{.status.readyReplicas}')" = 2 ] || fail "two app replicas should be ready"
 
