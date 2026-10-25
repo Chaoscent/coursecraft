@@ -3,12 +3,9 @@
 // session. Behind a transaction-mode pooler that leaks between connections.
 // Runs its own throwaway PostgreSQL and two PgBouncers (testcontainers):
 // - shows the leak with the production TenantDriver,
-// - validates the DRAFTED startup check `assertSessionPooling` (copied from
-//   the draft in SECURITY_AUDIT.md; replace with an import once it exists).
+// - validates the startup check `assertSessionPooling` from db/connection.ts.
 // Never point this at a real installation.
 import { randomUUID } from 'node:crypto';
-// eslint-disable-next-line no-restricted-imports -- audit test: the drafted check uses pg directly, like db/connection.ts
-import pg from 'pg';
 import {
   GenericContainer,
   Network,
@@ -17,7 +14,7 @@ import {
   type StartedTestContainer,
 } from 'testcontainers';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { createDatabase } from '../../apps/server/src/db/connection.js';
+import { assertSessionPooling, createDatabase } from '../../apps/server/src/db/connection.js';
 import { runAsTenant } from '../../apps/server/src/tenancy/context.js';
 
 const PASSWORD = 'pooler-probe-password-0123456789';
@@ -25,38 +22,6 @@ let network: StartedNetwork;
 let postgres: StartedTestContainer;
 const bouncers: StartedTestContainer[] = [];
 const urls = { direct: '', session: '', transaction: '' };
-
-/** DRAFT (SECURITY_AUDIT.md F-05): fails fast unless every connection keeps its own session state. */
-async function assertSessionPooling(connectionString: string): Promise<void> {
-  const clients = [new pg.Client({ connectionString }), new pg.Client({ connectionString })];
-  await Promise.all(clients.map((c) => c.connect()));
-  try {
-    const markers = clients.map(() => randomUUID());
-    const pids: number[] = [];
-    // Sequential on purpose: a pooler hands the server connection just released by A to B.
-    for (const [i, c] of clients.entries()) {
-      const { rows } = await c.query<{ pid: number }>(
-        "select set_config('app.pooler_probe', $1, false), pg_backend_pid() as pid",
-        [markers[i]],
-      );
-      pids.push(rows[0]?.pid ?? -1);
-    }
-    for (let round = 0; round < 3; round++)
-      for (const [i, c] of clients.entries()) {
-        const { rows } = await c.query<{ v: string | null; pid: number }>(
-          "select current_setting('app.pooler_probe', true) as v, pg_backend_pid() as pid",
-        );
-        if (rows[0]?.v !== markers[i] || rows[0]?.pid !== pids[i])
-          throw new Error(
-            'The database connection does not keep session state between statements ' +
-              '(a pooler in transaction or statement mode?). Several organisations need session ' +
-              'pooling or a direct connection; see SECURITY.md.',
-          );
-      }
-  } finally {
-    await Promise.all(clients.map((c) => c.end()));
-  }
-}
 
 function bouncer(mode: 'session' | 'transaction') {
   return new GenericContainer('edoburu/pgbouncer:latest')
@@ -142,15 +107,15 @@ describe('F-05: tenant setting and connection poolers', () => {
     for (const r of wrong) expect(r.got).toBe(r.wanted === tenants.a ? tenants.b : tenants.a);
   });
 
-  it('the drafted startup check passes on a direct connection', async () => {
+  it('the startup check passes on a direct connection', async () => {
     await expect(assertSessionPooling(urls.direct)).resolves.toBeUndefined();
   });
 
-  it('the drafted startup check passes behind a session-mode pooler', async () => {
+  it('the startup check passes behind a session-mode pooler', async () => {
     await expect(assertSessionPooling(urls.session)).resolves.toBeUndefined();
   });
 
-  it('the drafted startup check fails fast behind a transaction-mode pooler', async () => {
+  it('the startup check fails fast behind a transaction-mode pooler', async () => {
     await expect(assertSessionPooling(urls.transaction)).rejects.toThrow(/does not keep session state/);
   });
 });

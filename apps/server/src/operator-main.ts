@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
-import { createDatabase } from './db/connection.js';
+import { assertSessionPooling, createDatabase } from './db/connection.js';
 import { buildOperatorApp } from './operator/app.js';
 import { loadOperatorConfig } from './operator/config.js';
 import { blobStoreFromEnv } from './storage.js';
 import { StripeClient } from './modules/billing/stripe.js';
 
 const config = loadOperatorConfig();
+if (config.tenancy === 'multi') await assertSessionPooling(config.databaseUrl);
 const migrator = createDatabase(config.migratorDatabaseUrl, { max: 2 });
 // Inside one organisation at a time (row-level security), never without one.
 const appDb = createDatabase(config.databaseUrl, { max: 2, tenancy: 'multi' });
