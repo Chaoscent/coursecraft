@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import type { Response } from '@coursecraft/course-model/scoring';
 import {
   decodeState,
   encodeState,
@@ -232,6 +233,28 @@ export function xapiTracker(
   const startedAt = Date.now();
   let saveTimer: number | undefined;
   let finished = false;
+  // Own courses are graded on the server (SECURITY_AUDIT.md F-07): collect the
+  // structured answers per quiz and submit them at completion. The endpoint is
+  // only present for the platform's own courses.
+  const gradeUrl = params.get('grade');
+  const quizAnswers = new Map<string, Map<string, Response>>();
+  const submitGrade = (): void => {
+    if (!gradeUrl || quizAnswers.size === 0) return;
+    const quizzes = [...quizAnswers].map(([quizId, byQuestion]) => ({
+      quizId,
+      answers: [...byQuestion].map(([questionId, response]) => ({ questionId, response })),
+    }));
+    try {
+      void fetch(gradeUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quizzes }),
+        keepalive: true,
+      }).catch(() => undefined);
+    } catch {
+      // Never let grading break playback; the result stays "reported by the course".
+    }
+  };
 
   return {
     name: 'xapi',
@@ -263,6 +286,12 @@ export function xapiTracker(
           contextActivities: { parent: [{ id: client.config.activityId, objectType: 'Activity' }] },
         },
       });
+      // Keep the structured answer (last one per question wins) for server grading.
+      if (gradeUrl && record.data && record.parentId) {
+        const byQuestion = quizAnswers.get(record.parentId) ?? new Map<string, Response>();
+        byQuestion.set(record.id, record.data);
+        quizAnswers.set(record.parentId, byQuestion);
+      }
     },
     complete(result: CompletionResult) {
       if (!result.completed) return;
@@ -281,6 +310,8 @@ export function xapiTracker(
         client.statement(result.passed ? 'passed' : 'failed', {
           result: { success: result.passed, ...score },
         });
+      // The server grades own courses from the answers; its result is authoritative.
+      submitGrade();
     },
     finish() {
       if (finished) return;

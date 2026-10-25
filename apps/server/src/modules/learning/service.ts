@@ -233,6 +233,8 @@ export async function launch(
       query.set('auth', `Basic ${Buffer.from(`launch:${token}`).toString('base64')}`);
     } else {
       query.set('fetch', `${base}/fetch`);
+      // Own courses are graded on the server (SECURITY_AUDIT.md F-07): tell the player where.
+      if (kind === 'coursecraft') query.set('grade', `${base}/grade`);
       await writeLaunchData(ctx, reg.id, activityId, actor, manifest, mode);
     }
     const extra = manifest.launchQuery ? `&${manifest.launchQuery}` : '';

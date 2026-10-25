@@ -50,6 +50,7 @@ export async function issueCertificate(
       'registrations.completed_at',
       'registrations.success',
       'registrations.completion',
+      'registrations.verified',
       'library_items.title',
     ])
     .where('registrations.user_id', '=', auth.userId)
@@ -79,6 +80,8 @@ export async function issueCertificate(
       learner_name: auth.displayName,
       item_title: reg.title,
       score_scaled: reg.score_scaled,
+      // Verified only when the server graded the attempt itself (F-07).
+      verified: reg.verified,
       completed_at: reg.completed_at ?? new Date(),
     })
     .onConflict((oc) => oc.column('registration_id').doNothing())

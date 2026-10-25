@@ -237,6 +237,8 @@ export interface RegistrationsTable {
   success: ColumnType<Success, Success | undefined, Success>;
   score_scaled: number | null;
   time_spent_ms: ColumnType<string, number | undefined, number>;
+  /** The server graded this attempt itself (F-07); a certificate for it is "verified". */
+  verified: Generated<boolean>;
   started_at: DefaultedTimestamp;
   last_activity_at: DefaultedTimestamp;
   completed_at: Date | null;

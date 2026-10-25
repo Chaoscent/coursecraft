@@ -4,9 +4,11 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { createReadStream } from 'node:fs';
 import { join } from 'node:path';
+import { responseSchema } from '@coursecraft/course-model';
 import { z } from 'zod';
 import type { AppContext } from '../../http/context.js';
 import { badRequest, notFound } from '../../http/errors.js';
+import { gradeAttempt } from '../learning/grade.js';
 import { PackageStore } from '../library/packages.js';
 import {
   deleteDocument,
@@ -21,6 +23,24 @@ import {
 } from './service.js';
 
 const tokenParams = z.object({ token: z.string().max(64) });
+
+/** A learner's quiz answers for server-side grading (F-07). */
+const gradeSubmissionSchema = z
+  .object({
+    quizzes: z
+      .array(
+        z
+          .object({
+            quizId: z.string().max(200),
+            answers: z
+              .array(z.object({ questionId: z.string().max(200), response: responseSchema }).strict())
+              .max(500),
+          })
+          .strict(),
+      )
+      .max(200),
+  })
+  .strict();
 const fileParams = tokenParams.extend({ '*': z.string().max(2000) });
 const documentQuery = z.object({
   activityId: z.string().max(2000).optional(),
@@ -168,6 +188,18 @@ export async function launchRoutes(app: FastifyInstance, ctx: AppContext, option
       const launch = await launchOf(request);
       xapi(reply);
       return fetchAuthToken(ctx, launch);
+    });
+
+    // Server-side grading of the platform's own courses (SECURITY_AUDIT.md F-07):
+    // the player submits the structured answers; the server grades them against
+    // the published course version and sets the authoritative, verified result.
+    r.post('/launch/:token/grade', { config, schema: { params: tokenParams } }, async (request, reply) => {
+      const launch = await launchOf(request);
+      // The scope parses bodies as raw buffers (xAPI), so validate here.
+      const parsed = gradeSubmissionSchema.safeParse(json(request.body));
+      if (!parsed.success) throw badRequest('Invalid grade submission');
+      common(reply).header('Cache-Control', 'no-store');
+      return gradeAttempt(ctx, launch, parsed.data);
     });
 
     r.get(
