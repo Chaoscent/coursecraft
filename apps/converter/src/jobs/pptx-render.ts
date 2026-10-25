@@ -7,6 +7,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { run } from '../process.js';
+import { seedProfile } from './libreoffice-profile.js';
 
 const MAX_PAGES = 1000;
 const MAX_PDF_BYTES = 1024 * 1024 * 1024;
@@ -26,6 +27,8 @@ const pdfjsRoot = dirname(createRequire(import.meta.url).resolve('pdfjs-dist/pac
 /** LibreOffice → PDF, with a throwaway profile, macros off, and resource limits. */
 export async function presentationToPdf(input: string, tmp: string): Promise<string> {
   const profile = join(tmp, 'profile');
+  // Linked pictures and other external content are never loaded (SECURITY_AUDIT.md F-19).
+  seedProfile(profile);
   await run(
     'soffice',
     [
