@@ -167,8 +167,9 @@
     "qrAlt": "QR code with the key for your authenticator app",
     "confirm": "Confirm",
     "disable": "Turn off",
+    "disableNeedsCode": "Enter a current code to turn off two-factor sign-in.",
     "enabled": "Two-factor sign-in is active. Other sessions were ended.",
-    "disabled": "Two-factor sign-in is turned off."
+    "disabled": "Two-factor sign-in is turned off. Other sessions were ended."
   },
   "sessions": {
     "title": "Sessions",
@@ -204,6 +205,8 @@
     "resetPassword": "Reset password …",
     "resetPasswordFor": "Reset password: {{name}}",
     "resetPasswordHint": "All sessions of this person end. At the next sign-in they must choose their own password.",
+    "reset2fa": "Reset 2FA …",
+    "reset2faConfirm": "Turn off two-factor sign-in for {{name}} (for example after a lost device)? All their sessions end.",
     "import": "Import CSV …",
     "importHint": "Columns: email, display_name, roles (separated by ;), groups (names, separated by ;), locale (de/en). New accounts get a temporary password.",
     "importFile": "File",

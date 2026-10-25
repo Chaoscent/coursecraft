@@ -35,6 +35,9 @@ export interface UsersTable {
   must_change_password: Generated<boolean>;
   failed_logins: Generated<number>;
   locked_until: Timestamp | null;
+  /** Second-factor brute-force counter and lock (F-09), separate from the password counter. */
+  totp_failed: Generated<number>;
+  totp_locked_until: Timestamp | null;
   last_login_at: Timestamp | null;
   created_at: CreatedAt;
   updated_at: ColumnType<Date, Date | string | undefined, Date | string>;

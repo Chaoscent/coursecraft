@@ -10,6 +10,10 @@ const MAX_FAILURES = 10;
 const LOCK_MINUTES = 15;
 const CHALLENGE_MINUTES = 5;
 const MAX_CHALLENGE_ATTEMPTS = 5;
+// Second factor (F-09): total code guesses per account before a cool-down,
+// counted across login challenges so repeated password logins cannot reset it.
+const MAX_TOTP_FAILURES = 10;
+const TOTP_LOCK_MINUTES = 60;
 /** Accept codes from the previous and next 30 s step (clock drift). */
 const TOTP_TOLERANCE_SECONDS = 30;
 
@@ -54,7 +58,15 @@ export async function passwordLogin(ctx: AppContext, email: string, password: st
   const now = new Date();
   const user = await ctx.db
     .selectFrom('users')
-    .select(['id', 'password_hash', 'status', 'locked_until', 'failed_logins', 'totp_last_step'])
+    .select([
+      'id',
+      'password_hash',
+      'status',
+      'locked_until',
+      'failed_logins',
+      'totp_last_step',
+      'totp_locked_until',
+    ])
     .where('email', '=', email.trim().toLowerCase())
     .where('deleted_at', 'is', null)
     .executeTakeFirst();
@@ -87,6 +99,9 @@ export async function passwordLogin(ctx: AppContext, email: string, password: st
     .execute();
 
   if (user.totp_last_step !== null) {
+    // The second factor is locked after too many wrong codes (F-09): no new challenge.
+    if (user.totp_locked_until && user.totp_locked_until > now)
+      return { kind: 'failed', userId: user.id, reason: 'locked' };
     const challenge = randomToken();
     await ctx.db
       .insertInto('login_challenges')
@@ -116,16 +131,20 @@ export async function totpLogin(
       'login_challenges.attempts',
       'users.totp_secret as totpSecret',
       'users.totp_last_step as totpLastStep',
+      'users.totp_failed as totpFailed',
+      'users.totp_locked_until as totpLockedUntil',
       'users.status',
     ])
     .where('login_challenges.token_hash', '=', hashToken(challenge))
     .executeTakeFirst();
   if (!row) return { failedUserId: null };
+  const now = new Date();
   if (
-    row.expiresAt <= new Date() ||
+    row.expiresAt <= now ||
     row.attempts >= MAX_CHALLENGE_ATTEMPTS ||
     row.status !== 'active' ||
-    !row.totpSecret
+    !row.totpSecret ||
+    (row.totpLockedUntil !== null && row.totpLockedUntil > now)
   ) {
     await ctx.db.deleteFrom('login_challenges').where('id', '=', row.id).execute();
     return { failedUserId: row.userId };
@@ -137,9 +156,24 @@ export async function totpLogin(
       .set((eb) => ({ attempts: eb('attempts', '+', 1) }))
       .where('id', '=', row.id)
       .execute();
+    // Count the wrong code toward the per-account limit (F-09); lock after too many.
+    const failed = row.totpFailed + 1;
+    const lock = failed >= MAX_TOTP_FAILURES;
+    await ctx.db
+      .updateTable('users')
+      .set({
+        totp_failed: lock ? 0 : failed,
+        totp_locked_until: lock ? new Date(now.getTime() + TOTP_LOCK_MINUTES * 60_000) : row.totpLockedUntil,
+      })
+      .where('id', '=', row.userId)
+      .execute();
     return { failedUserId: row.userId };
   }
   await ctx.db.deleteFrom('login_challenges').where('id', '=', row.id).execute();
-  await ctx.db.updateTable('users').set({ totp_last_step: step }).where('id', '=', row.userId).execute();
+  await ctx.db
+    .updateTable('users')
+    .set({ totp_last_step: step, totp_failed: 0, totp_locked_until: null })
+    .where('id', '=', row.userId)
+    .execute();
   return { userId: row.userId };
 }

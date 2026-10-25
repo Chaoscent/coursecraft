@@ -18,7 +18,7 @@ import type { AppContext } from '../../http/context.js';
 import { notFound } from '../../http/errors.js';
 import { eraseUser, exportUserData } from './privacy.js';
 import { listUsers, loadUsers } from './repo.js';
-import { createUser, deleteUser, importUsers, resetPassword, updateUser } from './service.js';
+import { createUser, deleteUser, importUsers, resetPassword, resetTotp, updateUser } from './service.js';
 
 export function userRoutes(app: FastifyInstance, ctx: AppContext): void {
   const r = app.withTypeProvider<ZodTypeProvider>();
@@ -76,6 +76,16 @@ export function userRoutes(app: FastifyInstance, ctx: AppContext): void {
     async (request) => {
       const auth = requireAuth(request);
       await resetPassword(ctx, auth.userId, request.params.id, request.body.password, request.ipHmac);
+      return { ok: true as const };
+    },
+  );
+
+  r.post(
+    '/api/users/:id/reset-2fa',
+    { config, schema: { params: idParamSchema, response: { 200: okSchema } } },
+    async (request) => {
+      const auth = requireAuth(request);
+      await resetTotp(ctx, auth.userId, request.params.id, request.ipHmac);
       return { ok: true as const };
     },
   );

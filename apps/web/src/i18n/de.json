@@ -167,8 +167,9 @@
     "qrAlt": "QR-Code mit dem Schlüssel für die Authenticator-App",
     "confirm": "Bestätigen",
     "disable": "Deaktivieren",
+    "disableNeedsCode": "Geben Sie einen aktuellen Code ein, um die Zwei-Faktor-Anmeldung zu deaktivieren.",
     "enabled": "Zwei-Faktor-Anmeldung ist aktiv. Andere Sitzungen wurden beendet.",
-    "disabled": "Zwei-Faktor-Anmeldung ist deaktiviert."
+    "disabled": "Zwei-Faktor-Anmeldung ist deaktiviert. Andere Sitzungen wurden beendet."
   },
   "sessions": {
     "title": "Sitzungen",
@@ -204,6 +205,8 @@
     "resetPassword": "Passwort zurücksetzen …",
     "resetPasswordFor": "Passwort zurücksetzen: {{name}}",
     "resetPasswordHint": "Alle Sitzungen der Person werden beendet. Bei der nächsten Anmeldung muss sie ein eigenes Passwort festlegen.",
+    "reset2fa": "2FA zurücksetzen …",
+    "reset2faConfirm": "Zwei-Faktor-Anmeldung für {{name}} deaktivieren (z. B. nach einem verlorenen Gerät)? Alle Sitzungen werden beendet.",
     "import": "CSV importieren …",
     "importHint": "Spalten: email, display_name, roles (mit ; getrennt), groups (Namen, mit ; getrennt), locale (de/en). Neue Konten erhalten ein vorläufiges Passwort.",
     "importFile": "Datei",

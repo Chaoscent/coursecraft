@@ -380,7 +380,9 @@ export function UsersPage() {
   const [sort, setSort] = useState<SortDescriptor>({ column: 'name', direction: 'ascending' });
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Selection>(new Set());
-  const [dialog, setDialog] = useState<null | 'new' | 'edit' | 'reset' | 'delete' | 'import'>(null);
+  const [dialog, setDialog] = useState<null | 'new' | 'edit' | 'reset' | 'reset2fa' | 'delete' | 'import'>(
+    null,
+  );
   const [actionError, setError] = useState<string | null>(null);
 
   const fetchUsers = useCallback(() => {
@@ -431,6 +433,17 @@ export function UsersPage() {
     }
   };
 
+  const reset2fa = async () => {
+    if (!current) return;
+    try {
+      await api(okSchema, `/api/users/${current.id}/reset-2fa`, { method: 'POST' });
+      done();
+    } catch (e) {
+      setDialog(null);
+      setError(errorMessage(e));
+    }
+  };
+
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
@@ -451,6 +464,9 @@ export function UsersPage() {
           </ToolButton>
           <ToolButton icon="key-round" isDisabled={!current} onPress={() => setDialog('reset')}>
             {t('users.resetPassword')}
+          </ToolButton>
+          <ToolButton icon="smartphone" isDisabled={!current} onPress={() => setDialog('reset2fa')}>
+            {t('users.reset2fa')}
           </ToolButton>
           <ToolButton
             icon="download"
@@ -603,6 +619,15 @@ export function UsersPage() {
       ) : null}
       {dialog === 'reset' && current ? (
         <ResetPasswordDialog user={current} onClose={() => setDialog(null)} />
+      ) : null}
+      {dialog === 'reset2fa' && current ? (
+        <ConfirmDialog
+          title={t('users.reset2fa')}
+          text={t('users.reset2faConfirm', { name: current.displayName })}
+          action={t('users.reset2fa')}
+          onConfirm={() => void reset2fa()}
+          onClose={() => setDialog(null)}
+        />
       ) : null}
       {dialog === 'import' ? <ImportDialog onClose={() => setDialog(null)} onDone={load} /> : null}
       {dialog === 'delete' && current ? (
