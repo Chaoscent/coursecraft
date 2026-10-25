@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
-// Security audit (SECURITY_AUDIT.md, F-05): the tenant is set per database
-// session. Behind a transaction-mode pooler that leaks between connections.
-// Runs its own throwaway PostgreSQL and two PgBouncers (testcontainers):
-// - shows the leak with the production TenantDriver,
-// - validates the startup check `assertSessionPooling` from db/connection.ts.
-// Never point this at a real installation.
+// Security audit (SECURITY_AUDIT.md, F-05): the tenant is set transaction-
+// locally (set_config(…, true)), so it travels with each transaction and is
+// correct behind a connection pooler. Runs its own throwaway PostgreSQL and
+// two PgBouncers (session and transaction mode, testcontainers) and checks
+// that the production TenantDriver runs every query as its own tenant through
+// each. Before the root fix, the transaction-mode case leaked to the other
+// organisation. Never point this at a real installation.
 import { randomUUID } from 'node:crypto';
 import {
   GenericContainer,
@@ -14,7 +15,7 @@ import {
   type StartedTestContainer,
 } from 'testcontainers';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { assertSessionPooling, createDatabase } from '../../apps/server/src/db/connection.js';
+import { createDatabase } from '../../apps/server/src/db/connection.js';
 import { runAsTenant } from '../../apps/server/src/tenancy/context.js';
 
 const PASSWORD = 'pooler-probe-password-0123456789';
@@ -99,23 +100,15 @@ describe('F-05: tenant setting and connection poolers', () => {
     expect(runs.every((r) => r.got === r.wanted)).toBe(true);
   });
 
-  it('the production TenantDriver runs queries as the OTHER tenant behind a transaction pooler', async () => {
-    const { tenants, runs } = await alternate(urls.transaction);
-    const wrong = runs.filter((r) => r.got !== r.wanted);
-    expect(wrong.length).toBeGreaterThan(0);
-    // Not an error or an empty value: the other organisation's id, so RLS would show its rows.
-    for (const r of wrong) expect(r.got).toBe(r.wanted === tenants.a ? tenants.b : tenants.a);
+  it('the TenantDriver runs every query as its own tenant behind a transaction pooler', async () => {
+    // The regression this guards: before the transaction-local fix, alternating
+    // tenants here returned the OTHER organisation's id through PgBouncer.
+    const { runs } = await alternate(urls.transaction);
+    expect(runs.every((r) => r.got === r.wanted)).toBe(true);
   });
 
-  it('the startup check passes on a direct connection', async () => {
-    await expect(assertSessionPooling(urls.direct)).resolves.toBeUndefined();
-  });
-
-  it('the startup check passes behind a session-mode pooler', async () => {
-    await expect(assertSessionPooling(urls.session)).resolves.toBeUndefined();
-  });
-
-  it('the startup check fails fast behind a transaction-mode pooler', async () => {
-    await expect(assertSessionPooling(urls.transaction)).rejects.toThrow(/does not keep session state/);
+  it('the TenantDriver runs every query as its own tenant behind a session pooler', async () => {
+    const { runs } = await alternate(urls.session);
+    expect(runs.every((r) => r.got === r.wanted)).toBe(true);
   });
 });

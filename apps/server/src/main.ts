@@ -2,7 +2,6 @@
 import { convertDoneJobSchema, exportJobSchema, mailJobSchema, QUEUES } from '@coursecraft/shared';
 import { assertPlaybackOrigin, loadConfig } from './config/env.js';
 import { createContext } from './context-factory.js';
-import { assertSessionPooling } from './db/connection.js';
 import { checkReadiness } from './db/readiness.js';
 import { buildApp } from './http/app.js';
 import { buildContentApp } from './http/content-app.js';
@@ -26,8 +25,6 @@ const REMINDER_INTERVAL_MS = 60 * 60_000;
 const config = loadConfig();
 // Learner-controlled playback must not share the app's origin (SECURITY_AUDIT.md F-12).
 assertPlaybackOrigin(config);
-// The tenant lives in the database session: refuse to serve several organisations without one.
-if (config.tenancy === 'multi') await assertSessionPooling(config.databaseUrl);
 const boss = createBoss(config.databaseUrl);
 const ctx = createContext(config, bossQueue(boss));
 const { app, metrics } = await buildApp({ config, ctx, checkReadiness: () => checkReadiness(ctx.db) });

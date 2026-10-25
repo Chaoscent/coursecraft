@@ -15,11 +15,11 @@ app ── PostgreSQL (managed or operator)       app ── S3 bucket ── co
 - Kubernetes 1.27+, an ingress controller and TLS certificates for two host
   names (the content origin must differ from the app origin).
 - PostgreSQL 15+ with an administrator account for the first start (the chart
-  creates the three service roles itself with `coursecraft db-bootstrap`). With
-  several organisations (`tenancy=multi`) connect directly or through a
-  session-mode pooler: the organisation is a per-session setting, so a
-  transaction- or statement-mode pooler (such as PgBouncer in `transaction`
-  mode) would mix organisations. The app refuses to start when it detects one.
+  creates the three service roles itself with `coursecraft db-bootstrap`). A
+  direct connection, a session-mode pooler or a transaction-mode pooler
+  (PgBouncer) all work: the organisation is set per transaction, not per
+  session, so it never leaks between organisations. Only statement-mode
+  pooling is unsupported (it breaks transactions).
 - An S3-compatible bucket (AWS S3, MinIO, Ceph RGW, Scality, ...) **or** a
   ReadWriteMany volume (NFS, CephFS, EFS, Azure Files) with
   `storage.kind=fs`.

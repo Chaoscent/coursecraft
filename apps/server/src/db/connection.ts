@@ -1,15 +1,20 @@
 // SPDX-License-Identifier: Apache-2.0
-import { randomUUID } from 'node:crypto';
 import {
   Kysely,
   PostgresDialect,
   type DatabaseConnection,
   type Driver,
+  type QueryResult,
   type TransactionSettings,
 } from 'kysely';
 import pg from 'pg';
 import { currentScope, DEFAULT_TENANT_ID } from '../tenancy/context.js';
-import { setTenantQuery } from './migrations/sql-helpers.js';
+import {
+  BEGIN_TX as BEGIN,
+  COMMIT_TX as COMMIT,
+  ROLLBACK_TX as ROLLBACK,
+  setLocalTenantQuery,
+} from './migrations/sql-helpers.js';
 import type { Database } from './schema.js';
 
 /**
@@ -19,11 +24,69 @@ import type { Database } from './schema.js';
  */
 export type Tenancy = 'off' | 'single' | 'multi';
 
-/** Tells PostgreSQL the tenant before a pooled connection is used, only when it changes. */
+/** The compiled-query parameter types of a Kysely connection, without naming the raw SQL type. */
+type AnyCompiledQuery = Parameters<DatabaseConnection['executeQuery']>[0];
+
+/**
+ * Wraps a pooled connection so the tenant is set transaction-locally
+ * (SECURITY_AUDIT.md F-05). Every autocommit query is run as `begin;
+ * set_config('app.tenant_id', …, true); <query>; commit`, so the setting and
+ * the query always share one transaction — and therefore one backend
+ * connection, even through a transaction-mode pooler. Inside an explicit
+ * transaction the driver sets the tenant once, right after `begin`.
+ */
+class TenantConnection implements DatabaseConnection {
+  readonly inner: DatabaseConnection;
+  readonly tenantId: string;
+  inTransaction = false;
+
+  constructor(inner: DatabaseConnection, tenantId: string) {
+    this.inner = inner;
+    this.tenantId = tenantId;
+  }
+
+  async executeQuery<R>(compiledQuery: AnyCompiledQuery): Promise<QueryResult<R>> {
+    if (this.inTransaction) return this.inner.executeQuery<R>(compiledQuery);
+    await this.inner.executeQuery(BEGIN);
+    try {
+      await this.inner.executeQuery(setLocalTenantQuery(this.tenantId));
+      const result = await this.inner.executeQuery<R>(compiledQuery);
+      await this.inner.executeQuery(COMMIT);
+      return result;
+    } catch (error) {
+      await this.inner.executeQuery(ROLLBACK).catch(() => undefined);
+      throw error;
+    }
+  }
+
+  async *streamQuery<R>(
+    compiledQuery: AnyCompiledQuery,
+    chunkSize: number,
+  ): AsyncIterableIterator<QueryResult<R>> {
+    if (this.inTransaction) {
+      yield* this.inner.streamQuery<R>(compiledQuery, chunkSize);
+      return;
+    }
+    await this.inner.executeQuery(BEGIN);
+    let ok = false;
+    try {
+      await this.inner.executeQuery(setLocalTenantQuery(this.tenantId));
+      yield* this.inner.streamQuery<R>(compiledQuery, chunkSize);
+      ok = true;
+    } finally {
+      await this.inner.executeQuery(ok ? COMMIT : ROLLBACK).catch(() => undefined);
+    }
+  }
+}
+
+/**
+ * Sets the tenant per transaction, not per session, so it is correct behind
+ * any connection pooler (SECURITY_AUDIT.md F-05). Wraps the inner Postgres
+ * driver; begin/commit/rollback act on the wrapped connection's inner handle.
+ */
 class TenantDriver implements Driver {
   readonly #inner: Driver;
   readonly #tenancy: Exclude<Tenancy, 'off'>;
-  readonly #current = new WeakMap<DatabaseConnection, string>();
 
   constructor(inner: Driver, tenancy: Exclude<Tenancy, 'off'>) {
     this.#inner = inner;
@@ -38,32 +101,31 @@ class TenantDriver implements Driver {
     const connection = await this.#inner.acquireConnection();
     // An empty tenant makes every policy fail loudly instead of matching nothing silently.
     const wanted = currentScope()?.id ?? (this.#tenancy === 'single' ? DEFAULT_TENANT_ID : '');
-    if (this.#current.get(connection) !== wanted) {
-      try {
-        await connection.executeQuery(setTenantQuery(wanted));
-      } catch (error) {
-        await this.#inner.releaseConnection(connection);
-        throw error;
-      }
-      this.#current.set(connection, wanted);
-    }
-    return connection;
+    return new TenantConnection(connection, wanted);
   }
 
-  beginTransaction(connection: DatabaseConnection, settings: TransactionSettings): Promise<void> {
-    return this.#inner.beginTransaction(connection, settings);
+  async beginTransaction(connection: DatabaseConnection, settings: TransactionSettings): Promise<void> {
+    const wrapper = connection as TenantConnection;
+    await this.#inner.beginTransaction(wrapper.inner, settings);
+    // The tenant is bound to this transaction, so every statement in it is scoped.
+    await wrapper.inner.executeQuery(setLocalTenantQuery(wrapper.tenantId));
+    wrapper.inTransaction = true;
   }
 
-  commitTransaction(connection: DatabaseConnection): Promise<void> {
-    return this.#inner.commitTransaction(connection);
+  async commitTransaction(connection: DatabaseConnection): Promise<void> {
+    const wrapper = connection as TenantConnection;
+    wrapper.inTransaction = false;
+    await this.#inner.commitTransaction(wrapper.inner);
   }
 
-  rollbackTransaction(connection: DatabaseConnection): Promise<void> {
-    return this.#inner.rollbackTransaction(connection);
+  async rollbackTransaction(connection: DatabaseConnection): Promise<void> {
+    const wrapper = connection as TenantConnection;
+    wrapper.inTransaction = false;
+    await this.#inner.rollbackTransaction(wrapper.inner);
   }
 
   releaseConnection(connection: DatabaseConnection): Promise<void> {
-    return this.#inner.releaseConnection(connection);
+    return this.#inner.releaseConnection((connection as TenantConnection).inner);
   }
 
   destroy(): Promise<void> {
@@ -97,42 +159,4 @@ export function createDatabase(
   return new Kysely<Database>({
     dialect: tenancy === 'off' ? new PostgresDialect({ pool }) : new TenantDialect(pool, tenancy),
   });
-}
-
-/**
- * Fails fast unless every client connection keeps its own session state.
- * The tenant is a session setting (TenantDriver), so a pooler in transaction
- * or statement mode would run one organisation's queries with another's
- * tenant. Two clients set a marker one after the other (a pooler hands the
- * server connection that A just released to B), then each reads its marker
- * and backend pid back a few times.
- */
-export async function assertSessionPooling(connectionString: string): Promise<void> {
-  const clients = [new pg.Client({ connectionString }), new pg.Client({ connectionString })];
-  await Promise.all(clients.map((c) => c.connect()));
-  try {
-    const markers = clients.map(() => randomUUID());
-    const pids: number[] = [];
-    for (const [i, c] of clients.entries()) {
-      const { rows } = await c.query<{ pid: number }>(
-        "select set_config('app.pooler_probe', $1, false), pg_backend_pid() as pid",
-        [markers[i]],
-      );
-      pids.push(rows[0]?.pid ?? -1);
-    }
-    for (let round = 0; round < 3; round++)
-      for (const [i, c] of clients.entries()) {
-        const { rows } = await c.query<{ v: string | null; pid: number }>(
-          "select current_setting('app.pooler_probe', true) as v, pg_backend_pid() as pid",
-        );
-        if (rows[0]?.v !== markers[i] || rows[0]?.pid !== pids[i])
-          throw new Error(
-            'The database connection does not keep session state between statements ' +
-              '(a pooler in transaction or statement mode?). Several organisations need session ' +
-              'pooling or a direct connection; see SECURITY.md.',
-          );
-      }
-  } finally {
-    await Promise.all(clients.map((c) => c.end()));
-  }
 }

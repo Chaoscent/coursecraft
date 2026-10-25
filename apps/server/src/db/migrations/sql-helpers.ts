@@ -90,6 +90,21 @@ export function setTenantQuery(tenantId: string): CompiledQuery {
   return CompiledQuery.raw("select set_config('app.tenant_id', $1, false)", [tenantId]);
 }
 
+/**
+ * Transaction-local tenant (SECURITY_AUDIT.md F-05): `is_local = true` binds
+ * the setting to the current transaction, so it travels with the transaction
+ * even through a transaction-mode connection pooler and cannot leak to another
+ * organisation's query on the same backend connection.
+ */
+export function setLocalTenantQuery(tenantId: string): CompiledQuery {
+  return CompiledQuery.raw("select set_config('app.tenant_id', $1, true)", [tenantId]);
+}
+
+/** Transaction control statements used by the tenant driver (F-05). */
+export const BEGIN_TX: CompiledQuery = CompiledQuery.raw('begin');
+export const COMMIT_TX: CompiledQuery = CompiledQuery.raw('commit');
+export const ROLLBACK_TX: CompiledQuery = CompiledQuery.raw('rollback');
+
 /** Read access only for a role (platform tables the app must not change). Skipped when the role is missing. */
 export async function readOnlyFor<DB>(
   db: Kysely<DB>,
