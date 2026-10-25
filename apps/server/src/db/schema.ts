@@ -362,6 +362,8 @@ export interface CertificatesTable {
   learner_name: string;
   item_title: string;
   score_scaled: number | null;
+  /** The result was scored by the server (vs reported by the course content) — F-07. */
+  verified: Generated<boolean>;
   completed_at: Timestamp;
   issued_at: CreatedAt;
 }

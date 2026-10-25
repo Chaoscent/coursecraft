@@ -25,6 +25,7 @@ import * as m0020 from './0020-session-sso.js';
 import * as m0021 from './0021-operator-details.js';
 import * as m0022 from './0022-billing.js';
 import * as m0023 from './0023-job-queue-privileges.js';
+import * as m0024 from './0024-certificate-verified.js';
 
 /** Ordered list of all migrations. Released migrations never change. */
 export const MIGRATIONS: Readonly<Record<string, Migration>> = {
@@ -51,6 +52,7 @@ export const MIGRATIONS: Readonly<Record<string, Migration>> = {
   '0021-operator-details': m0021,
   '0022-billing': m0022,
   '0023-job-queue-privileges': m0023,
+  '0024-certificate-verified': m0024,
 };
 
 /**

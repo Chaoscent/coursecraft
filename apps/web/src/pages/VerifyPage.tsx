@@ -65,6 +65,7 @@ export function VerifyPage() {
         <Notice tone="info">{t('verify.hint')}</Notice>
         {error ? <Notice tone="danger">{error}</Notice> : null}
         {result ? <Notice tone="success">{t('verify.valid')}</Notice> : null}
+        {result && !result.verified ? <Notice tone="warning">{t('verify.reported')}</Notice> : null}
         <FormGrid>
           <TextField
             label={t('verify.serial')}

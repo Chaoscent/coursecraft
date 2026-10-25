@@ -1385,6 +1385,7 @@
     "serial": "Zertifikatsnummer",
     "check": "Prüfen",
     "valid": "Dieses Zertifikat ist echt und wurde von dieser Plattform ausgestellt.",
+    "reported": "Der Abschluss wurde vom Kursinhalt gemeldet und nicht serverseitig bewertet.",
     "notFound": "Zu dieser Nummer gibt es kein Zertifikat.",
     "learner": "Ausgestellt für",
     "course": "Kurs",

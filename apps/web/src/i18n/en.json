@@ -1385,6 +1385,7 @@
     "serial": "Certificate number",
     "check": "Verify",
     "valid": "This certificate is genuine and was issued by this platform.",
+    "reported": "The completion was reported by the course content and was not scored by the server.",
     "notFound": "There is no certificate with this number.",
     "learner": "Issued to",
     "course": "Course",
