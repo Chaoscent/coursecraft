@@ -7,7 +7,7 @@ const KEY = 'sso_policy';
 export async function getSsoPolicy(ctx: AppContext): Promise<SsoPolicy> {
   const row = await ctx.db.selectFrom('settings').select('value').where('key', '=', KEY).executeTakeFirst();
   const parsed = ssoPolicySchema.safeParse(row?.value);
-  return parsed.success ? parsed.data : { localLoginAdminOnly: false };
+  return parsed.success ? parsed.data : { localLoginAdminOnly: false, allowPasswordResetForSsoUsers: false };
 }
 
 export async function saveSsoPolicy(ctx: AppContext, auth: AuthState, input: SsoPolicy): Promise<void> {

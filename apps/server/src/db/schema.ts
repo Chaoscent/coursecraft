@@ -38,6 +38,10 @@ export interface UsersTable {
   /** Second-factor brute-force counter and lock (F-09), separate from the password counter. */
   totp_failed: Generated<number>;
   totp_locked_until: Timestamp | null;
+  /** Per-account password-reset throttle (F-10). */
+  reset_requested_at: Timestamp | null;
+  reset_count: Generated<number>;
+  reset_count_since: Timestamp | null;
   last_login_at: Timestamp | null;
   created_at: CreatedAt;
   updated_at: ColumnType<Date, Date | string | undefined, Date | string>;

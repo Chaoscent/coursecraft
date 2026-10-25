@@ -1262,6 +1262,7 @@
       "too_many": "Sync aborted: an unusually large number of accounts would be deactivated. Check the filter."
     },
     "adminOnly": "Allow local password sign-in for administrators only (emergency access)",
+    "allowResetForSso": "Allow password reset for identity-provider accounts without a local password",
     "groupClaim": "Claim with groups",
     "groupClaimHint": "e.g. groups. Must be in the ID token. Empty = no roles from groups.",
     "groupAttributeSaml": "Attribute with groups",

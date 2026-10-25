@@ -27,6 +27,7 @@ import * as m0022 from './0022-billing.js';
 import * as m0023 from './0023-job-queue-privileges.js';
 import * as m0024 from './0024-certificate-verified.js';
 import * as m0025 from './0025-totp-lockout.js';
+import * as m0026 from './0026-reset-throttle.js';
 
 /** Ordered list of all migrations. Released migrations never change. */
 export const MIGRATIONS: Readonly<Record<string, Migration>> = {
@@ -55,6 +56,7 @@ export const MIGRATIONS: Readonly<Record<string, Migration>> = {
   '0023-job-queue-privileges': m0023,
   '0024-certificate-verified': m0024,
   '0025-totp-lockout': m0025,
+  '0026-reset-throttle': m0026,
 };
 
 /**

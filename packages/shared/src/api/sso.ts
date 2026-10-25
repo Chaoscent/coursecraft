@@ -231,6 +231,12 @@ export const ssoProvidersResponseSchema = z.object({ items: z.array(ssoProviderS
 export const ssoPolicySchema = z.object({
   /** Only administrators (the break-glass accounts) may use a local password. */
   localLoginAdminOnly: z.boolean(),
+  /**
+   * Allow a password reset for accounts provisioned by an identity provider
+   * that have no local password yet (F-10). Off by default: such a reset lets
+   * the account sign in locally and survive IdP deprovisioning.
+   */
+  allowPasswordResetForSsoUsers: z.boolean().default(false),
 });
 export type SsoPolicy = z.infer<typeof ssoPolicySchema>;
 

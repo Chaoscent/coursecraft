@@ -1262,6 +1262,7 @@
       "too_many": "Abgleich abgebrochen: Es würden auffällig viele Konten deaktiviert. Prüfen Sie den Filter."
     },
     "adminOnly": "Lokale Passwort-Anmeldung nur für Administratoren erlauben (Notfallzugang)",
+    "allowResetForSso": "Passwort-Zurücksetzen für IdP-Konten ohne lokales Passwort erlauben",
     "groupClaim": "Claim mit Gruppen",
     "groupClaimHint": "z. B. groups. Muss im ID-Token stehen. Leer = keine Rollen aus Gruppen.",
     "groupAttributeSaml": "Attribut mit Gruppen",
