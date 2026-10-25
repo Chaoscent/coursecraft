@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { randomUUID } from 'node:crypto';
 import {
   Kysely,
   PostgresDialect,
@@ -96,4 +97,42 @@ export function createDatabase(
   return new Kysely<Database>({
     dialect: tenancy === 'off' ? new PostgresDialect({ pool }) : new TenantDialect(pool, tenancy),
   });
+}
+
+/**
+ * Fails fast unless every client connection keeps its own session state.
+ * The tenant is a session setting (TenantDriver), so a pooler in transaction
+ * or statement mode would run one organisation's queries with another's
+ * tenant. Two clients set a marker one after the other (a pooler hands the
+ * server connection that A just released to B), then each reads its marker
+ * and backend pid back a few times.
+ */
+export async function assertSessionPooling(connectionString: string): Promise<void> {
+  const clients = [new pg.Client({ connectionString }), new pg.Client({ connectionString })];
+  await Promise.all(clients.map((c) => c.connect()));
+  try {
+    const markers = clients.map(() => randomUUID());
+    const pids: number[] = [];
+    for (const [i, c] of clients.entries()) {
+      const { rows } = await c.query<{ pid: number }>(
+        "select set_config('app.pooler_probe', $1, false), pg_backend_pid() as pid",
+        [markers[i]],
+      );
+      pids.push(rows[0]?.pid ?? -1);
+    }
+    for (let round = 0; round < 3; round++)
+      for (const [i, c] of clients.entries()) {
+        const { rows } = await c.query<{ v: string | null; pid: number }>(
+          "select current_setting('app.pooler_probe', true) as v, pg_backend_pid() as pid",
+        );
+        if (rows[0]?.v !== markers[i] || rows[0]?.pid !== pids[i])
+          throw new Error(
+            'The database connection does not keep session state between statements ' +
+              '(a pooler in transaction or statement mode?). Several organisations need session ' +
+              'pooling or a direct connection; see SECURITY.md.',
+          );
+      }
+  } finally {
+    await Promise.all(clients.map((c) => c.end()));
+  }
 }
