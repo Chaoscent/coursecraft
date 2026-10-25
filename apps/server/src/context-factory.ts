@@ -16,7 +16,10 @@ export function createContext(config: AppConfig, jobs: JobQueue = new RecordingQ
   return {
     config,
     db,
-    box: SecretBox.single(config.masterKey),
+    box:
+      config.masterKeys && config.masterKeyCurrent
+        ? new SecretBox(config.masterKeys, config.masterKeyCurrent)
+        : SecretBox.single(config.masterKey),
     sessions: new SessionService(
       db,
       { idleMinutes: config.sessionIdleMinutes, absoluteHours: config.sessionAbsoluteHours },

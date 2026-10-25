@@ -150,7 +150,13 @@ styles, inline scripts and `eval` stay blocked. The web app runs Zod in
   `crypto.randomBytes`; stored as SHA-256.
 - Passwords: Argon2id.
 - Secrets at rest: AES-256-GCM, random 96-bit nonce, AAD binds ciphertext to
-  purpose and record id, versioned keys.
+  purpose and record id (the SMTP password also to its organisation), versioned
+  keys.
+- Master-key rotation: set `COURSECRAFT_MASTER_KEYS` to the ordered key ring
+  (current key last), deploy so old ciphertext still opens, run
+  `coursecraft rotate-master-key` to re-seal every stored secret with the
+  current key, then drop the retired keys. A single `COURSECRAFT_MASTER_KEY`
+  stays supported (key version 1).
 - IP addresses: HMAC-SHA-256 with a pepper from the secret store.
 
 ## 7. Verification

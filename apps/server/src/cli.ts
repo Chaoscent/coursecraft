@@ -11,8 +11,12 @@ import { DEFAULT_TENANT_ID } from './tenancy/context.js';
 import { createTenant, deleteTenant, listTenants, newSetupToken, setTenantStatus } from './cli/tenants.js';
 import { initSecrets } from './cli/init-secrets.js';
 import { migrate } from './cli/migrate.js';
+import { resealTenantSecrets } from './cli/rotate-master-key.js';
+import { loadConfig } from './config/env.js';
+import { createContext } from './context-factory.js';
 import { createDatabase } from './db/connection.js';
 import { issueSetupToken } from './modules/setup/service.js';
+import { forEachTenant } from './tenancy/directory.js';
 
 function optionalSecret(name: string): string | undefined {
   const file = process.env[`${name}_FILE`];
@@ -137,6 +141,33 @@ async function run(args: string[]): Promise<number> {
         );
       } finally {
         await db.destroy();
+      }
+      return 0;
+    }
+    case 'rotate-master-key': {
+      const config = loadConfig();
+      if (!config.masterKeys)
+        throw new Error(
+          'Set COURSECRAFT_MASTER_KEYS (the key ring, current key last) before rotating; a single COURSECRAFT_MASTER_KEY has nothing to rotate to.',
+        );
+      const ctx = createContext(config);
+      try {
+        let total = 0;
+        await forEachTenant(
+          config,
+          ctx.tenants,
+          async () => {
+            total += await resealTenantSecrets(ctx.db, ctx.box);
+          },
+          (scope, error) => {
+            throw error instanceof Error ? error : new Error(`re-seal failed for organisation ${scope.id}`);
+          },
+        );
+        console.log(
+          `Re-sealed ${total} secret(s) with the current master key. Retired keys can now be removed.`,
+        );
+      } finally {
+        await ctx.db.destroy();
       }
       return 0;
     }

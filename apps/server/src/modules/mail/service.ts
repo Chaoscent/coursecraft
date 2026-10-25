@@ -6,10 +6,13 @@ import { z } from 'zod';
 import type { SealedJson } from '../../db/schema.js';
 import type { AppContext, AuthState } from '../../http/context.js';
 import { AppError } from '../../http/errors.js';
+import { currentScope, DEFAULT_TENANT_ID } from '../../tenancy/context.js';
 import { formatDue, renderMail } from './templates.js';
 
 const SETTINGS_KEY = 'smtp';
-const PASSWORD_AAD = 'smtp-password';
+// The SMTP password ciphertext is bound to its organisation (SECURITY_AUDIT.md F-21),
+// so a sealed value copied into another tenant's settings row cannot be decrypted there.
+export const smtpAad = () => `smtp-password:${currentScope()?.id ?? DEFAULT_TENANT_ID}`;
 const REMINDER_HOURS = 72;
 
 const storedSchema = z.object({
@@ -63,7 +66,7 @@ export async function saveSmtpSettings(
       ? (current?.value.password ?? null)
       : input.password === null || input.password === ''
         ? null
-        : ctx.box.seal(input.password, PASSWORD_AAD);
+        : ctx.box.seal(input.password, smtpAad());
   const value: Stored = {
     enabled: input.enabled,
     host: input.host,
@@ -111,7 +114,7 @@ async function deliver(ctx: AppContext, to: string, mail: { subject: string; tex
     requireTLS: s.security === 'starttls',
     ignoreTLS: s.security === 'none',
     ...(s.username
-      ? { auth: { user: s.username, pass: s.password ? ctx.box.open(s.password, PASSWORD_AAD) : '' } }
+      ? { auth: { user: s.username, pass: s.password ? ctx.box.open(s.password, smtpAad()) : '' } }
       : {}),
     connectionTimeout: 15_000,
     greetingTimeout: 15_000,

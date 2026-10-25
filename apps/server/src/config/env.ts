@@ -28,6 +28,32 @@ const key32 = z
   .transform((value) => Buffer.from(value, 'base64'))
   .refine((buf) => buf.length === 32, { message: 'Must be 32 bytes, base64-encoded' });
 
+/**
+ * Master key ring for rotation (SECURITY_AUDIT.md F-21). COURSECRAFT_MASTER_KEYS
+ * is a comma-separated list of 32-byte base64 keys; position is the key version
+ * (1-based) and the last entry is the current key. Rotate by appending a new
+ * key (it becomes current) and keeping the old ones so existing ciphertext still
+ * opens; run `coursecraft rotate-master-key`, then drop the retired keys.
+ */
+function masterKeyRing(
+  env: NodeJS.ProcessEnv,
+): { keys: Map<number, Buffer>; current: number; currentKeyBase64: string } | null {
+  const raw = env['COURSECRAFT_MASTER_KEYS'];
+  if (!raw) return null;
+  const parts = raw
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (!parts.length) throw new Error('COURSECRAFT_MASTER_KEYS is set but empty');
+  const keys = new Map<number, Buffer>();
+  parts.forEach((b64, i) => {
+    const buf = Buffer.from(b64, 'base64');
+    if (buf.length !== 32) throw new Error('Each COURSECRAFT_MASTER_KEYS entry must be a 32-byte base64 key');
+    keys.set(i + 1, buf);
+  });
+  return { keys, current: parts.length, currentKeyBase64: parts[parts.length - 1] as string };
+}
+
 const configSchema = z
   .object({
     publicUrl: httpsOrLocalhost,
@@ -128,9 +154,14 @@ const configSchema = z
     path: ['contentUrl'],
   });
 
-export type AppConfig = z.infer<typeof configSchema>;
+export type AppConfig = z.infer<typeof configSchema> & {
+  /** Versioned master keys for rotation (F-21); absent means the single masterKey (version 1). */
+  masterKeys?: Map<number, Buffer>;
+  masterKeyCurrent?: number;
+};
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
+  const ring = masterKeyRing(env);
   const result = configSchema.safeParse({
     publicUrl: env['COURSECRAFT_PUBLIC_URL'],
     contentUrl: env['COURSECRAFT_CONTENT_URL'] || undefined,
@@ -141,7 +172,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     databaseUrl: readSecret(env, 'COURSECRAFT_DATABASE_URL'),
     dataDir: env['COURSECRAFT_DATA_DIR'],
     trustProxy: env['COURSECRAFT_TRUST_PROXY'],
-    masterKey: readSecret(env, 'COURSECRAFT_MASTER_KEY'),
+    masterKey: ring ? ring.currentKeyBase64 : readSecret(env, 'COURSECRAFT_MASTER_KEY'),
     ipPepper: readSecret(env, 'COURSECRAFT_IP_PEPPER'),
     webDir: env['COURSECRAFT_WEB_DIR'] || undefined,
     sessionIdleMinutes: env['COURSECRAFT_SESSION_IDLE_MINUTES'],
@@ -174,7 +205,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     const problems = result.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`);
     throw new Error(`Invalid configuration:\n  ${problems.join('\n  ')}`);
   }
-  return result.data;
+  return ring ? { ...result.data, masterKeys: ring.keys, masterKeyCurrent: ring.current } : result.data;
 }
 
 /**
