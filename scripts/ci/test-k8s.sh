@@ -51,8 +51,28 @@ helm install cc /charts/coursecraft -n cc --wait --timeout 300s \
   --set image.app=coursecraft/app --set image.converter=coursecraft/converter --set image.tag=local --set image.pullPolicy=Never --set publicUrl=http://localhost:8080 --set contentUrl=http://localhost:8081 \
   --set database.host=pg.cc.svc --set database.sslmode=disable --set database.bootstrap.adminSecret=admin-db \
   --set storage.s3.endpoint="http://$S3IP:8000" --set storage.s3.bucket=coursecraft --set storage.s3.secret=s3-keys --set storage.s3.converterSecret=s3-converter-keys \
+  --set networkPolicy.converter.database.podSelector.app=pg \
+  --set networkPolicy.converter.objectStorage.podSelector.app=s3 \
+  --set networkPolicy.converter.objectStorage.port=8000 \
   --set ingress.enabled=false >/dev/null
 [ "$(k -n cc get deploy cc-app -o jsonpath='{.status.readyReplicas}')" = 2 ] || fail "two app replicas should be ready"
+
+# The converter reaches DNS, PostgreSQL and the object storage, nothing else (SECURITY_AUDIT.md F-14).
+# k3s enforces NetworkPolicy with its embedded kube-router controller.
+probe() { # host port -> "open" or "closed"
+  k -n cc exec deploy/cc-converter -c converter -- node -e '
+    const s = require("net").connect({ host: process.argv[1], port: +process.argv[2], timeout: 4000 });
+    s.on("connect", () => { console.log("open"); s.destroy(); });
+    s.on("timeout", () => { console.log("closed"); s.destroy(); });
+    s.on("error", () => console.log("closed"));' "$1" "$2"
+}
+k -n cc exec deploy/cc-converter -c converter -- node -e 'require("dns").lookup("pg.cc.svc.cluster.local", (e) => process.exit(e ? 1 : 0))' \
+  || fail "converter cannot resolve names"
+[ "$(probe pg.cc.svc.cluster.local 5432)" = open ] || fail "converter cannot reach PostgreSQL"
+[ "$(probe "$S3IP" 8000)" = open ] || fail "converter cannot reach the object storage"
+[ "$(probe 169.254.169.254 80)" = closed ] || fail "converter reaches the metadata address"
+[ "$(probe 1.1.1.1 443)" = closed ] || fail "converter reaches the internet"
+[ "$(probe cc-app.cc.svc.cluster.local 3000)" = closed ] || fail "converter reaches the app"
 
 # Restarted when the pod behind it goes away (rolling updates).
 docker exec -d "$K" sh -c 'while true; do kubectl -n cc port-forward --address 127.0.0.1 svc/cc-app 8080:3000 9464:9464; sleep 1; done'

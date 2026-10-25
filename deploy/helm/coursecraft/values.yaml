@@ -117,6 +117,35 @@ networkPolicy:
   # allow the egress the pods need. Adjust to your cluster.
   enabled: false
   ingressControllerNamespace: ingress-nginx
+  # Default-deny egress for the converter, which handles untrusted files
+  # (SECURITY_AUDIT.md F-14). Independent of "enabled" above and on by default:
+  # the converter then reaches only DNS, the database and (with s3) the object
+  # storage, never the internet or the cloud metadata endpoint. A
+  # NetworkPolicy cannot match host names, so give destinations as in-cluster
+  # selectors or as address ranges (managed services).
+  converter:
+    enabled: true
+    # PostgreSQL. At least one of cidrs / podSelector / namespaceSelector is
+    # required while this policy is enabled (a managed DB by CIDR, an
+    # in-cluster DB such as CloudNativePG by selector).
+    database:
+      cidrs: []
+      podSelector: {}
+      namespaceSelector: {}
+    # Object storage (storage.kind=s3). Prefer a selector (in-cluster MinIO/Ceph)
+    # or the narrow CIDRs of a VPC endpoint. 0.0.0.0/0 is the last-resort
+    # fallback for public S3 without a VPC endpoint: it allows outbound HTTPS
+    # anywhere, with the link-local range (169.254.0.0/16, cloud metadata)
+    # excluded automatically. Policies match pod IPs, not Service ClusterIPs.
+    objectStorage:
+      cidrs: []
+      podSelector: {}
+      namespaceSelector: {}
+      port: 443
+    # The cluster DNS service (kube-dns/CoreDNS); adjust if yours differs.
+    dns:
+      namespaceSelector: { kubernetes.io/metadata.name: kube-system }
+      podSelector: { k8s-app: kube-dns }
 
 # Operator console (organisations, limits, usage). Not exposed: reach it with
 #   kubectl port-forward svc/<release>-operator 3002:3002
