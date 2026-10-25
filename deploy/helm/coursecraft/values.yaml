@@ -23,6 +23,14 @@ replicas:
   app: 2
   converter: 1
 
+# The converter processes untrusted files. The pod is already non-root, with
+# all capabilities dropped, a read-only root file system, no network egress
+# and resource limits. For strong kernel isolation on top of that
+# (SECURITY_AUDIT.md F-15), set a sandbox runtime the cluster provides, e.g.
+# "gvisor" or "kata". Empty = the cluster's default runtime.
+converter:
+  runtimeClassName: ''
+
 # How the application is configured (see .env.example).
 config:
   logLevel: info

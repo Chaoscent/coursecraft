@@ -7,7 +7,7 @@ import {
   type ConvertDoneJob,
 } from '@coursecraft/shared';
 import { PgBoss } from 'pg-boss';
-import { loadConfig } from './config.js';
+import { loadConfig, scrubSecretsFromEnv } from './config.js';
 import { beat, HEARTBEAT_INTERVAL_MS } from './heartbeat.js';
 import { convertMedia, UnsupportedMediaError } from './jobs/media.js';
 import { renderPresentation } from './jobs/pptx-render.js';
@@ -17,6 +17,9 @@ import { withJobFiles } from './stage.js';
 // Outputs must stay deletable by the app, which shares only the group.
 process.umask(0o007);
 const config = loadConfig();
+// The secrets now live in `config`; drop them from the environment so a
+// compromised parser (same uid) cannot read them from /proc (SECURITY_AUDIT.md F-15).
+scrubSecretsFromEnv();
 
 // Schema and queues are created by the migrate service; this role has no DDL rights.
 const boss = new PgBoss({

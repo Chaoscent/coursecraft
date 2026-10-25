@@ -25,6 +25,11 @@ spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets: {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- with .Values.converter.runtimeClassName }}
+      # Strong kernel isolation for untrusted-file parsing (SECURITY_AUDIT.md F-15),
+      # e.g. gVisor ("gvisor") or Kata ("kata"); the cluster must provide the class.
+      runtimeClassName: {{ . | quote }}
+      {{- end }}
       automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true

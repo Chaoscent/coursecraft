@@ -99,6 +99,18 @@ Verify once, with the converter key: `aws s3 cp` to `work/x/out/y` succeeds,
 while `aws s3 ls s3://BUCKET/PREFIX/tenants/` and
 `aws s3 cp s3://BUCKET/PREFIX/backups/... .` are denied.
 
+## Converter sandbox
+
+The converter parses untrusted files. Its pod is non-root, drops all
+capabilities, has a read-only root file system and no network egress, and the
+tools (LibreOffice, ffmpeg) run as separate processes with resource limits and
+an environment that holds no secrets; the converter also removes its own DB and
+object-storage secrets from its process environment at start, so a compromised
+parser sharing its uid cannot read them from `/proc`. For strong kernel-level
+isolation on top of that, run the converter under a sandbox runtime by setting
+`converter.runtimeClassName` (for example `gvisor` or `kata`); the cluster must
+provide that RuntimeClass.
+
 ## Converter network policy
 
 The converter handles untrusted files, so a default-deny egress NetworkPolicy
