@@ -13,9 +13,9 @@
 //   with today's (empty) profile, and blocked by M-6
 //   (BlockUntrustedRefererLinks alone is enough).
 //
-// The "today" test is marked `it.fails` (expected failure). When M-6 lands,
-// replace PRODUCTION_PROFILE with an import of the profile the converter
-// seeds; the test then passes, `it.fails` reports it, and `.fails` must go.
+// M-6 applied: the converter seeds HARDENED_PROFILE (libreoffice-profile.ts)
+// before soffice starts, so a picture linked to a local file is no longer
+// embedded. The test imports that exact profile.
 import { execFileSync } from 'node:child_process';
 import {
   GenericContainer,
@@ -25,6 +25,7 @@ import {
   type StartedTestContainer,
 } from 'testcontainers';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { HARDENED_PROFILE } from '../../apps/converter/src/jobs/libreoffice-profile.js';
 import { ZipArchive } from '../../apps/server/src/lib/zip.js';
 import { zipFiles } from '../support/packages.js';
 import { solidPng } from '../support/png.js';
@@ -49,24 +50,8 @@ const PDF_FILTER =
     UseLosslessCompression: { type: 'boolean', value: 'true' },
   });
 
-/** DRAFT M-6 (SECURITY_AUDIT.md): seeded as `<profile>/user/registrymodifications.xcu` before the first start. */
-export const HARDENED_PROFILE = `<?xml version="1.0" encoding="UTF-8"?>
-<oor:items xmlns:oor="http://openoffice.org/2001/registry" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-<item oor:path="/org.openoffice.Office.Common/Security/Scripting"><prop oor:name="BlockUntrustedRefererLinks" oor:op="fuse"><value>true</value></prop></item>
-<item oor:path="/org.openoffice.Office.Common/Security/Scripting"><prop oor:name="DisableActiveContent" oor:op="fuse"><value>true</value></prop></item>
-<item oor:path="/org.openoffice.Office.Common/Security/Scripting"><prop oor:name="MacroSecurityLevel" oor:op="fuse"><value>3</value></prop></item>
-<item oor:path="/org.openoffice.Office.Common/Security/Scripting"><prop oor:name="DisableMacrosExecution" oor:op="fuse"><value>true</value></prop></item>
-<item oor:path="/org.openoffice.Inet/Settings"><prop oor:name="ooInetProxyType" oor:op="fuse"><value>2</value></prop></item>
-<item oor:path="/org.openoffice.Inet/Settings"><prop oor:name="ooInetHTTPProxyName" oor:op="fuse"><value>127.0.0.1</value></prop></item>
-<item oor:path="/org.openoffice.Inet/Settings"><prop oor:name="ooInetHTTPProxyPort" oor:op="fuse"><value>9</value></prop></item>
-<item oor:path="/org.openoffice.Inet/Settings"><prop oor:name="ooInetHTTPSProxyName" oor:op="fuse"><value>127.0.0.1</value></prop></item>
-<item oor:path="/org.openoffice.Inet/Settings"><prop oor:name="ooInetHTTPSProxyPort" oor:op="fuse"><value>9</value></prop></item>
-<item oor:path="/org.openoffice.Inet/Settings"><prop oor:name="ooInetNoProxy" oor:op="fuse"><value></value></prop></item>
-</oor:items>
-`;
-
-/** What the converter seeds today: nothing (a fresh, empty profile). Replace with the M-6 import once it exists. */
-const PRODUCTION_PROFILE: string | undefined = undefined;
+/** The profile the converter seeds in production (apps/converter/src/jobs/libreoffice-profile.ts). */
+const PRODUCTION_PROFILE: string | undefined = HARDENED_PROFILE;
 
 const LISTENER = `
 const fs = require('fs');
@@ -228,18 +213,10 @@ describe.skipIf(!imagePresent)('F-19 / M-6: LibreOffice and linked pictures', ()
     }
   }, 120_000);
 
-  // F-19: fails today (the local file is embedded); passes once the converter seeds the M-6 profile.
-  it.fails(
-    'the production profile does not embed a picture linked to a local file',
-    async () => {
-      const deck = await linkedPictureDeck(`file://${LOCAL_PICTURE}`);
-      expect(await render(deck, PRODUCTION_PROFILE)).toEqual({ pdf: true, pictures: 0 });
-    },
-    120_000,
-  );
-
-  it('M-6: the hardened profile does not embed a picture linked to a local file', async () => {
+  // F-19 (M-6 applied): the shipped profile blocks the local-file link that an
+  // empty profile would embed.
+  it('the production profile does not embed a picture linked to a local file', async () => {
     const deck = await linkedPictureDeck(`file://${LOCAL_PICTURE}`);
-    expect(await render(deck, HARDENED_PROFILE)).toEqual({ pdf: true, pictures: 0 });
+    expect(await render(deck, PRODUCTION_PROFILE)).toEqual({ pdf: true, pictures: 0 });
   }, 120_000);
 });
