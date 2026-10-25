@@ -91,6 +91,10 @@ services:
     environment:
       COURSECRAFT_PUBLIC_URL: ${COURSECRAFT_PUBLIC_URL:?set COURSECRAFT_PUBLIC_URL in .env}
       COURSECRAFT_CONTENT_URL: ${COURSECRAFT_CONTENT_URL:-}
+      # Course playback belongs on its own origin (COURSECRAFT_CONTENT_URL). This
+      # single-host trial lets it share the app origin; set a content origin for
+      # production and drop this flag (SECURITY.md, course playback / F-12).
+      COURSECRAFT_ALLOW_SAME_ORIGIN_PLAYBACK: ${COURSECRAFT_ALLOW_SAME_ORIGIN_PLAYBACK:-true}
       COURSECRAFT_TRUST_PROXY: ${COURSECRAFT_TRUST_PROXY:-false}
       COURSECRAFT_LOG_LEVEL: ${COURSECRAFT_LOG_LEVEL:-info}
       COURSECRAFT_SESSION_IDLE_MINUTES: ${COURSECRAFT_SESSION_IDLE_MINUTES:-60}

@@ -77,8 +77,8 @@ describe('P3: xAPI documents served on the app origin', () => {
     expect(isInertDocument(today)).toBe(false);
   });
 
-  // F-12: fails today; remove `.fails` once the fix is in.
-  it.fails('a learner cannot make the app origin serve their HTML and script to another user', async () => {
+  // F-12 (M-4 applied): stored documents come back inert on the app origin.
+  it('a learner cannot make the app origin serve their HTML and script to another user', async () => {
     // Setup: an own course, published and assigned to the (malicious) learner.
     const { id: courseId } = await openCourse(t, author, `xss ${Date.now()}`);
     const itemId = (await t.request(author, 'POST', '/api/library/publish', { courseId })).json<{
