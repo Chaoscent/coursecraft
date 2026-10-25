@@ -52,7 +52,9 @@ services:
         target: /run/coursecraft
         read_only: true
         volume: { subpath: db }
-    networks: [backend]
+    # Reachable by the app/operator (backend) and, separately, the converter (jobs);
+    # the converter never shares a network with the app or operator (SECURITY_AUDIT.md F-17).
+    networks: [backend, jobs]
     shm_size: 128m
     mem_limit: 384m
     healthcheck:
@@ -144,7 +146,8 @@ services:
         volume: { subpath: converter }
     tmpfs:
       - /tmp:size=1g
-    networks: [backend]
+    # Only the job-queue database, never the app or operator console (SECURITY_AUDIT.md F-17).
+    networks: [jobs]
     mem_limit: 1g
     cpus: ${COURSECRAFT_CONVERTER_CPUS:-2}
     pids_limit: 256
@@ -204,8 +207,12 @@ services:
 
 networks:
   edge: {}
-  # No route to the outside world: database and converter live only here.
+  # No route to the outside world. The app, operator console and database live here.
   backend:
+    internal: true
+  # The converter and the database only; keeps the converter off the app/operator
+  # network so a compromised converter cannot reach them (SECURITY_AUDIT.md F-17).
+  jobs:
     internal: true
 
 volumes:

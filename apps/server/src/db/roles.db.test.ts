@@ -110,4 +110,21 @@ describe('database roles', () => {
       );
     });
   });
+
+  it('the converter role is bounded in connections and statement time (F-17)', async () => {
+    const res = await container.exec([
+      'psql',
+      '--no-psqlrc',
+      '-tA',
+      '-U',
+      'postgres',
+      '-d',
+      'coursecraft',
+      '-c',
+      "select rolconnlimit, array_to_string(rolconfig, ',') from pg_roles where rolname = 'coursecraft_converter'",
+    ]);
+    expect(res.exitCode).toBe(0);
+    expect(res.output.trim()).toContain('4|');
+    expect(res.output).toContain('statement_timeout=30s');
+  });
 });

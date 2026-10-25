@@ -17,6 +17,10 @@ SELECT format('CREATE ROLE %I LOGIN', r) FROM unnest(ARRAY['coursecraft_migrator
 ALTER ROLE coursecraft_migrator PASSWORD :'migrator_pw';
 ALTER ROLE coursecraft_app PASSWORD :'app_pw';
 ALTER ROLE coursecraft_converter PASSWORD :'converter_pw';
+-- Bound the converter's database footprint (SECURITY_AUDIT.md F-17): few connections and
+-- a short statement timeout, so a compromised converter cannot tie up the database for every tenant.
+ALTER ROLE coursecraft_converter CONNECTION LIMIT 4;
+ALTER ROLE coursecraft_converter SET statement_timeout = '30s';
 -- Managed services: the administrator is no superuser and must be allowed to hand out ownership.
 SELECT 'GRANT coursecraft_migrator TO ' || quote_ident(current_user)
   WHERE NOT pg_has_role(current_user, 'coursecraft_migrator', 'MEMBER') \gexec
