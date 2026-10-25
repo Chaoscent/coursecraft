@@ -38,7 +38,11 @@ const REL_TYPE = {
 const RASTER_EXT = new Set(['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp']);
 const MAX_SLIDES = 1000;
 const MAX_ELEMENTS = 500;
-const MAX_XML_BYTES = 20 * 1024 * 1024;
+// Per-part and cumulative XML budgets (SECURITY_AUDIT.md F-13): bound the work
+// of a single crafted part and of the whole import, on top of the worker's
+// heap limit and timeout.
+const MAX_XML_BYTES = 12 * 1024 * 1024;
+const MAX_TOTAL_XML_BYTES = 96 * 1024 * 1024;
 const LINE_SHAPES = new Set([
   'line',
   'straightConnector1',
@@ -143,13 +147,17 @@ const invalid = (message: string) => new AppError('invalid_file', message);
 class Reader {
   readonly #zip: ZipArchive;
   readonly #cache = new Map<string, Part>();
+  #xmlBudget = MAX_TOTAL_XML_BYTES;
 
   constructor(zip: ZipArchive) {
     this.#zip = zip;
   }
 
   async xml(name: string): Promise<Document> {
-    if (this.#zip.size(name) > MAX_XML_BYTES) throw invalid('Presentation part too large');
+    const size = this.#zip.size(name);
+    if (size > MAX_XML_BYTES) throw invalid('Presentation part too large');
+    this.#xmlBudget -= size;
+    if (this.#xmlBudget < 0) throw invalid('Presentation has too much XML to import');
     return parseXml(await this.#zip.read(name));
   }
 

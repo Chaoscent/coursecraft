@@ -10,7 +10,8 @@ import { ZipArchive, type ZipLimits } from '../../lib/zip.js';
 import { storeAsset, type StoredAsset } from '../assets/service.js';
 import type { AssetStore } from '../assets/store.js';
 import { newId } from '../courses/document.js';
-import { parsePresentation, type PendingImage } from './parse.js';
+import { parsePresentationInWorker } from './parse-worker-client.js';
+import { type PendingImage } from './parse.js';
 
 export const PPTX_LIMITS: ZipLimits = {
   maxEntries: 20_000,
@@ -103,7 +104,9 @@ export async function preparePresentation(
         .basename(options.fileName)
         .replace(/\.(pptx|ppsx|potx)$/i, '')
         .slice(0, 200) || 'Import';
-    const parsed = await parsePresentation(zip, { lang: options.lang, fileTitle });
+    // Parse in a separate thread with a bounded heap and a timeout (SECURITY_AUDIT.md F-13);
+    // the open zip here stays for reading the pictures the parse points to.
+    const parsed = await parsePresentationInWorker(bytes, PPTX_LIMITS, { lang: options.lang, fileTitle });
     const stored = new Map<string, StoredAsset>();
     const byPart = new Map<string, StoredAsset>();
     for (const image of parsed.images) {
