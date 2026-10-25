@@ -3,7 +3,7 @@ import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { loadConfig } from './env.js';
+import { assertPlaybackOrigin, loadConfig } from './env.js';
 
 const KEY = Buffer.alloc(32, 7).toString('base64');
 const base = {
@@ -56,5 +56,32 @@ describe('loadConfig', () => {
     expect(() =>
       loadConfig({ ...base, COURSECRAFT_PUBLIC_URL: 'nope', COURSECRAFT_DATABASE_URL: 'secret-value' }),
     ).toThrow(/^(?!.*secret-value)/s);
+  });
+});
+
+describe('assertPlaybackOrigin (F-12)', () => {
+  const content = new URL('https://content.example.org');
+
+  it('refuses single mode without a content origin', () => {
+    expect(() => assertPlaybackOrigin({ contentUrl: undefined, tenancy: 'single' }, {})).toThrow(
+      'COURSECRAFT_CONTENT_URL is required',
+    );
+  });
+
+  it('allows a content origin', () => {
+    expect(() => assertPlaybackOrigin({ contentUrl: content, tenancy: 'single' }, {})).not.toThrow();
+  });
+
+  it('allows the explicit local-trial opt-out', () => {
+    expect(() =>
+      assertPlaybackOrigin(
+        { contentUrl: undefined, tenancy: 'single' },
+        { COURSECRAFT_ALLOW_SAME_ORIGIN_PLAYBACK: 'true' },
+      ),
+    ).not.toThrow();
+  });
+
+  it('does not require it for several organisations (own origins per tenant)', () => {
+    expect(() => assertPlaybackOrigin({ contentUrl: undefined, tenancy: 'multi' }, {})).not.toThrow();
   });
 });

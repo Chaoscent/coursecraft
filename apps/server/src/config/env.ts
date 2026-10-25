@@ -176,3 +176,23 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   }
   return result.data;
 }
+
+/**
+ * Course playback must not share the app's origin: own courses serve
+ * learner-controlled content under /launch/<token>/, which would run with the
+ * app's CSP and cookies (SECURITY_AUDIT.md F-12). With several organisations
+ * each tenant has its own origins, so only single mode is checked. A local
+ * trial may opt out with COURSECRAFT_ALLOW_SAME_ORIGIN_PLAYBACK=true.
+ */
+export function assertPlaybackOrigin(
+  config: Pick<AppConfig, 'contentUrl' | 'tenancy'>,
+  env: NodeJS.ProcessEnv = process.env,
+): void {
+  if (config.contentUrl || config.tenancy !== 'single') return;
+  if (env['COURSECRAFT_ALLOW_SAME_ORIGIN_PLAYBACK'] === 'true') return;
+  throw new Error(
+    'COURSECRAFT_CONTENT_URL is required: course playback needs its own origin, ' +
+      'separate from the application (SECURITY.md, course playback). ' +
+      'For a local trial only, set COURSECRAFT_ALLOW_SAME_ORIGIN_PLAYBACK=true.',
+  );
+}

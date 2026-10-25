@@ -79,6 +79,17 @@ const WRAPPER_CSS =
   'html,body{margin:0;height:100%;overflow:hidden}iframe{border:0;width:100%;height:100%;display:block}';
 
 /**
+ * Stored documents are bytes chosen by the learner's browser. They are never
+ * rendered: the type comes from this list, whatever was stored
+ * (SECURITY_AUDIT.md F-12).
+ */
+const INERT_TYPES = new Set(['application/json', 'text/plain', 'application/octet-stream']);
+const inertType = (stored: string): string => {
+  const base = stored.split(';')[0]?.trim().toLowerCase() ?? '';
+  return INERT_TYPES.has(base) ? base : 'application/octet-stream';
+};
+
+/**
  * Playback routes under /launch/<token>/: package files, the SCORM wrapper,
  * the cmi5 fetch URL and the xAPI LRS for the launched registration. They
  * run on the content origin (or on the app origin for own courses when no
@@ -116,7 +127,11 @@ export async function launchRoutes(app: FastifyInstance, ctx: AppContext, option
         .header('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), display-capture=()')
         .removeHeader('X-Frame-Options');
     const xapi = (reply: FastifyReply) =>
-      common(reply).header('X-Experience-API-Version', '1.0.3').header('Cache-Control', 'no-store');
+      common(reply)
+        .header('X-Experience-API-Version', '1.0.3')
+        .header('Cache-Control', 'no-store')
+        // LRS answers are data for the course's fetch calls, never a page.
+        .header('Content-Security-Policy', "default-src 'none'; sandbox");
     const json = (raw: unknown): unknown => {
       if (!Buffer.isBuffer(raw) || !raw.length) throw badRequest('JSON body required');
       try {
@@ -219,7 +234,8 @@ export async function launchRoutes(app: FastifyInstance, ctx: AppContext, option
         return reply
           .header('ETag', `"${result.document.etag}"`)
           .header('Last-Modified', result.document.updated_at.toUTCString())
-          .type(result.document.content_type)
+          .header('Content-Disposition', 'attachment')
+          .type(inertType(result.document.content_type))
           .send(result.document.content);
       });
       for (const method of ['put', 'post'] as const)

@@ -172,6 +172,17 @@ change:
 
 ## 5a. Course playback (content origin)
 
+- Playback runs on a separate origin (`COURSECRAFT_CONTENT_URL`): own courses
+  serve learner-stored content (xAPI documents) under `/launch/…`, so sharing
+  the app origin would expose the app's cookies and relax its CSP. In single
+  mode the app refuses to start without a content origin unless
+  `COURSECRAFT_ALLOW_SAME_ORIGIN_PLAYBACK=true` is set for a local trial; each
+  organisation has its own origins in multi mode.
+- Stored xAPI documents are served inert whatever type was stored: a
+  server-chosen type (`application/json`, `text/plain` or
+  `application/octet-stream`), `nosniff`, `Content-Disposition: attachment`
+  and `Content-Security-Policy: default-src 'none'; sandbox`, so they are data
+  for the course's `fetch`, never a page (F-12).
 - Playback URLs carry a launch token (`/launch/<token>/…`, 256 bit, stored
   as SHA-256). It is bound to user, registration and package, expires 15
   minutes after the last heartbeat of the host page (12 hours at most), is
