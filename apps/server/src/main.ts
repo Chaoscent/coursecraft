@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { convertDoneJobSchema, exportJobSchema, mailJobSchema, QUEUES } from '@coursecraft/shared';
-import { loadConfig } from './config/env.js';
+import { assertPlaybackOrigin, loadConfig } from './config/env.js';
 import { createContext } from './context-factory.js';
 import { checkReadiness } from './db/readiness.js';
 import { buildApp } from './http/app.js';
@@ -23,6 +23,8 @@ const CONVERSION_SWEEP_MS = 60_000;
 const REMINDER_INTERVAL_MS = 60 * 60_000;
 
 const config = loadConfig();
+// Learner-controlled playback must not share the app's origin (SECURITY_AUDIT.md F-12).
+assertPlaybackOrigin(config);
 const boss = createBoss(config.databaseUrl);
 const ctx = createContext(config, bossQueue(boss));
 const { app, metrics } = await buildApp({ config, ctx, checkReadiness: () => checkReadiness(ctx.db) });

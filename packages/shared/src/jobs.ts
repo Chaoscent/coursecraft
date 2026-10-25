@@ -80,7 +80,14 @@ export const convertDoneJobSchema = z
   .strict();
 export type ConvertDoneJob = z.infer<typeof convertDoneJobSchema>;
 
-export const MAIL_KINDS = ['passwordReset', 'assigned', 'reminder', 'pathAssigned', 'pathReminder'] as const;
+export const MAIL_KINDS = [
+  'passwordReset',
+  'assigned',
+  'reminder',
+  'pathAssigned',
+  'pathReminder',
+  'securityAlert',
+] as const;
 export const mailJobSchema = z
   .object({
     ...tenantField,

@@ -3,6 +3,7 @@ import './zod-runtime.js';
 export * from './primitives.js';
 export * from './assets.js';
 export * from './scoring.js';
+export * from './response-schema.js';
 export * from './rich-text.js';
 export * from './nodes/slide.js';
 export * from './nodes/quiz.js';

@@ -79,7 +79,9 @@ export const accountSessionsResponseSchema = z.object({ items: z.array(accountSe
 
 export const totpSetupResponseSchema = z.object({ secret: z.string(), uri: z.string() });
 export const totpConfirmRequestSchema = z.object({ code: totpCodeSchema }).strict();
-export const totpDisableRequestSchema = z.object({ password: z.string().min(1).max(1024) }).strict();
+export const totpDisableRequestSchema = z
+  .object({ password: z.string().min(1).max(1024), code: totpCodeSchema })
+  .strict();
 
 export const updateProfileRequestSchema = z
   .object({ displayName: displayNameSchema.optional(), locale: localeSchema.optional() })

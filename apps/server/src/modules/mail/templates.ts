@@ -35,6 +35,15 @@ const TEMPLATES: Record<'de' | 'en', Record<MailJob['kind'] | 'test', Template>>
       subject: `Erinnerung: ${p['title'] ?? ''}`,
       text: `Hallo ${p['name'] ?? ''},\n\nder Lernpfad „${p['title'] ?? ''}“ ist bis ${p['due'] ?? ''} fällig. Offen sind noch ${p['open'] ?? ''} von ${p['steps'] ?? ''} Kursen.\n\n${p['link'] ?? ''}`,
     }),
+    securityAlert: (p) => ({
+      subject: 'Sicherheitshinweis zu Ihrem Konto',
+      text:
+        `Hallo ${p['name'] ?? ''},\n\n` +
+        (p['event'] === 'totp_disabled'
+          ? 'die Zwei-Faktor-Authentisierung wurde für Ihr Konto deaktiviert und alle anderen Sitzungen wurden beendet.'
+          : 'an Ihrem Konto wurde eine sicherheitsrelevante Änderung vorgenommen.') +
+        '\n\nWenn Sie das nicht waren, ändern Sie sofort Ihr Passwort und wenden Sie sich an Ihre Administration.',
+    }),
     test: () => ({
       subject: 'Coursecraft: Testnachricht',
       text: 'Die E-Mail-Einstellungen funktionieren.',
@@ -60,6 +69,15 @@ const TEMPLATES: Record<'de' | 'en', Record<MailJob['kind'] | 'test', Template>>
     pathReminder: (p) => ({
       subject: `Reminder: ${p['title'] ?? ''}`,
       text: `Hello ${p['name'] ?? ''},\n\nthe learning path “${p['title'] ?? ''}” is due by ${p['due'] ?? ''}. ${p['open'] ?? ''} of ${p['steps'] ?? ''} courses are still open.\n\n${p['link'] ?? ''}`,
+    }),
+    securityAlert: (p) => ({
+      subject: 'Security notice for your account',
+      text:
+        `Hello ${p['name'] ?? ''},\n\n` +
+        (p['event'] === 'totp_disabled'
+          ? 'two-factor authentication was turned off for your account and all other sessions were ended.'
+          : 'a security-relevant change was made to your account.') +
+        '\n\nIf this was not you, change your password immediately and contact your administrator.',
     }),
     test: () => ({
       subject: 'Coursecraft: test message',

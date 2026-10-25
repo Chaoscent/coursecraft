@@ -111,13 +111,14 @@ IP HMAC.
 
 ### Elevation of privilege
 
-| Threat                               | Control                                                                                                                                                                                                                                                                                                                                                                             |
-| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Missing authorization on a new route | `onRoute` hook refuses to start the server if `config.permission` is missing; test enforces an unauthorized-access test per route.                                                                                                                                                                                                                                                  |
-| Stale privileges                     | Permissions read from the DB on every request; role changes set `rotate_pending` on that user's sessions; deactivation, deletion, and admin password reset delete all of the user's sessions immediately.                                                                                                                                                                           |
-| RCE through document converters      | LibreOffice and ffmpeg run only in the separate `converter` container: non-root, read-only root fs, internal network without egress, no `data` volume, DB role limited to the job queue, CPU/memory/pid limits, per-job timeouts, macros disabled, throwaway profile. A compromised converter can at most tamper with conversion outputs, which the app validates before ingesting. |
-| SSRF via configurable URLs           | Only admins configure outbound URLs (AI base URL, SMTP host, OIDC issuer). Users can never supply URLs that the server fetches.                                                                                                                                                                                                                                                     |
-| Container escape impact              | Non-root uid, read-only root fs, no added capabilities, `no-new-privileges`.                                                                                                                                                                                                                                                                                                        |
+| Threat                               | Control                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Missing authorization on a new route | `onRoute` hook refuses to start the server if `config.permission` is missing; test enforces an unauthorized-access test per route.                                                                                                                                                                                                                                                                                                                                                                            |
+| Cross-organisation data via a pooler | The organisation is set transaction-locally (`set_config('app.tenant_id', …, true)`) as the first statement of every transaction, so it travels with the transaction and the query always runs on the same backend connection — correct behind a direct connection, a session-mode pooler or a transaction-mode pooler (PgBouncer). Row-level security reads that setting. Statement-mode pooling is unsupported (it breaks transactions). Single-organisation installs use one setting for all.              |
+| Stale privileges                     | Permissions read from the DB on every request; role changes set `rotate_pending` on that user's sessions; deactivation, deletion, and admin password reset delete all of the user's sessions immediately.                                                                                                                                                                                                                                                                                                     |
+| RCE through document converters      | LibreOffice and ffmpeg run only in the separate `converter` container: non-root, read-only root fs, no egress beyond DNS, the database and the object storage (Compose `internal` network; Helm default-deny egress NetworkPolicy, `networkPolicy.converter`), no `data` volume, DB role limited to the job queue, CPU/memory/pid limits, per-job timeouts, macros disabled, throwaway profile. A compromised converter can at most tamper with conversion outputs, which the app validates before ingesting. |
+| SSRF via configurable URLs           | Only admins configure outbound URLs (AI base URL, SMTP host, OIDC issuer). Users can never supply URLs that the server fetches.                                                                                                                                                                                                                                                                                                                                                                               |
+| Container escape impact              | Non-root uid, read-only root fs, no added capabilities, `no-new-privileges`.                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 
 ## 5. Security headers (main origin)
 
@@ -149,7 +150,13 @@ styles, inline scripts and `eval` stay blocked. The web app runs Zod in
   `crypto.randomBytes`; stored as SHA-256.
 - Passwords: Argon2id.
 - Secrets at rest: AES-256-GCM, random 96-bit nonce, AAD binds ciphertext to
-  purpose and record id, versioned keys.
+  purpose and record id (the SMTP password also to its organisation), versioned
+  keys.
+- Master-key rotation: set `COURSECRAFT_MASTER_KEYS` to the ordered key ring
+  (current key last), deploy so old ciphertext still opens, run
+  `coursecraft rotate-master-key` to re-seal every stored secret with the
+  current key, then drop the retired keys. A single `COURSECRAFT_MASTER_KEY`
+  stays supported (key version 1).
 - IP addresses: HMAC-SHA-256 with a pepper from the secret store.
 
 ## 7. Verification
@@ -171,6 +178,17 @@ change:
 
 ## 5a. Course playback (content origin)
 
+- Playback runs on a separate origin (`COURSECRAFT_CONTENT_URL`): own courses
+  serve learner-stored content (xAPI documents) under `/launch/…`, so sharing
+  the app origin would expose the app's cookies and relax its CSP. In single
+  mode the app refuses to start without a content origin unless
+  `COURSECRAFT_ALLOW_SAME_ORIGIN_PLAYBACK=true` is set for a local trial; each
+  organisation has its own origins in multi mode.
+- Stored xAPI documents are served inert whatever type was stored: a
+  server-chosen type (`application/json`, `text/plain` or
+  `application/octet-stream`), `nosniff`, `Content-Disposition: attachment`
+  and `Content-Security-Policy: default-src 'none'; sandbox`, so they are data
+  for the course's `fetch`, never a page (F-12).
 - Playback URLs carry a launch token (`/launch/<token>/…`, 256 bit, stored
   as SHA-256). It is bound to user, registration and package, expires 15
   minutes after the last heartbeat of the host page (12 hours at most), is

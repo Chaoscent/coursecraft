@@ -167,10 +167,11 @@ function TwoFactor() {
     try {
       const result = await api(sessionResponseSchema, '/api/account/totp/disable', {
         method: 'POST',
-        body: { password },
+        body: { password, code },
       });
       setSession(result.session);
       setPassword('');
+      setCode('');
       setMessage({ tone: 'success', text: t('totp.disabled') });
     } catch (e) {
       setMessage({ tone: 'danger', text: errorMessage(e) });
@@ -195,9 +196,20 @@ function TwoFactor() {
               onChange={setPassword}
               autoComplete="current-password"
             />
+            <TextField
+              label={t('login.code')}
+              value={code}
+              onChange={setCode}
+              autoComplete="one-time-code"
+              description={t('totp.disableNeedsCode')}
+            />
             <FormRow label="">
               <div>
-                <Button variant="danger" onPress={() => void disable()} isDisabled={!password}>
+                <Button
+                  variant="danger"
+                  onPress={() => void disable()}
+                  isDisabled={!password || code.length !== 6}
+                >
                   {t('totp.disable')}
                 </Button>
               </div>

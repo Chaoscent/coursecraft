@@ -20,6 +20,7 @@ import type { AppContext } from '../../http/context.js';
 import { AppError, notFound } from '../../http/errors.js';
 import { checkTotp, openTotpSecret, totpAad } from '../auth/service.js';
 import { sessionInfo } from '../auth/routes.js';
+import { queueMail } from '../mail/service.js';
 import { exportUserData } from '../users/privacy.js';
 
 export function accountRoutes(app: FastifyInstance, ctx: AppContext): void {
@@ -229,17 +230,36 @@ export function accountRoutes(app: FastifyInstance, ctx: AppContext): void {
       const auth = requireAuth(request);
       const user = await ctx.db
         .selectFrom('users')
-        .select('password_hash')
+        .select(['password_hash', 'totp_secret', 'totp_last_step'])
         .where('id', '=', auth.userId)
         .executeTakeFirstOrThrow();
       if (!(await verifyPassword(user.password_hash, request.body.password))) {
         throw new AppError('invalid_credentials', 'Password is wrong');
       }
+      // A current code is required too (F-09): a stolen session plus the password
+      // must not be enough to strip the second factor.
+      if (
+        !user.totp_secret ||
+        checkTotp(
+          openTotpSecret(ctx, auth.userId, user.totp_secret),
+          request.body.code,
+          user.totp_last_step,
+        ) === null
+      ) {
+        throw new AppError('invalid_credentials', 'The code is wrong');
+      }
       await ctx.db
         .updateTable('users')
-        .set({ totp_secret: null, totp_last_step: null })
+        .set({ totp_secret: null, totp_last_step: null, totp_failed: 0, totp_locked_until: null })
         .where('id', '=', auth.userId)
         .execute();
+      // End every other session and tell the account owner (F-09).
+      await ctx.sessions.revokeAll(auth.userId, auth.sessionId);
+      await queueMail(ctx, {
+        kind: 'securityAlert',
+        userId: auth.userId,
+        params: { event: 'totp_disabled' },
+      });
       await ctx.audit.record({
         actorUserId: auth.userId,
         action: 'account.totp_disabled',

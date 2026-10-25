@@ -35,6 +35,13 @@ export interface UsersTable {
   must_change_password: Generated<boolean>;
   failed_logins: Generated<number>;
   locked_until: Timestamp | null;
+  /** Second-factor brute-force counter and lock (F-09), separate from the password counter. */
+  totp_failed: Generated<number>;
+  totp_locked_until: Timestamp | null;
+  /** Per-account password-reset throttle (F-10). */
+  reset_requested_at: Timestamp | null;
+  reset_count: Generated<number>;
+  reset_count_since: Timestamp | null;
   last_login_at: Timestamp | null;
   created_at: CreatedAt;
   updated_at: ColumnType<Date, Date | string | undefined, Date | string>;
@@ -230,6 +237,8 @@ export interface RegistrationsTable {
   success: ColumnType<Success, Success | undefined, Success>;
   score_scaled: number | null;
   time_spent_ms: ColumnType<string, number | undefined, number>;
+  /** The server graded this attempt itself (F-07); a certificate for it is "verified". */
+  verified: Generated<boolean>;
   started_at: DefaultedTimestamp;
   last_activity_at: DefaultedTimestamp;
   completed_at: Date | null;
@@ -362,6 +371,8 @@ export interface CertificatesTable {
   learner_name: string;
   item_title: string;
   score_scaled: number | null;
+  /** The result was scored by the server (vs reported by the course content) — F-07. */
+  verified: Generated<boolean>;
   completed_at: Timestamp;
   issued_at: CreatedAt;
 }

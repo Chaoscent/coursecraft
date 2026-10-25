@@ -58,3 +58,23 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ConverterConfi
   }
   return result.data;
 }
+
+/**
+ * Removes the secret-bearing variables from the process environment once the
+ * config holds them (SECURITY_AUDIT.md F-15). The parser tools already run
+ * with a scrubbed env, but they share the converter's uid, so without this a
+ * compromised parser could read the supervising process's secrets from
+ * /proc/<pid>/environ. Strong uid/namespace isolation needs a sandbox
+ * RuntimeClass (see docs/kubernetes.md).
+ */
+export function scrubSecretsFromEnv(env: NodeJS.ProcessEnv = process.env): void {
+  for (const name of [
+    'COURSECRAFT_CONVERTER_DATABASE_URL',
+    'COURSECRAFT_CONVERTER_DATABASE_URL_FILE',
+    'COURSECRAFT_S3_ACCESS_KEY_ID',
+    'COURSECRAFT_S3_ACCESS_KEY_ID_FILE',
+    'COURSECRAFT_S3_SECRET_ACCESS_KEY',
+    'COURSECRAFT_S3_SECRET_ACCESS_KEY_FILE',
+  ])
+    delete env[name];
+}

@@ -62,3 +62,9 @@ apiVersion: v1
 kind: Secret
 metadata: { name: s3-keys, namespace: cc }
 stringData: { accessKeyId: k8s-access-key, secretAccessKey: k8s-secret-key-0123456789 }
+---
+# Separate converter key (same throwaway CloudServer creds; the chart only checks the Secret name).
+apiVersion: v1
+kind: Secret
+metadata: { name: s3-converter-keys, namespace: cc }
+stringData: { accessKeyId: k8s-access-key, secretAccessKey: k8s-secret-key-0123456789 }

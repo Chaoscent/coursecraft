@@ -165,6 +165,35 @@ export async function updateUser(
   else if (changes.roles || changes.groupIds) await ctx.sessions.markRotate(id);
 }
 
+/**
+ * Admin removal of a user's second factor (SECURITY_AUDIT.md F-09): the
+ * recovery path when a learner loses their authenticator, since self-disable
+ * now needs a current code. Clears the secret and the lockout and ends the
+ * user's sessions.
+ */
+export async function resetTotp(ctx: AppContext, actorId: string, id: string, ipHmac: string) {
+  await existingUser(ctx.db, id);
+  await ctx.db
+    .updateTable('users')
+    .set({
+      totp_secret: null,
+      totp_last_step: null,
+      totp_failed: 0,
+      totp_locked_until: null,
+      updated_at: new Date(),
+    })
+    .where('id', '=', id)
+    .execute();
+  await ctx.sessions.revokeAll(id);
+  await ctx.audit.record({
+    actorUserId: actorId,
+    action: 'user.totp_reset',
+    targetType: 'user',
+    targetId: id,
+    ipHmac,
+  });
+}
+
 export async function resetPassword(
   ctx: AppContext,
   actorId: string,

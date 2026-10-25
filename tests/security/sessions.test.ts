@@ -2,6 +2,7 @@
 import { generateSync } from 'otplib';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { SESSION_COOKIE } from '../../apps/server/src/auth/sessions.js';
+import { passwordLogin, totpLogin } from '../../apps/server/src/modules/auth/service.js';
 import { hashToken, randomToken } from '../../apps/server/src/crypto/tokens.js';
 import { createTestApp, PASSWORD, sessionCookie, type TestApp } from '../support/test-app.js';
 
@@ -265,5 +266,60 @@ describe('two-factor authentication', () => {
       .where('id', '=', user.id)
       .executeTakeFirstOrThrow();
     expect(JSON.stringify(stored.totp_secret)).not.toContain(secret);
+  });
+});
+
+describe('F-09: second-factor hardening (SECURITY_AUDIT.md)', () => {
+  async function enableTotp() {
+    const user = await t.createUser(['learner']);
+    const actor = await t.login(user.email);
+    const { secret } = (await t.request(actor, 'POST', '/api/account/totp/setup')).json<{ secret: string }>();
+    const confirm = await t.request(actor, 'POST', '/api/account/totp/confirm', {
+      code: generateSync({ secret }),
+    });
+    expect(confirm.statusCode).toBe(200);
+    return { user, actor, secret };
+  }
+
+  it('locks the second factor after too many wrong codes, across fresh challenges', async () => {
+    const { user } = await enableTotp();
+    // Each password login makes a new challenge and resets the password counter, but the
+    // per-account code counter persists, so it cannot be brute-forced indefinitely.
+    for (let i = 0; i < 10; i++) {
+      const outcome = await passwordLogin(t.ctx, user.email, PASSWORD);
+      expect(outcome.kind).toBe('totp');
+      if (outcome.kind !== 'totp') throw new Error('expected a challenge');
+      const result = await totpLogin(t.ctx, outcome.challenge, '000000');
+      expect('failedUserId' in result).toBe(true);
+    }
+    const locked = await passwordLogin(t.ctx, user.email, PASSWORD);
+    expect(locked).toMatchObject({ kind: 'failed', reason: 'locked' });
+  });
+
+  it('turning off two-factor needs a current code, not just the password', async () => {
+    const { actor, secret } = await enableTotp();
+    const noCode = await t.request(actor, 'POST', '/api/account/totp/disable', { password: PASSWORD });
+    expect(noCode.statusCode).toBe(400);
+    const wrong = await t.request(actor, 'POST', '/api/account/totp/disable', {
+      password: PASSWORD,
+      code: '000000',
+    });
+    expect(wrong.statusCode).toBe(401);
+    const code = generateSync({ secret, epoch: Math.floor(Date.now() / 1000) + 30 });
+    const ok = await t.request(actor, 'POST', '/api/account/totp/disable', { password: PASSWORD, code });
+    expect(ok.statusCode).toBe(200);
+  });
+
+  it('an administrator can reset a second factor after a lost device', async () => {
+    const { user } = await enableTotp();
+    const admin = await t.actor(['admin']);
+    const res = await t.request(admin, 'POST', `/api/users/${user.id}/reset-2fa`);
+    expect(res.statusCode).toBe(200);
+    const row = await t.ctx.db
+      .selectFrom('users')
+      .select('totp_last_step')
+      .where('id', '=', user.id)
+      .executeTakeFirstOrThrow();
+    expect(row.totp_last_step).toBeNull();
   });
 });

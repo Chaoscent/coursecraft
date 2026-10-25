@@ -3,7 +3,7 @@ import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { loadConfig } from './env.js';
+import { assertPlaybackOrigin, loadConfig } from './env.js';
 
 const KEY = Buffer.alloc(32, 7).toString('base64');
 const base = {
@@ -56,5 +56,52 @@ describe('loadConfig', () => {
     expect(() =>
       loadConfig({ ...base, COURSECRAFT_PUBLIC_URL: 'nope', COURSECRAFT_DATABASE_URL: 'secret-value' }),
     ).toThrow(/^(?!.*secret-value)/s);
+  });
+});
+
+describe('master key ring (F-21)', () => {
+  const k = (b: number) => Buffer.alloc(32, b).toString('base64');
+
+  it('reads COURSECRAFT_MASTER_KEYS as a versioned ring, current last', () => {
+    const config = loadConfig({
+      ...base,
+      COURSECRAFT_MASTER_KEY: undefined,
+      COURSECRAFT_MASTER_KEYS: `${k(1)},${k(2)}`,
+    });
+    expect(config.masterKeyCurrent).toBe(2);
+    expect(config.masterKeys?.size).toBe(2);
+    expect(config.masterKey.equals(Buffer.alloc(32, 2))).toBe(true);
+  });
+
+  it('falls back to the single COURSECRAFT_MASTER_KEY (no ring)', () => {
+    const config = loadConfig(base);
+    expect(config.masterKeys).toBeUndefined();
+  });
+});
+
+describe('assertPlaybackOrigin (F-12)', () => {
+  const content = new URL('https://content.example.org');
+
+  it('refuses single mode without a content origin', () => {
+    expect(() => assertPlaybackOrigin({ contentUrl: undefined, tenancy: 'single' }, {})).toThrow(
+      'COURSECRAFT_CONTENT_URL is required',
+    );
+  });
+
+  it('allows a content origin', () => {
+    expect(() => assertPlaybackOrigin({ contentUrl: content, tenancy: 'single' }, {})).not.toThrow();
+  });
+
+  it('allows the explicit local-trial opt-out', () => {
+    expect(() =>
+      assertPlaybackOrigin(
+        { contentUrl: undefined, tenancy: 'single' },
+        { COURSECRAFT_ALLOW_SAME_ORIGIN_PLAYBACK: 'true' },
+      ),
+    ).not.toThrow();
+  });
+
+  it('does not require it for several organisations (own origins per tenant)', () => {
+    expect(() => assertPlaybackOrigin({ contentUrl: undefined, tenancy: 'multi' }, {})).not.toThrow();
   });
 });

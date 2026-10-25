@@ -90,6 +90,21 @@ export function setTenantQuery(tenantId: string): CompiledQuery {
   return CompiledQuery.raw("select set_config('app.tenant_id', $1, false)", [tenantId]);
 }
 
+/**
+ * Transaction-local tenant (SECURITY_AUDIT.md F-05): `is_local = true` binds
+ * the setting to the current transaction, so it travels with the transaction
+ * even through a transaction-mode connection pooler and cannot leak to another
+ * organisation's query on the same backend connection.
+ */
+export function setLocalTenantQuery(tenantId: string): CompiledQuery {
+  return CompiledQuery.raw("select set_config('app.tenant_id', $1, true)", [tenantId]);
+}
+
+/** Transaction control statements used by the tenant driver (F-05). */
+export const BEGIN_TX: CompiledQuery = CompiledQuery.raw('begin');
+export const COMMIT_TX: CompiledQuery = CompiledQuery.raw('commit');
+export const ROLLBACK_TX: CompiledQuery = CompiledQuery.raw('rollback');
+
 /** Read access only for a role (platform tables the app must not change). Skipped when the role is missing. */
 export async function readOnlyFor<DB>(
   db: Kysely<DB>,
@@ -122,4 +137,85 @@ export async function grantColumnUpdate<DB>(
     await sql`grant update (${sql.join(columns.map((c) => sql.id(c)))}) on ${sql.table(table)} to ${sql.id(role)}`.execute(
       db,
     );
+}
+
+/* ---------- Job queue (pg-boss) privileges, SECURITY_AUDIT.md F-01 ---------- */
+
+/**
+ * pg-boss's own deferred commands are single index statements on its job
+ * tables. bam.ts runs a command with the simple query protocol, so a `;`
+ * would allow more statements.
+ */
+const PG_BOSS_COMMAND = String.raw`^\s*(CREATE (UNIQUE )?INDEX|DROP INDEX)[^;]*;?\s*$`;
+
+const queueReady = async <DB>(db: Kysely<DB>): Promise<boolean> => {
+  const result = await sql<{ ok: boolean }>`select to_regclass('pgboss.bam') is not null
+    and exists (select 1 from pg_roles where rolname = 'coursecraft_converter')
+    and exists (select 1 from pg_roles where rolname = 'coursecraft_app') as ok`.execute(db);
+  return result.rows[0]?.ok === true;
+};
+
+/**
+ * Least privilege on the job queue. The converter only works its job rows and
+ * registers itself; neither it nor the app may write pg-boss's maintenance
+ * tables (`bam` commands run as the table owner during migrate). Idempotent;
+ * runs after every migration and after pg-boss created or upgraded its
+ * tables. Skipped while the schema or the roles do not exist.
+ */
+export async function lockDownJobQueue<DB>(db: Kysely<DB>): Promise<void> {
+  if (!(await queueReady(db))) return;
+  await sql`alter default privileges for role coursecraft_migrator in schema pgboss revoke all on tables from coursecraft_converter`.execute(
+    db,
+  );
+  await sql`revoke all on all tables in schema pgboss from coursecraft_converter`.execute(db);
+  await sql`grant select, insert, update on pgboss.job, pgboss.job_common to coursecraft_converter`.execute(
+    db,
+  );
+  await sql`grant select on pgboss.queue, pgboss.version to coursecraft_converter`.execute(db);
+  await sql`grant select, insert, update, delete on pgboss.instance to coursecraft_converter`.execute(db);
+  await sql`revoke insert, update, delete, truncate on pgboss.bam from coursecraft_app`.execute(db);
+  await restrictJobQueueRows(db);
+}
+
+/**
+ * Row-level isolation of the shared job table (SECURITY_AUDIT.md F-01). The
+ * converter may only read and write the `convert.*` queues (its own work and
+ * `convert.done`); it can no longer read the payloads of, or forge jobs on,
+ * the app-only queues `mail.send` and `export.build`. The app keeps full
+ * access through its own policy; the migrator owns the tables and bypasses
+ * RLS. Both the partitioned parent `pgboss.job` and its only partition
+ * `pgboss.job_common` carry the policies, so neither access path is open.
+ * Idempotent; skipped until pg-boss has created its tables.
+ */
+export async function restrictJobQueueRows<DB>(db: Kysely<DB>): Promise<void> {
+  const present = await sql<{
+    ok: boolean;
+  }>`select to_regclass('pgboss.job_common') is not null as ok`.execute(db);
+  if (!present.rows[0]?.ok) return;
+  await sql`alter table pgboss.job enable row level security`.execute(db);
+  await sql`alter table pgboss.job_common enable row level security`.execute(db);
+  await sql`drop policy if exists cc_job_app on pgboss.job`.execute(db);
+  await sql`drop policy if exists cc_job_app on pgboss.job_common`.execute(db);
+  await sql`drop policy if exists cc_job_converter on pgboss.job`.execute(db);
+  await sql`drop policy if exists cc_job_converter on pgboss.job_common`.execute(db);
+  await sql`create policy cc_job_app on pgboss.job to coursecraft_app using (true) with check (true)`.execute(
+    db,
+  );
+  await sql`create policy cc_job_app on pgboss.job_common to coursecraft_app using (true) with check (true)`.execute(
+    db,
+  );
+  await sql`create policy cc_job_converter on pgboss.job to coursecraft_converter using (name like 'convert.%') with check (name like 'convert.%')`.execute(
+    db,
+  );
+  await sql`create policy cc_job_converter on pgboss.job_common to coursecraft_converter using (name like 'convert.%') with check (name like 'convert.%')`.execute(
+    db,
+  );
+}
+
+/** Deletes queued maintenance commands that pg-boss did not write (queued through the old grants). */
+export async function purgeForeignQueueCommands<DB>(db: Kysely<DB>): Promise<number> {
+  if (!(await queueReady(db))) return 0;
+  const result = await sql`delete from pgboss.bam
+    where status <> 'completed' and command !~* ${PG_BOSS_COMMAND}`.execute(db);
+  return Number(result.numAffectedRows ?? 0);
 }

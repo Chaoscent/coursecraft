@@ -14,7 +14,10 @@ afterAll(() => t.close());
 
 describe('local sign-in policy', () => {
   it('is off by default and settable only by administrators', async () => {
-    expect((await t.request(admin, 'GET', '/api/sso/policy')).json()).toEqual({ localLoginAdminOnly: false });
+    expect((await t.request(admin, 'GET', '/api/sso/policy')).json()).toEqual({
+      localLoginAdminOnly: false,
+      allowPasswordResetForSsoUsers: false,
+    });
     const learner = await t.actor(['learner']);
     expect(
       (await t.request(learner, 'PUT', '/api/sso/policy', { localLoginAdminOnly: true })).statusCode,

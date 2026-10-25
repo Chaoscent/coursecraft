@@ -185,19 +185,25 @@ export async function applyOutcome(
   await db.transaction().execute(async (tx) => {
     const reg = await tx
       .selectFrom('registrations')
-      .select(['completion', 'success', 'completed_at', 'time_spent_ms'])
+      .select(['completion', 'success', 'completed_at', 'time_spent_ms', 'verified'])
       .where('id', '=', registrationId)
       .forUpdate()
       .executeTakeFirst();
     if (!reg) return;
     const completion = reg.completion === 'completed' ? 'completed' : (outcome.completion ?? reg.completion);
-    const success = reg.success === 'passed' ? 'passed' : (outcome.success ?? reg.success);
+    // A server-graded attempt (F-07) is authoritative: client-reported pass/score from
+    // xAPI/SCORM must not change it. Progress and time may still advance.
+    const success = reg.verified
+      ? reg.success
+      : reg.success === 'passed'
+        ? 'passed'
+        : (outcome.success ?? reg.success);
     await tx
       .updateTable('registrations')
       .set({
         completion,
         success,
-        ...(outcome.scoreScaled !== undefined ? { score_scaled: outcome.scoreScaled } : {}),
+        ...(!reg.verified && outcome.scoreScaled !== undefined ? { score_scaled: outcome.scoreScaled } : {}),
         time_spent_ms: Number(reg.time_spent_ms) + (outcome.addTimeMs ?? 0),
         last_activity_at: new Date(),
         ...(completion === 'completed' && !reg.completed_at ? { completed_at: new Date() } : {}),

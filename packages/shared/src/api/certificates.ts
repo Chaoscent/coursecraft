@@ -8,6 +8,8 @@ export const certificateSchema = z.object({
   itemTitle: z.string(),
   completedAt: z.string(),
   issuedAt: z.string(),
+  /** False: completion reported by the course content, not scored by the server (F-07). */
+  verified: z.boolean(),
 });
 export type Certificate = z.infer<typeof certificateSchema>;
 
@@ -25,4 +27,6 @@ export const certificateVerificationSchema = z.object({
   itemTitle: z.string(),
   completedAt: z.string(),
   issuedAt: z.string(),
+  /** False: completion reported by the course content, not scored by the server (F-07). */
+  verified: z.boolean(),
 });

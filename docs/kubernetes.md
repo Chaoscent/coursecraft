@@ -15,7 +15,11 @@ app ── PostgreSQL (managed or operator)       app ── S3 bucket ── co
 - Kubernetes 1.27+, an ingress controller and TLS certificates for two host
   names (the content origin must differ from the app origin).
 - PostgreSQL 15+ with an administrator account for the first start (the chart
-  creates the three service roles itself with `coursecraft db-bootstrap`).
+  creates the three service roles itself with `coursecraft db-bootstrap`). A
+  direct connection, a session-mode pooler or a transaction-mode pooler
+  (PgBouncer) all work: the organisation is set per transaction, not per
+  session, so it never leaks between organisations. Only statement-mode
+  pooling is unsupported (it breaks transactions).
 - An S3-compatible bucket (AWS S3, MinIO, Ceph RGW, Scality, ...) **or** a
   ReadWriteMany volume (NFS, CephFS, EFS, Azure Files) with
   `storage.kind=fs`.
@@ -38,8 +42,12 @@ helm install coursecraft oci://ghcr.io/chaoscent/charts/coursecraft --version 1.
   --set database.bootstrap.adminSecret=coursecraft-db-admin \
   --set storage.s3.endpoint=https://s3.example.com \
   --set storage.s3.bucket=coursecraft \
-  --set storage.s3.secret=coursecraft-s3
+  --set storage.s3.secret=coursecraft-s3 \
+  --set storage.s3.converterSecret=coursecraft-s3-converter
 ```
+
+`storage.s3.converterSecret` is a separate access key limited to the `work/`
+prefix; see "Converter object-storage key" below.
 
 The setup token for the first administrator appears in the log of one app pod
 (see the notes Helm prints). After the first start the administrator secret
@@ -47,15 +55,98 @@ is only needed when roles change; you may remove `database.bootstrap`.
 
 ## What the chart does
 
-| Part       | Details                                                                                                                                                                                                                                                                                   |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Secrets    | Master key, IP pepper and the three role passwords are generated once and kept (`helm.sh/resource-policy: keep`). Losing the master key makes sealed settings (SSO, SMTP, AI keys) unreadable: back the Secret up.                                                                        |
-| Migrations | Init container of every app pod: `db-bootstrap` (optional) and `migrate`. Concurrent runs are serialised by the migrator's lock. Migrations are additive, so old and new pods can run side by side during a rolling update.                                                               |
-| App        | Rolling updates without unavailable pods, readiness `/readyz`, liveness `/healthz`, read-only root file system, non-root, no service account token. Request limits are shared through the database (`COURSECRAFT_RATE_LIMIT_STORE=database`), periodic jobs run on one replica per round. |
-| Converter  | Separate Deployment, larger resources, waits for the job queue; nothing may connect to it (network policy). With object storage it may get its own keys limited to the `work/` prefix (`storage.s3.converterSecret`).                                                                     |
-| Metrics    | Prometheus text format on a separate port (`metrics.port`, default 9464), optional ServiceMonitor. Request counts and durations per route template, active sessions, pending conversions, process numbers.                                                                                |
-| Backup     | CronJob `coursecraft backup`: database dump, uploaded to `backups/` in the bucket (object storage) or written to `/data/backups` (shared volume). Protect the bucket itself with versioning or replication; set a lifecycle rule for old backups.                                         |
-| Optional   | HorizontalPodAutoscaler, PodDisruptionBudget, NetworkPolicy, ServiceMonitor.                                                                                                                                                                                                              |
+| Part       | Details                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Secrets    | Master key, IP pepper and the three role passwords are generated once and kept (`helm.sh/resource-policy: keep`). Losing the master key makes sealed settings (SSO, SMTP, AI keys) unreadable: back the Secret up.                                                                                                                                                                                                                                                                                          |
+| Migrations | Init container of every app pod: `db-bootstrap` (optional) and `migrate`. Concurrent runs are serialised by the migrator's lock. Migrations are additive, so old and new pods can run side by side during a rolling update.                                                                                                                                                                                                                                                                                 |
+| App        | Rolling updates without unavailable pods, readiness `/readyz`, liveness `/healthz`, read-only root file system, non-root, no service account token. Request limits are shared through the database (`COURSECRAFT_RATE_LIMIT_STORE=database`), periodic jobs run on one replica per round.                                                                                                                                                                                                                   |
+| Converter  | Separate Deployment, larger resources, waits for the job queue. A default-deny egress NetworkPolicy (on by default) lets nothing connect to it and lets it reach only DNS, the database and, with object storage, the S3 endpoint — never the internet or the cloud metadata endpoint (see "Converter network policy"). With object storage it **requires** its own key limited to the `work/` prefix (`storage.s3.converterSecret`); the chart refuses the app's key (see "Converter object-storage key"). |
+| Metrics    | Prometheus text format on a separate port (`metrics.port`, default 9464), optional ServiceMonitor. Request counts and durations per route template, active sessions, pending conversions, process numbers.                                                                                                                                                                                                                                                                                                  |
+| Backup     | CronJob `coursecraft backup`: database dump, uploaded to `backups/` in the bucket (object storage) or written to `/data/backups` (shared volume). Protect the bucket itself with versioning or replication; set a lifecycle rule for old backups.                                                                                                                                                                                                                                                           |
+| Optional   | HorizontalPodAutoscaler, PodDisruptionBudget, NetworkPolicy, ServiceMonitor.                                                                                                                                                                                                                                                                                                                                                                                                                                |
+
+## Converter object-storage key
+
+With `storage.kind=s3`, the converter must get its **own** access key through
+`storage.s3.converterSecret` (a Secret with `accessKeyId` and
+`secretAccessKey`). The chart refuses to render if it is missing or is the
+same Secret as `storage.s3.secret`: the converter processes untrusted files,
+so it must not hold the app's full-bucket key, which reaches every tenant's
+data and the `backups/` dumps.
+
+Restrict that key to the `work/` prefix. The converter lists `work/<id>/in`,
+reads `work/<id>/in/<name>`, and writes `work/<id>/out/<name>`; the app does
+the deleting. AWS IAM shown; MinIO and Ceph accept the same JSON. `PREFIX` is
+`storage.s3.keyPrefix` (omit the `PREFIX/` segment when it is empty):
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "s3:ListBucket",
+      "Resource": "arn:aws:s3:::BUCKET",
+      "Condition": { "StringLike": { "s3:prefix": ["PREFIX/work/*"] } }
+    },
+    { "Effect": "Allow", "Action": "s3:GetObject", "Resource": "arn:aws:s3:::BUCKET/PREFIX/work/*/in/*" },
+    { "Effect": "Allow", "Action": "s3:PutObject", "Resource": "arn:aws:s3:::BUCKET/PREFIX/work/*/out/*" }
+  ]
+}
+```
+
+Verify once, with the converter key: `aws s3 cp` to `work/x/out/y` succeeds,
+while `aws s3 ls s3://BUCKET/PREFIX/tenants/` and
+`aws s3 cp s3://BUCKET/PREFIX/backups/... .` are denied.
+
+## Converter sandbox
+
+The converter parses untrusted files. Its pod is non-root, drops all
+capabilities, has a read-only root file system and no network egress, and the
+tools (LibreOffice, ffmpeg) run as separate processes with resource limits and
+an environment that holds no secrets; the converter also removes its own DB and
+object-storage secrets from its process environment at start, so a compromised
+parser sharing its uid cannot read them from `/proc`. For strong kernel-level
+isolation on top of that, run the converter under a sandbox runtime by setting
+`converter.runtimeClassName` (for example `gvisor` or `kata`); the cluster must
+provide that RuntimeClass.
+
+## Converter network policy
+
+The converter handles untrusted files, so a default-deny egress NetworkPolicy
+(`networkPolicy.converter`, on by default and independent of
+`networkPolicy.enabled`) limits it to DNS, the database and — with object
+storage — the S3 endpoint. Everything else is denied, including the internet
+and the cloud metadata endpoint (`169.254.169.254`).
+
+A NetworkPolicy cannot match host names, so give the destinations as
+in-cluster selectors or address ranges. The render fails if no database
+destination is set, or, with S3, no object-storage destination — set
+`networkPolicy.converter.enabled=false` only to opt out deliberately.
+
+```sh
+# Managed PostgreSQL by address, in-cluster MinIO/Ceph by pod selector:
+--set networkPolicy.converter.database.cidrs={10.0.0.5/32} \
+--set networkPolicy.converter.objectStorage.podSelector.app=minio \
+--set networkPolicy.converter.objectStorage.namespaceSelector.kubernetes\.io/metadata\.name=storage
+```
+
+Object-storage destinations, best first:
+
+| Setup                              | Set                                                                     |
+| ---------------------------------- | ----------------------------------------------------------------------- |
+| In-cluster storage (MinIO, Ceph)   | `objectStorage.podSelector` (+ `namespaceSelector`) and `.port`         |
+| AWS interface VPC endpoint (S3)    | `objectStorage.cidrs`: the endpoint ENIs' subnet CIDRs or /32s          |
+| AWS gateway VPC endpoint           | `objectStorage.cidrs`: the region's S3 prefix list (refresh in your CI) |
+| Private storage at a fixed address | `objectStorage.cidrs`: that /32 or subnet                               |
+
+Policies match pod IPs after Service DNAT, so select the **pods**, not the
+Service ClusterIP. `objectStorage.cidrs={0.0.0.0/0}` is a last resort for
+public S3 without a VPC endpoint: it allows outbound HTTPS anywhere (TCP 443),
+with the metadata range excluded automatically. On EKS also set the IMDSv2 hop
+limit to 1, or keep the converter's node pool off any instance role. A
+CNI with DNS-aware policy (Cilium `toFQDNs`) can pin the endpoint by name
+instead; see SECURITY_AUDIT.md (M-5 follow-up) for a `CiliumNetworkPolicy`.
 
 ## Restore
 

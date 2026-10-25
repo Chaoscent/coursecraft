@@ -20,6 +20,7 @@ const toCertificate = (r: {
   id: string;
   serial: string;
   item_title: string;
+  verified: boolean;
   completed_at: Date;
   issued_at: Date;
 }): Certificate => ({
@@ -28,6 +29,7 @@ const toCertificate = (r: {
   itemTitle: r.item_title,
   completedAt: r.completed_at.toISOString(),
   issuedAt: r.issued_at.toISOString(),
+  verified: r.verified,
 });
 
 /**
@@ -48,6 +50,7 @@ export async function issueCertificate(
       'registrations.completed_at',
       'registrations.success',
       'registrations.completion',
+      'registrations.verified',
       'library_items.title',
     ])
     .where('registrations.user_id', '=', auth.userId)
@@ -77,6 +80,8 @@ export async function issueCertificate(
       learner_name: auth.displayName,
       item_title: reg.title,
       score_scaled: reg.score_scaled,
+      // Verified only when the server graded the attempt itself (F-07).
+      verified: reg.verified,
       completed_at: reg.completed_at ?? new Date(),
     })
     .onConflict((oc) => oc.column('registration_id').doNothing())
@@ -121,6 +126,7 @@ const TEXT = {
     score: 'Ergebnis',
     serial: 'Zertifikatsnummer',
     verify: 'Echtheit prüfen',
+    reported: 'Abschluss vom Kursinhalt gemeldet, nicht serverseitig bewertet.',
     locale: 'de-DE',
   },
   en: {
@@ -132,6 +138,7 @@ const TEXT = {
     score: 'Result',
     serial: 'Certificate number',
     verify: 'Verify at',
+    reported: 'Completion reported by the course content, not scored by the server.',
     locale: 'en-GB',
   },
 } as const;
@@ -149,7 +156,7 @@ function fitted(text: string, size: number, bold: boolean, maxWidth: number): { 
 export async function verifyCertificate(ctx: AppContext, serial: string) {
   const row = await ctx.db
     .selectFrom('certificates')
-    .select(['serial', 'learner_name', 'item_title', 'completed_at', 'issued_at'])
+    .select(['serial', 'learner_name', 'item_title', 'verified', 'completed_at', 'issued_at'])
     .where('serial', '=', serial)
     .executeTakeFirst();
   if (!row) throw notFound('Certificate not found');
@@ -159,6 +166,7 @@ export async function verifyCertificate(ctx: AppContext, serial: string) {
     itemTitle: row.item_title,
     completedAt: row.completed_at.toISOString(),
     issuedAt: row.issued_at.toISOString(),
+    verified: row.verified,
   };
 }
 
@@ -201,6 +209,7 @@ export async function certificatePdf(
     ...(row.score_scaled !== null
       ? [{ text: `${t.score}: ${Math.round(row.score_scaled * 100)} %`, size: 14, y: 140 }]
       : []),
+    ...(row.verified ? [] : [{ text: t.reported, size: 9, y: 90, color: grey }]),
     { text: `${t.serial}: ${row.serial}`, size: 10, y: 62, color: grey },
     {
       text: `${t.verify}: ${new URL(`/verify/${row.serial}`, publicUrl(ctx.config)).toString()}`,

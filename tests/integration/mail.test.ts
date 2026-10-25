@@ -12,6 +12,7 @@ import {
   sendDueReminders,
   sendPathReminders,
 } from '../../apps/server/src/modules/mail/service.js';
+import { requestReset } from '../../apps/server/src/modules/password-reset/service.js';
 import { scorm12Package } from '../support/packages.js';
 import { createTestApp, type Actor, type TestApp } from '../support/test-app.js';
 import { uploadTo } from '../support/courses.js';
@@ -255,5 +256,33 @@ describe('e-mail', () => {
       userId: open.id,
       params: { open: '2', steps: '2' },
     });
+  });
+});
+
+describe('F-10: password-reset throttle and provider-only accounts (SECURITY_AUDIT.md)', () => {
+  it('sends at most one reset mail per account within the window', async () => {
+    await configure();
+    const user = await t.createUser(['learner']);
+    const before = mailJobs().length;
+    for (let i = 0; i < 3; i++) await requestReset(t.ctx, user.email, 'hmac');
+    expect(mailJobs().length).toBe(before + 1);
+  });
+
+  it('does not reset the password of an account that only signs in through a provider', async () => {
+    await configure();
+    const user = await t.createUser(['learner']);
+    const provider = await t.ctx.db
+      .insertInto('sso_providers')
+      .values({ kind: 'oidc', name: 'Test IdP', config: JSON.stringify({}) })
+      .returning('id')
+      .executeTakeFirstOrThrow();
+    await t.ctx.db
+      .insertInto('user_identities')
+      .values({ provider_id: provider.id, subject: 'subject-1', user_id: user.id })
+      .execute();
+    await t.ctx.db.updateTable('users').set({ password_hash: null }).where('id', '=', user.id).execute();
+    const before = mailJobs().length;
+    await requestReset(t.ctx, user.email, 'hmac');
+    expect(mailJobs().length).toBe(before);
   });
 });

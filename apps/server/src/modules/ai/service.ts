@@ -14,8 +14,8 @@ import { buildRequest, endpointFor, extractText, headersFor, parseResult, send }
 
 const PREVIEW_MINUTES = 10;
 
-const providerAad = (id: string) => `ai-provider:${id}`;
-const userKeyAad = (userId: string, providerId: string) => `ai-user-key:${userId}:${providerId}`;
+export const providerAad = (id: string) => `ai-provider:${id}`;
+export const userKeyAad = (userId: string, providerId: string) => `ai-user-key:${userId}:${providerId}`;
 const last4 = (key: string) => key.slice(-4);
 const today = () => new Date().toISOString().slice(0, 10);
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { Kysely } from 'kysely';
 import { Migrator, type Migration } from 'kysely/migration';
-import { grantColumnUpdate, ident, readOnlyFor, revokeWrites } from './sql-helpers.js';
+import { grantColumnUpdate, ident, lockDownJobQueue, readOnlyFor, revokeWrites } from './sql-helpers.js';
 import * as m0001 from './0001-initial.js';
 import * as m0002 from './0002-identity.js';
 import * as m0003 from './0003-courses.js';
@@ -24,6 +24,11 @@ import * as m0019 from './0019-path-notices.js';
 import * as m0020 from './0020-session-sso.js';
 import * as m0021 from './0021-operator-details.js';
 import * as m0022 from './0022-billing.js';
+import * as m0023 from './0023-job-queue-privileges.js';
+import * as m0024 from './0024-certificate-verified.js';
+import * as m0025 from './0025-totp-lockout.js';
+import * as m0026 from './0026-reset-throttle.js';
+import * as m0027 from './0027-registration-verified.js';
 
 /** Ordered list of all migrations. Released migrations never change. */
 export const MIGRATIONS: Readonly<Record<string, Migration>> = {
@@ -49,6 +54,11 @@ export const MIGRATIONS: Readonly<Record<string, Migration>> = {
   '0020-session-sso': m0020,
   '0021-operator-details': m0021,
   '0022-billing': m0022,
+  '0023-job-queue-privileges': m0023,
+  '0024-certificate-verified': m0024,
+  '0025-totp-lockout': m0025,
+  '0026-reset-throttle': m0026,
+  '0027-registration-verified': m0027,
 };
 
 /**
@@ -80,6 +90,8 @@ export async function enforcePrivileges<DB>(db: Kysely<DB>): Promise<void> {
   );
   await readOnlyFor(db, ident('billing_plans'), ident('coursecraft_app'));
   await revokeWrites(db, ident('billing_events'), ident('coursecraft_app'));
+  // Job queue: the converter and app may not write pg-boss's maintenance tables (F-01).
+  await lockDownJobQueue(db);
 }
 
 export const LATEST_MIGRATION = Object.keys(MIGRATIONS).sort().at(-1);

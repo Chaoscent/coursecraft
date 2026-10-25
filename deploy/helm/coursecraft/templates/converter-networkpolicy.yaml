@@ -1,0 +1,60 @@
+{{- /* SPDX-License-Identifier: Apache-2.0 */ -}}
+{{- define "coursecraft.egressPeers" -}}
+{{- range .cidrs }}
+- ipBlock:
+    cidr: {{ . | quote }}
+    {{- if eq . "0.0.0.0/0" }}
+    except: ["169.254.0.0/16"]
+    {{- end }}
+{{- end }}
+{{- if or .podSelector .namespaceSelector }}
+-
+  {{- with .namespaceSelector }}
+  namespaceSelector:
+    matchLabels: {{- toYaml . | nindent 6 }}
+  {{- end }}
+  {{- with .podSelector }}
+  podSelector:
+    matchLabels: {{- toYaml . | nindent 6 }}
+  {{- end }}
+{{- end }}
+{{- end -}}
+{{- $np := .Values.networkPolicy.converter }}
+{{- if $np.enabled }}
+{{- $db := $np.database }}
+{{- if not (or $db.cidrs $db.podSelector $db.namespaceSelector) }}
+{{- fail "networkPolicy.converter.database: set cidrs or podSelector/namespaceSelector for PostgreSQL (or networkPolicy.converter.enabled=false)" }}
+{{- end }}
+{{- $s3 := eq .Values.storage.kind "s3" }}
+{{- $os := $np.objectStorage }}
+{{- if and $s3 (not (or $os.cidrs $os.podSelector $os.namespaceSelector)) }}
+{{- fail "networkPolicy.converter.objectStorage: set cidrs or podSelector/namespaceSelector for the S3 endpoint (or networkPolicy.converter.enabled=false)" }}
+{{- end }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "coursecraft.fullname" . }}-converter
+  labels: {{- include "coursecraft.labels" . | nindent 4 }}
+spec:
+  # Untrusted files: nothing connects to the converter, and it reaches only DNS,
+  # the database and (with S3) the object storage. Everything else is denied,
+  # including the cloud metadata endpoint (SECURITY_AUDIT.md F-14).
+  podSelector:
+    matchLabels: {{- include "coursecraft.selector" . | nindent 6 }}
+      app.kubernetes.io/component: converter
+  policyTypes: [Ingress, Egress]
+  ingress: []
+  egress:
+    - to: {{- include "coursecraft.egressPeers" (dict "cidrs" (list) "podSelector" $np.dns.podSelector "namespaceSelector" $np.dns.namespaceSelector) | trim | nindent 8 }}
+      ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
+    - to: {{- include "coursecraft.egressPeers" $db | trim | nindent 8 }}
+      ports:
+        - { protocol: TCP, port: {{ .Values.database.port }} }
+    {{- if $s3 }}
+    - to: {{- include "coursecraft.egressPeers" $os | trim | nindent 8 }}
+      ports:
+        - { protocol: TCP, port: {{ $os.port }} }
+    {{- end }}
+{{- end }}

@@ -4,6 +4,7 @@ import {
   idParamSchema,
   okSchema,
   ssoPolicySchema,
+  type SsoPolicy,
   SSO_KINDS,
   SSO_ROLES,
   ssoProvidersResponseSchema,
@@ -577,8 +578,15 @@ export function SsoPage() {
     const [id] = [...selected];
     return providers.find((p) => p.id === id) ?? null;
   }, [selected, providers]);
-  const setAdminOnly = (localLoginAdminOnly: boolean) =>
-    void api(okSchema, '/api/sso/policy', { method: 'PUT', body: { localLoginAdminOnly } })
+  const savePolicy = (patch: Partial<SsoPolicy>) =>
+    void api(okSchema, '/api/sso/policy', {
+      method: 'PUT',
+      body: {
+        localLoginAdminOnly: policy?.localLoginAdminOnly ?? false,
+        allowPasswordResetForSsoUsers: policy?.allowPasswordResetForSsoUsers ?? false,
+        ...patch,
+      },
+    })
       .then(reloadPolicy)
       .catch((e: unknown) => setError(errorMessage(e)));
   const syncNow = () => {
@@ -630,8 +638,17 @@ export function SsoPage() {
           <Notice tone="info">{t('sso.privacyNote')}</Notice>
           {message ? <Notice tone="success">{message}</Notice> : null}
           {(actionError ?? loadError) ? <Notice tone="danger">{actionError ?? loadError}</Notice> : null}
-          <Checkbox isSelected={policy?.localLoginAdminOnly ?? false} onChange={setAdminOnly}>
+          <Checkbox
+            isSelected={policy?.localLoginAdminOnly ?? false}
+            onChange={(v) => savePolicy({ localLoginAdminOnly: v })}
+          >
             {t('sso.adminOnly')}
+          </Checkbox>
+          <Checkbox
+            isSelected={policy?.allowPasswordResetForSsoUsers ?? false}
+            onChange={(v) => savePolicy({ allowPasswordResetForSsoUsers: v })}
+          >
+            {t('sso.allowResetForSso')}
           </Checkbox>
         </div>
         <DataTable

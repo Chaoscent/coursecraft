@@ -84,14 +84,17 @@ describe('certificates', () => {
     const body = res.json<Record<string, string>>();
     expect(body).toMatchObject({ serial, itemTitle: 'Brandschutz (Grundlagen)' });
     expect(body['learnerName']).toBeTruthy();
-    // No ids, e-mail addresses or scores.
+    // No ids, e-mail addresses or scores. `verified` flags server-scored results (F-07).
     expect(Object.keys(body).sort()).toEqual([
       'completedAt',
       'issuedAt',
       'itemTitle',
       'learnerName',
       'serial',
+      'verified',
     ]);
+    // Nothing is server-scored yet: a certificate is reported by the course content.
+    expect(body['verified']).toBe(false);
     expect((await t.request(null, 'GET', '/api/certificates/verify/CC-AAAA-BBBB-CCCC')).statusCode).toBe(404);
     expect((await t.request(null, 'GET', "/api/certificates/verify/CC-AAAA-BBBB-CCC'")).statusCode).toBe(400);
   });
