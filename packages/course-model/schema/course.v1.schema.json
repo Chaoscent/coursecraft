@@ -1057,6 +1057,9 @@
             "sources": {
               "$ref": "#/$defs/__schema45"
             },
+            "webmSources": {
+              "$ref": "#/$defs/__schema45"
+            },
             "poster": {
               "$ref": "#/$defs/__schema11"
             },
