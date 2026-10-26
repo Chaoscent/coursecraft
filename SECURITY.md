@@ -6,7 +6,7 @@ Please do not open a public issue for security problems.
 
 - Preferred: **Private Vulnerability Reporting** of the repository
   ("Security" tab → "Report a vulnerability").
-- Alternative: email **security@chardsoft.com**.
+- Alternative: email **contact@chardsoft.com**.
 - Include affected version, steps to reproduce, and impact.
 - We acknowledge within 5 working days and aim to ship a fix for high or
   critical issues within 30 days. We credit reporters unless they prefer
@@ -387,29 +387,3 @@ change:
 - Tests: `tests/integration/billing.test.ts` (signatures, replay, duplicates,
   unknown tenants, default organisation, anonymous access to the console's
   billing routes).
-
-## 8. Known limitations
-
-- Third-party packages run arbitrary JavaScript on the content origin. They
-  can read other packages served from that same origin while the respective
-  launch token is valid. Per-package subdomains would close this gap; this is
-  not planned for v1.
-- A content origin on a subdomain or another port is same-site with the app.
-  The `__Host-` cookie is still never sent there, but a separate registrable
-  domain isolates more (no same-site relationship).
-- Without a content origin, own courses run on the app origin in a frame
-  with `allow-same-origin`. They are authored in Coursecraft and keep the
-  strict CSP, but they are not isolated from the app the way third-party
-  packages are; production setups should configure a content origin.
-- Report CSV files prefix cells starting with `= + - @` so spreadsheets do
-  not evaluate them (CSV injection).
-- The converter role can read all job payloads in the `pgboss` schema.
-- Single sign-on adds a third outbound connection (to the administrator's
-  identity provider, during sign-in only). A compromised provider can sign in
-  as any user it asserts; restrict domains and review who may sign in.
-- AI base URLs may point to private addresses on purpose (local model
-  servers such as Ollama). This is an administrator decision; the app does
-  not resolve and block private ranges.
-  Payloads therefore contain only ids, file names, and parameters.
-- Plain-HTTP deployments are not supported (`__Host-` cookies require HTTPS,
-  except on `localhost`).

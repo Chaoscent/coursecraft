@@ -10,3 +10,6 @@ test-results/
 *.log
 .vite/
 .pnpm-store/
+
+# Internal security audit — kept locally, never published.
+SECURITY_AUDIT.md

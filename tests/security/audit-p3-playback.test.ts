@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-// Security audit (SECURITY_AUDIT.md, Priority 3): playback on the app origin.
-// Default installation: no COURSECRAFT_CONTENT_URL and a single organisation,
-// so own courses play under /launch/<token>/ on the APP origin.
-//
-// F-12 (SECURITY_AUDIT.md): the end-to-end test is marked `it.fails`
-// (expected failure) while the finding is open. With M-4 applied it passes,
-// `it.fails` then reports it, and `.fails` must be removed.
+// Regression test (internal security review): course playback on the app
+// origin. In the default single-origin setup, own courses play under
+// /launch/<token>/ on the app origin, so stored learner content must be served
+// inert. Verifies that a stored document cannot be served as active,
+// same-origin content. Never point this at a real installation.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { openCourse } from '../support/courses.js';
 import { createTestApp, ORIGIN, type Actor, type TestApp } from '../support/test-app.js';
